@@ -91,13 +91,18 @@ const authSlice = createSlice({
         // Store admin tokens
         localStorage.setItem('adminAccessToken', accessToken);
         localStorage.setItem('adminRefreshToken', refreshToken);
-      } else {
+      } else if(user.role === 'user'){
         state.user = user;
         state.isUserAuthenticated = true;
         
         // Store user tokens
         localStorage.setItem('userAccessToken', accessToken);
         localStorage.setItem('userRefreshToken', refreshToken);
+      }else if(user.role === 'doctor'){
+        localStorage.removeItem('userAccessToken');
+        localStorage.removeItem('userRefreshToken');
+        localStorage.setItem('doctorAccessToken', accessToken);
+        localStorage.setItem('doctorRefreshToken', refreshToken);
       }
       
       state.loading = false;

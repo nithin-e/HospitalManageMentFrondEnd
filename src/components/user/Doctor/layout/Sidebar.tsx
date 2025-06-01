@@ -11,12 +11,12 @@ import {
   import { Link } from "react-router-dom";
   
   const sidebarLinks = [
-    { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+    { icon: LayoutDashboard, label: "Dashboard", path: "/DoctorDashboard" },
     { icon: Clock, label: "Appointments", path: "/appointments" },
     { icon: Users, label: "Patients", path: "/patients" },
     { icon: BellRing, label: "Reminders", path: "/reminders" },
     { icon: MessageSquare, label: "Chat", path: "/chat" },
-    { icon: CalendarDays, label: "Set Dates", path: "/dates" },
+    { icon: CalendarDays, label: "Set Dates", path: "/AppointmentScheduler" },
     { icon: Wallet, label: "Payments", path: "/payments" },
   ];
   

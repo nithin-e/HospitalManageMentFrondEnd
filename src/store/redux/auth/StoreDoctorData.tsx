@@ -15,22 +15,13 @@ export interface ApplyDoctorProps {
   medicalLicense?: File;
 }
 
-export const registerDoctorApi = async (doctorData: FormData, accessToken: string, refreshToken: string) => {
+export const registerDoctorApi = async (doctorData: FormData) => {
   try {
     console.log("Preparing to send doctor registration data");
    
-
-    // Ensure axios is properly configured to handle FormData
     const response = await axiosInstance.post(
       "/api/auth/user/applyDoctor",
-      doctorData,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "x-refresh-token": refreshToken,
-          'Content-Type': 'multipart/form-data'
-        },
-      }
+      doctorData
     );
 
     console.log("API response:", response.data);

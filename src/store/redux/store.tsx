@@ -1,32 +1,32 @@
 import { configureStore } from "@reduxjs/toolkit";
 import userReducer from "./slices/authSlice";
-import { persistStore, persistReducer } from "redux-persist";
-import storage from "redux-persist/lib/storage"; // defaults to localStorage for web
+import doctorReducer from './slices/DoctorSlice';
+import { persistStore, persistReducer, FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER } from "redux-persist";
+import storage from "redux-persist/lib/storage";
 import { combineReducers } from "redux";
-import { FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER } from "redux-persist";
-// import adminReducer from './slices/adminSlice';
 
-
-
-// Configure persist options
-const persistConfig = {
-  key: "root", // key for the persisted data in storage
+// Separate persist configs for different slices if needed
+const authPersistConfig = {
+  key: "auth",
   storage,
- 
+  whitelist: ['user', 'isUserAuthenticated'], // Only persist these fields
 };
 
-// Combine all reducers
-const rootReducer = combineReducers({
-  user: userReducer,
-  // admin:adminReducer 
-});
+const doctorPersistConfig = {
+  key: "doctor",
+  storage,
+};
 
-// Create persisted reducer
-const persistedReducer = persistReducer(persistConfig, rootReducer);
+// Create persisted reducers
+const persistedUserReducer = persistReducer(authPersistConfig, userReducer);
+const persistedDoctorReducer = persistReducer(doctorPersistConfig, doctorReducer);
 
-// Configure store with persisted reducer
+// Configure store with persisted reducers
 export const store = configureStore({
-  reducer: persistedReducer,
+  reducer: {
+    user: persistedUserReducer,
+    doctor: persistedDoctorReducer,
+  },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {

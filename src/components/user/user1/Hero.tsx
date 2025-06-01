@@ -2,6 +2,7 @@ import React from 'react';
 import { Button } from "@/components/user/ui/button";
 import { Play, Star, Calendar, ShieldCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 
 interface HeroProps {
   doctorImage: string;
@@ -53,10 +54,12 @@ const Hero: React.FC<HeroProps> = ({ doctorImage }) => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
+                <Link to="/AppointMent">
                 <Button className="bg-brand-blue hover:bg-brand-blue/90 text-white px-8 py-6 h-auto button-transition flex items-center">
                   <Calendar size={20} className="mr-2" />
-                  Book Appointment
-                </Button>
+                       Book Appointment
+                          </Button>
+                           </Link>
               </motion.div>
               
               <motion.div

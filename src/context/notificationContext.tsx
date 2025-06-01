@@ -21,11 +21,11 @@ export const SocketProvider = ({ children }) => {
   const [userBlockStatus, setUserBlockStatus] = useState({});
 
   useEffect(() => {
-    console.log('SocketProvider initializing...');
+    console.log('Notification system initializing...');
 
     // Log socket connection details
-    const socketUrl = 'http://localhost:3002/admin';
-    console.log('Attempting to connect to socket server at:', socketUrl);
+    const socketUrl = 'http://localhost:5000/notification';
+    console.log('Setting up notification channel at:', socketUrl);
 
     // Initialize socket connection with detailed options
     const newSocket = io(socketUrl, {
@@ -40,46 +40,46 @@ export const SocketProvider = ({ children }) => {
 
     // Set up event listeners with detailed logging
     newSocket.on('connect', () => {
-      console.log('Socket connected successfully with ID:', newSocket.id);
-      console.log('Socket transport used:', newSocket.io.engine.transport.name);
+      console.log('Notification service connected with ID:', newSocket.id);
+      console.log('Notification transport method:', newSocket.io.engine.transport.name);
       setConnected(true);
     });
 
     newSocket.on('connect_error', (error) => {
-      console.error('Socket connection error details:', error);
-      console.log('Connection options:', newSocket.io.opts);
-      console.log('Transport:', newSocket.io.engine?.transport?.name || 'No transport');
+      console.error('Notification service connection error:', error);
+      console.log('Notification connection options:', newSocket.io.opts);
+      console.log('Notification transport:', newSocket.io.engine?.transport?.name || 'No transport');
       setConnected(false);
     });
 
     newSocket.on('disconnect', (reason) => {
-      console.log(`Socket disconnected. Reason: ${reason}`);
+      console.log(`Notification service disconnected. Reason: ${reason}`);
       setConnected(false);
     });
 
     newSocket.on('reconnect', (attemptNumber) => {
-      console.log(`Socket reconnected after ${attemptNumber} attempts`);
+      console.log(`Notification service reconnected after ${attemptNumber} attempts`);
     });
 
     newSocket.on('reconnect_attempt', (attemptNumber) => {
-      console.log(`Socket reconnection attempt #${attemptNumber}`);
+      console.log(`Notification service reconnection attempt #${attemptNumber}`);
     });
 
     newSocket.on('reconnect_error', (error) => {
-      console.error('Socket reconnection error:', error);
+      console.error('Notification service reconnection error:', error);
     });
 
     newSocket.on('reconnect_failed', () => {
-      console.error('Socket failed to reconnect after all attempts');
+      console.error('Notification service failed to reconnect after all attempts');
     });
 
     newSocket.on('error', (error) => {
-      console.error('Socket general error:', error);
+      console.error('Notification service general error:', error);
     });
 
     // Listen for user_status_updated event
     newSocket.on('user_status_updated', (data) => {
-      console.log('Received user_status_updated event:', data);
+      console.log('Received user block notification update:', data);
       const { userId, isBlocked } = data;
       
       setUserBlockStatus((prev) => ({
@@ -93,27 +93,27 @@ export const SocketProvider = ({ children }) => {
 
     // Clean up on unmount
     return () => {
-      console.log('Cleaning up socket connection');
+      console.log('Shutting down notification service connection');
       newSocket.disconnect();
     };
   }, []);
 
   // Log connection status changes
   useEffect(() => {
-    console.log('Socket connection status changed:', connected);
+    console.log('Notification service status changed:', connected ? 'active' : 'inactive');
   }, [connected]);
 
   // Log user block status changes
   useEffect(() => {
-    console.log('User block status updated:', userBlockStatus);
+    console.log('User notification block status updated:', userBlockStatus);
   }, [userBlockStatus]);
 
   // Value passed to consumers
   const value = {
     socket,
     connected,
-    userBlockStatus, // Expose user block status
-    isUserBlocked: (userId) => userBlockStatus[userId] ?? false, // Helper function to check if a user is blocked
+    userBlockStatus, 
+    isUserBlocked: (userId) => userBlockStatus[userId] ?? false, 
   };
 
   return (

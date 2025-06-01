@@ -9,6 +9,10 @@ import AuthButtons from '../navbar/AuthButton';
 import { RootState } from '../../../store/redux/store';
 import { logoutUser } from '@/store/redux/slices/authSlice';
 import { GetFetchNotifications } from '@/store/userSideApi/GetNotificationApi';
+import { SocketProvider, useSocket } from '@/context/socketContext';
+
+
+
 
 
 interface User {
@@ -233,9 +237,24 @@ const Navbar: React.FC = () => {
   const [hasNotifications, setHasNotifications] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const { 
+    notificationSocket,
+    notificationConnected 
+  } = useSocket();
 
   // Get auth and user data from Redux store
-  const user = useSelector((state: RootState) => state.user);
+    const user = useSelector((state: RootState) => state.user)
+  
+   console.log('......Navuser.......',user)
+
+   const userData = user?.checkUserEmailAndPhone?.user || user?.user?.user || user?.user || null;
+  const userName = userData?.name || '';
+  const userEmail = userData?.email || '';
+  const userInitial = userName.charAt(0)?.toUpperCase() || '';
+
+
+  
+ 
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -265,15 +284,21 @@ const Navbar: React.FC = () => {
     if (userData?.email) {
       fetchNotifications();
     }
-  }, []);
+  }, [])
+
 
   const fetchNotifications = async () => {
     try {
       setIsLoading(true);
       setError(null);
       const response = await GetFetchNotifications(userData?.email || '');
+
+      console.log('check this notification in navbar',response.notification.notification[0]);
       
-      if (response && response.notification && response.notification.notification) {
+      
+  if (response && response.notification && response.notification.notification) {
+        
+       
         // Process the data from your backend response structure
         const notificationsData = response.notification.notification.map((notification: any) => ({
           ...notification,
@@ -299,6 +324,23 @@ const Navbar: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+
+
+
+  //   useEffect(() => {
+  //   if (userData?.email && notificationSocket) {
+  //     console.log('Setting up socket with user data', userData.email);
+      
+  //     notificationSocket.emit('user_data', { 
+  //       userEmail: userData.email 
+  //     }, (response) => {
+  //       console.log("Socket response:", response);
+  //     });
+  //   }
+  // }, [userData?.email, notificationSocket]);
+
+
 
   const navItems = [
     { name: 'Home', href: '/' },
@@ -342,10 +384,7 @@ const Navbar: React.FC = () => {
   };
 
   // Simplified user data extraction with fallback
-  const userData = user?.checkUserEmailAndPhone?.user || user?.user?.user || user?.user || null;
-  const userName = userData?.name || '';
-  const userEmail = userData?.email || '';
-  const userInitial = userName.charAt(0)?.toUpperCase() || '';
+  
 
   // Robust authentication check: use user data or token presence
   const isAuthenticated =
@@ -497,7 +536,7 @@ const Navbar: React.FC = () => {
                       {/* Menu items */}
                       <div className="py-1">
                         <a
-                          href="/profile"
+                          href="/userprofile"
                           className="flex items-center px-6 py-3 text-sm text-gray-700 hover:bg-blue-50 transition-colors group"
                           onClick={handleNavigateToProfile}
                         >

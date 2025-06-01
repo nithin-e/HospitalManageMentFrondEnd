@@ -85,18 +85,13 @@ const Login = () => {
     onSubmit: async (values) => {
       setIsLoading(true);
       try {
-        const token = localStorage.getItem("accessToken"); 
+        // const token = localStorage.getItem("accessToken"); 
         const response = await axiosInstance.post(
           "/api/auth/user/loginUser",
           {
             email: values.email,
             password: values.password,
           },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`  // pass token in Authorization header
-            }
-          }
         );
 
         if (!response.data || !response.data.user) {
@@ -126,6 +121,12 @@ const Login = () => {
           navigate('/adminDash');
         } else if ((result.payload as any).user.role === 'user') {
           navigate('/');
+        }else if ((result.payload as any).user.role ==='doctor') {
+          
+           let email=result.payload.user?.email
+           console.log('........nekeeeeee...........',email);
+           navigate('/DoctorDashboard',{ state: { email: email } });
+          //  navigate('/DoctorDashboard');
         }
       } catch (error) {
         let errorMsg = "An error occurred during login";
@@ -154,21 +155,28 @@ const Login = () => {
     }
   }, [navigate]);
 
+
+
   const handleGoogleSignIn = useGoogleLogin({
+
     onSuccess: async (tokenResponse) => {
       setIsGoogleLoading(true);
       try {
+        // Include the access token in the Authorization header
         const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
           headers: {
-            Authorization: `Bearer ${tokenResponse.access_token}`,
+            'Authorization': `Bearer ${tokenResponse.access_token}`,
+            'Content-Type': 'application/json',
           },
         });
-
+  
+  
         if (!userInfoResponse.ok) {
           throw new Error('Failed to fetch user info from Google');
         }
-
+  
         const userData = await userInfoResponse.json();
+
         const googleLoginPayload = {
           user: {
             googleId: userData.sub,
@@ -177,19 +185,19 @@ const Login = () => {
           },
           accessToken: tokenResponse.access_token,
         };
-
+  
         const backendResponse = await axiosInstance.post("/api/auth/user/loginUser", {
           googleId: userData.sub,
           email: userData.email,
           name: userData.name,
           accessToken: tokenResponse.access_token,
         });
-
+  
         if (backendResponse.data.user.isActive === false) {
           setShowBlockedMessage(true);
           return;
         }
-
+  
         const result = await dispatch(login({
           ...googleLoginPayload,
           user: {
@@ -198,11 +206,11 @@ const Login = () => {
           },
           refreshToken: backendResponse.data.refreshToken,
         }));
-
+  
         if ((result.payload as any).user.role === 'admin') {
           navigate('/adminDash');
         } else if ((result.payload as any).user.role === 'user') {
-          navigate('/');
+           navigate('/');
         }
       } catch (error) {
         formik.setFieldError('password', error.message || "Failed to sign in with Google");
@@ -210,13 +218,13 @@ const Login = () => {
         setIsGoogleLoading(false);
       }
     },
+
     onError: (error) => {
       setIsGoogleLoading(false);
       formik.setFieldError('password', error.error_description || "Authentication error occurred");
     },
     scope: 'email profile openid',
   });
-
 
 
   const containerVariants = {

@@ -5,9 +5,6 @@ export const GetFetchNotifications = async (email: string) => {
     
     const response = await axiosInstance.post("/api/notifiction/getNotifications", 
       { email }, 
-      {
-        headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` }
-      }
     );
     
     console.log('checking data', response.data);

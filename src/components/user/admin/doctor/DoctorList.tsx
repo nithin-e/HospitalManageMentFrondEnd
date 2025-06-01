@@ -7,7 +7,6 @@ import { Input } from "@/components/user/ui/docui/input";
 import { Button } from "@/components/user/ui/docui/button";
 import { fetchDoctors } from "@/store/AdminSideApi/fechDoctors";
 import { deleteDoctor } from "@/store/AdminSideApi/deleteDoctorAfterRejection";
- 
 
 export const DoctorsList = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -17,8 +16,6 @@ export const DoctorsList = () => {
   const [sortField, setSortField] = useState("name");
   const [sortDirection, setSortDirection] = useState("asc");
   const [activeFilters, setActiveFilters] = useState([]);
-  const [rejectedDoctorId, setRejectedDoctorId] = useState(null);
-  const [rejectedDoctorEmail, setRejectedDoctorEmail] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -28,47 +25,30 @@ export const DoctorsList = () => {
 
   // Handle rejected doctor state from navigation
   useEffect(() => {
-    // Check if we arrived from rejection dialog
     if (location.state?.rejectedDoctor && location.state?.rejectedDoctorEmail) {
       const email = location.state?.rejectedDoctorEmail;
-      setRejectedDoctorId(location.state?.rejectedDoctor);
-      setRejectedDoctorEmail(email);
       console.log('Found rejected doctor with email:', email);
       
-      // Set the timer to remove the doctor after 2 minutes (120000 ms)
-      const removalTimer = setTimeout(() => {
-        console.log('Timer completed, removing doctor with email:', email);
-        removeRejectedDoctor(email);
-      }, 120000);
-      
-      // Clean up timer if component unmounts
-      return () => {
-        console.log('Cleaning up timer');
-        clearTimeout(removalTimer);
-      };
+      // Remove doctor immediately
+      removeRejectedDoctor(email);
     }
   }, [location.state]);
 
   const removeRejectedDoctor = async (email) => {
     try {
-      console.log('Starting to remove doctor with email:', email);
+      console.log('Removing doctor with email:', email);
       
       // Remove doctor from the UI immediately
       setDoctors(prevDoctors => prevDoctors.filter(doctor => doctor.email !== email));
       
-      // Make the API call to delete from backend
       console.log('Making API call to delete doctor with email:', email);
       const response = await deleteDoctor(email);
       console.log('API response:', response);
       
-      // Reset states after successful removal
-      setRejectedDoctorId(null);
-      setRejectedDoctorEmail(null);
-      
-      console.log(`Doctor with email ${email} successfully removed after 2-minute delay`);
+      console.log(`Doctor with email ${email} successfully removed`);
     } catch (error) {
       console.error("Error removing rejected doctor:", error);
-      // If the API call fails, you might want to refresh the data
+      // If the API call fails, refresh the data
       fetchDoctorData();
     }
   };
@@ -77,6 +57,7 @@ export const DoctorsList = () => {
     try {
       setLoading(true);
       const response = await fetchDoctors();
+      console.log('doctor listing table', response);
       
       let doctorData = [];
       if (Array.isArray(response)) {
@@ -108,11 +89,6 @@ export const DoctorsList = () => {
         agreeTerms: doctor.agreeTerms,
         createdAt: new Date(doctor.createdAt).toLocaleDateString(),
       }));
-
-      // Filter out doctors that are pending removal
-      if (rejectedDoctorEmail) {
-        doctorData = doctorData.filter(doctor => doctor.email !== rejectedDoctorEmail);
-      }
 
       setDoctors(doctorData);
     } catch (error) {
@@ -224,16 +200,6 @@ export const DoctorsList = () => {
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Medical Professionals Directory</h1>
         <p className="text-gray-500">Manage and review doctor registrations</p>
       </div>
-
-      {/* Notification of pending removal - optional */}
-      {rejectedDoctorEmail && (
-        <div className="mb-4 bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Clock className="w-5 h-5 text-amber-500" />
-            <span className="text-amber-800">A rejected doctor will be removed from this list in 2 minutes</span>
-          </div>
-        </div>
-      )}
 
       {/* Search and filters */}
       <div className="mb-6 flex flex-col lg:flex-row gap-4">

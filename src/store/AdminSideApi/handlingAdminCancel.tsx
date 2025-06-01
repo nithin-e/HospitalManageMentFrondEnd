@@ -11,9 +11,7 @@ export const handlingAdminCancel = async (email:any,rejectionReasonTexts:any) =>
       
       const response = await axiosInstance.post("/api/notifiction/handleCanceldoctorApplication", 
         { email,rejectionReasonTexts }, 
-        {
-          headers: { Authorization: `Bearer ${accessToken}` }
-        }
+
       );
   
       return response; 

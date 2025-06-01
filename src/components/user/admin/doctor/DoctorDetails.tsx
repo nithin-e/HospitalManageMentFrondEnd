@@ -483,12 +483,14 @@ export const DoctorDetails = () => {
                       <p className="text-sm text-gray-600 mb-4">
                         Approving this application will grant the doctor access to the platform and allow them to provide services.
                       </p>
+                      
                       <Button 
                         className="w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 shadow-md text-white" 
                         onClick={() => setIsApproveDialogOpen(true)}
                       >
                         Approve Application
                       </Button>
+
                     </div>
 
                     <div className="bg-gradient-to-br from-white to-rose-50 rounded-lg p-4 border border-rose-100 shadow-md">

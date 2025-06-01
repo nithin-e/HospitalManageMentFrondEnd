@@ -129,7 +129,7 @@ const Register = () => {
         navigate('/adminDash');
       } else if ((res.payload as any).user.role === 'user') {
         console.log('yes iam a user');
-        navigate('/');
+        navigate('/login');
       }
       
     } catch (error: any) {
@@ -328,7 +328,7 @@ const Register = () => {
           </motion.div>
 
           <motion.div variants={itemVariants} className="mt-6">
-            <motion.button
+            {/* <motion.button
               className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 rounded-lg py-2 px-3 text-sm text-gray-700 font-medium"
               onClick={() => handleGoogleSignUp()}
               disabled={isGoogleLoading}
@@ -351,7 +351,7 @@ const Register = () => {
                 </svg>
               )}
               {isGoogleLoading ? "Signing up..." : "Sign up with Google"}
-            </motion.button>
+            </motion.button> */}
           </motion.div>
 
           <div className="my-4 flex items-center">

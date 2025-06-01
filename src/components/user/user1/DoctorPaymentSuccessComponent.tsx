@@ -7,7 +7,7 @@ const DoctorPaymentSuccessComponent = () => {
   const [animationComplete, setAnimationComplete] = useState(false);
   const [pulse, setPulse] = useState(false);
   const cardRef = useRef(null);
-  const Nagigate=useNavigate()
+  const Navigate=useNavigate()
   
   useEffect(() => {
     // Add floating medical symbols effect with enhanced visibility
@@ -73,13 +73,26 @@ const DoctorPaymentSuccessComponent = () => {
     };
   }, []);
 
-  // Function to handle dashboard navigation
+
+  const extractEmailFromUrl = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const email = urlParams.get('email');
+    return email;
+  };
+
+
+  const email = extractEmailFromUrl();
+console.log("Extracted email:", email);
+
+
+
   const navigateToDashboard = () => {
     console.log("Navigating to doctor dashboard");
-    // Add your navigation logic here
-     
-     Nagigate('/DoctorDashboard')
-    // Button click animation effect
+  
+    
+    // Navigate('/DoctorDashboard', { state: { email: email } });
+    Navigate('/login')
+   
     if (cardRef.current) {
       cardRef.current.classList.add('scale-95');
       setTimeout(() => {
@@ -462,7 +475,7 @@ const DoctorPaymentSuccessComponent = () => {
             <div className="absolute inset-0 rounded-lg animate-ping bg-white opacity-0 group-hover:opacity-5"></div>
             
             <Stethoscope size={18} className="mr-2" />
-            <span>Go to Doctor Dashboard</span>
+            <span>Go To Login Page Login As a Doctor </span>
             <ArrowRight size={18} className="ml-2 transition-transform duration-300 group-hover:translate-x-1" />
           </button>
         </div>

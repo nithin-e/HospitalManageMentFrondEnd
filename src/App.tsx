@@ -26,6 +26,9 @@ import NotificationList from './pages/user/user1/NotificationList';
 import NotificationDetails from './pages/user/user1/NotificationDetails';
 import DoctorPaymentSucces from './pages/user/user1/DoctorPaymentSucces';
 import DoctorDash from './pages/user/doctor/DoctorDash';
+import SetUpSlotes from './pages/user/doctor/setUpSlotes';
+import AppointMent from './pages/user/user1/AppointMent';
+import UserProfile from './components/user/user1/userProfileComponent';
 
 const queryClient = new QueryClient();
 
@@ -79,48 +82,54 @@ const BlockStatusChecker = () => {
     '/adminLogin'
   ].some(path => currentPath === path || currentPath.startsWith(path));
   
-  // Check if regular user is blocked
-  const isRegularUserBlocked = React.useMemo(() => {
-    // Different ways to access the user ID based on the structure
-    let userId = null;
+  // Extract current user ID for block checks
+  const getCurrentUserId = React.useMemo(() => {
+    if (!userData) return null;
     
-    if (userData) {
-      // Handle different possible structures
-      if (typeof userData === 'object') {
-        if (userData.id) {
-          userId = userData.id;
-        } else if (userData.user && userData.user.id) {
-          userId = userData.user.id;
-        }
-      }
+    // Handle different possible structures
+    if (typeof userData === 'object') {
+      if (userData.id) return userData.id;
+      if (userData._id) return userData._id;
+      if (userData.user?.id) return userData.user.id;
+      if (userData.user?._id) return userData.user._id;
     }
+    
+    return null;
+  }, [userData]);
+  
+  // Check if THIS specific user is blocked - IMPROVED FUNCTION
+  const isRegularUserBlocked = React.useMemo(() => {
+    const userId = getCurrentUserId;
     
     // Skip if no user ID
     if (!userId) return false;
     
-    // IMPORTANT CHANGE: Check block status even if admin is authenticated
-    // We'll handle the admin check in the useEffect redirect logic
-    
     console.log('Checking block status for user ID:', userId);
     
-    // Check method 1: Using the enhanced isUserBlocked function
-    const blockedByFunction = isUserBlocked && isUserBlocked(userId);
+    // Only check if THIS user is blocked - not any user
+    let thisUserIsBlocked = false;
     
-    // Check method 2: Direct lookup in userBlockStatus object
-    const blockedByDirect = userBlockStatus && userBlockStatus[userId] === true;
+    // Method 1: Check using isUserBlocked function specifically for THIS user
+    if (typeof isUserBlocked === 'function') {
+      thisUserIsBlocked = isUserBlocked(userId);
+    }
     
-    console.log('Regular user block check:', {
+    // Method 2: Check userBlockStatus object specifically for THIS user
+    if (!thisUserIsBlocked && userBlockStatus && typeof userBlockStatus === 'object') {
+      thisUserIsBlocked = userBlockStatus[userId] === true;
+    }
+    
+    console.log('THIS user block check:', {
       userId,
-      blockedByFunction,
-      blockedByDirect,
-      userBlockStatus
+      thisUserIsBlocked,
+      userBlockStatus: userBlockStatus ? (userId in userBlockStatus ? userBlockStatus[userId] : 'Not in block list') : 'No block status'
     });
     
-    return blockedByFunction || blockedByDirect;
-  }, [userData, isUserBlocked, userBlockStatus]);  // Removed isAdminAuthenticated from dependencies
+    return thisUserIsBlocked;
+  }, [userData, isUserBlocked, userBlockStatus]);
   
-  console.log('Inside BlockStatusChecker - userData ID:', userData?.id);
-  console.log('Inside BlockStatusChecker - adminData ID:', adminData?.id);
+  console.log('Inside BlockStatusChecker - userData ID:', userData?.id || userData?._id);
+  console.log('Inside BlockStatusChecker - adminData ID:', adminData?.id || adminData?._id);
   console.log('Inside BlockStatusChecker **-** isUserAuthenticated:', isUserAuthenticated);
   console.log('Inside BlockStatusChecker **-** isAdminAuthenticated:', isAdminAuthenticated);
   console.log('Inside BlockStatusChecker **-** isRegularUserBlocked:', isRegularUserBlocked);
@@ -130,15 +139,18 @@ const BlockStatusChecker = () => {
   console.log('Inside BlockStatusChecker - isPublicRoute:', isPublicRoute);
 
   useEffect(() => {
-    // IMPORTANT CHANGE: We check if the user has been blocked, and we're on a user page (not admin page)
-    // This allows blocked users to be redirected even if they're also admin authenticated
-    if (isUserAuthenticated && isRegularUserBlocked && !isAdminPage) {
-      console.log(`ALERT: Regular user ${userData?.id} is BLOCKED. Logging out user and redirecting.`);
+    // Get this user's ID for precise blocking
+    const currentUserId = getCurrentUserId;
+    
+    // CRITICAL: Check if THIS SPECIFIC user is blocked, regardless of route
+    if (isUserAuthenticated && currentUserId && isRegularUserBlocked) {
+      console.log(`ALERT: Current user ${currentUserId} is BLOCKED. Logging out THIS user and redirecting.`);
       
-      // Use the specific logoutUser action instead of the generic logout
+      // Log exactly which user we're logging out
+      console.log('Logging out blocked user with ID:', currentUserId);
+      
       dispatch(logoutUser());
       
-      // Navigate to register with a message
       navigate('/register', { 
         state: { message: "Your account has been blocked. Please contact support." } 
       });
@@ -146,7 +158,7 @@ const BlockStatusChecker = () => {
       return;
     }
     
-    // If we're on a public route, always allow access
+    // If we're on a public route, allow access (but only AFTER block check)
     if (isPublicRoute) {
       console.log('On public route. Skipping further checks.');
       return;
@@ -183,6 +195,8 @@ const BlockStatusChecker = () => {
 };
 
 
+
+
 const App = () => {
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -195,8 +209,8 @@ const App = () => {
     <GoogleOAuthProvider clientId={clientId}>
       <QueryClientProvider client={queryClient}>
         <Provider store={store}>
-          <BrowserRouter>
           <SocketProvider>
+            <BrowserRouter>
               <TooltipProvider>
                 <Toaster />
                 <BlockStatusChecker />
@@ -207,7 +221,6 @@ const App = () => {
                   <Route path="*" element={<NotFound />} />
                   <Route path="/" element={<Index />} />
 
-                 
                   {/* Protected routes */}
                   <Route path="/services" element={<Services2 />} />
                   <Route path="/applyAsDoctor" element={<Apply />} />
@@ -215,9 +228,10 @@ const App = () => {
                   <Route path="/NotificationList" element={<NotificationList />} />
                   <Route path="/NotificationDetails/:id" element={<NotificationDetails />} />
                   <Route path="/payment-success" element={<DoctorPaymentSucces />} />
-                  
-                  
+                  <Route path="/AppointMent" element={<AppointMent />} />
+                  <Route path="/userprofile" element={<UserProfile />} />
 
+                  
                   {/* Admin routes */}
                   <Route path="/adminDash" element={<AdminDashboard />} />
                   <Route path="/users" element={<AdminUsers />} />
@@ -225,13 +239,13 @@ const App = () => {
                   <Route path="/Doctors" element={<DoctorListing/>} />
                   <Route path="/adminDetails/:id" element={<DoctorDetailsPage />} />
 
-
                   {/* Doctor routes */}
                   <Route path="/DoctorDashboard" element={<DoctorDash />}/>
+                  <Route path="/AppointmentScheduler" element={<SetUpSlotes />}/>
                 </Routes>
               </TooltipProvider>
-              </SocketProvider>
-          </BrowserRouter>
+            </BrowserRouter>
+          </SocketProvider>
         </Provider>
       </QueryClientProvider>
     </GoogleOAuthProvider>

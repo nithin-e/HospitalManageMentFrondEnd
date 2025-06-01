@@ -1,60 +1,53 @@
 import { logoutAdmin, logoutUser } from "@/store/redux/slices/authSlice";
+import { logoutDoctor } from "@/store/redux/slices/DoctorSlice";
 import { store } from "@/store/redux/store";
 import axios from "axios";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+
+
 
 // Create an Axios instance
 const axiosInstance = axios.create({
   baseURL: 'http://localhost:4000',
   headers: {
-    'Content-Type': 'application/json',
     'Accept': 'application/json',
     'Custom-Header': 'CustomValue'
+   
   }
 });
 
 // Request interceptor
 axiosInstance.interceptors.request.use(
   (config) => {
-    // Check if we're making an authenticated request
-    if (!config.url?.includes('/auth/login')) {
-      // Determine which token to use based on endpoint or other logic
+
+    if (!config.headers.Authorization && !config.url?.includes('/auth/login')) {
       const isAdminEndpoint = config.url?.includes('/admin');
+      const isDoctorEndpoint = config.url?.includes('/doctor');
+      // const isUserEndpoint = !isAdminEndpoint && !isDoctorEndpoint;
       
-      // Get the appropriate token
-      const accessToken = isAdminEndpoint 
-        ? localStorage.getItem("adminAccessToken") 
-        : localStorage.getItem("userAccessToken");
+      let accessToken;
       
-      // If no token exists, dispatch logout
-      if (!accessToken) {
-        if (isAdminEndpoint) {
-          store.dispatch(logoutAdmin());
-        } else {
-          store.dispatch(logoutUser());
-        }
+      if (isAdminEndpoint) {
+        accessToken = localStorage.getItem("adminAccessToken");
+      } else if (isDoctorEndpoint) {
+        console.log('taking doctor tocken');
         
-        // You could throw an error here or let the request continue
-        // return Promise.reject(new Error('No authentication token'));
+        accessToken = localStorage.getItem("doctorAccessToken");
+      } else {
+        accessToken = localStorage.getItem("userAccessToken");
       }
-      
-      // Add token to request headers
+  
       if (accessToken) {
         config.headers.Authorization = `Bearer ${accessToken}`;
-        
-        // Add refresh token if needed
-        const refreshToken = isAdminEndpoint
-          ? localStorage.getItem("adminRefreshToken")
-          : localStorage.getItem("userRefreshToken");
-          
-        if (refreshToken) {
-          config.headers["x-refresh-token"] = refreshToken;
-        }
       }
     }
     
+    console.log('Request config headers:', config.headers);
     return config;
   },
   (error) => {
+    console.error('Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
@@ -62,26 +55,107 @@ axiosInstance.interceptors.request.use(
 // Response interceptor
 axiosInstance.interceptors.response.use(
   (response) => {
+    console.log('Response((((((((((((((((())))))))))))))))) received:', {
+      status: response.status,
+      url: response.config.url,
+      data: response.data
+    });
     return response;
   },
-  (error) => {
-   
+  async (error) => {
+    console.error('Response interceptor error:', {
+      status: error.response?.status,
+      url: error.config?.url,
+      message: error.message,
+      data: error.response?.data
+    });
+
     if (error.response && error.response.status === 401) {
-      // Determine which user to logout based on the request URL
+
       const isAdminEndpoint = error.config.url?.includes('/admin');
-      
-      if (isAdminEndpoint) {
-        store.dispatch(logoutAdmin());
-      } else {
-        store.dispatch(logoutUser());
-      }
-      
-      // Redirect to login page if needed
-      // window.location.href = '/login';
-    }
+      const isDoctorEndpoint = error.config.url?.includes('/doctor');
     
+
+
+     console.log('<<<<<<<<<<<<<<<<<<<<000000000isDoctorEndpoint000000000>>>>>>>>>>>>',isDoctorEndpoint);
+     
+     
+      // if (isAdminEndpoint) {
+      //   // localStorage.removeItem("adminAccessToken");
+      //   // refreshToken= localStorage.removeItem("adminRefreshToken");
+      //   // store.dispatch(logoutAdmin());
+      //   // window.location.href = '/login'; 
+      // } else  {
+        var refreshToken = null;
+
+        
+
+        try {
+          console.log("calling doctor refresh");
+ 
+          if (isDoctorEndpoint){
+            refreshToken = localStorage.getItem("doctorRefreshToken");
+            console.log('Doctorrefresh token kittando',refreshToken);
+            
+          }else if(isAdminEndpoint){
+            refreshToken= localStorage.getItem("adminRefreshToken");
+          }else{
+          
+            refreshToken = localStorage.getItem("userRefreshToken");
+
+            console.log("calling user refresh <<<<<<<<<>>>>>>>>>>>>> ",refreshToken);
+          }
+
+          if (!refreshToken) {
+            store.dispatch(logoutDoctor());
+            window.location.href = "/login";
+            return Promise.reject(error);
+          }
+          
+          const response = await axios.post(`http://localhost:4000/auth/refresh`, {
+            token: refreshToken,
+          });
+
+          console.log('Doctor refresh response:', response);
+          
+          const { accessToken, refreshToken: newRefreshToken } = response.data.data;
+
+          if(isDoctorEndpoint){
+            localStorage.setItem("doctorAccessToken", accessToken);
+            localStorage.setItem("doctorRefreshToken", newRefreshToken);
+          }else if(isAdminEndpoint){
+            localStorage.setItem("adminAccessToken", accessToken);
+            localStorage.setItem("adminRefreshToken", refreshToken);
+          }else{
+            localStorage.setItem("userAccessToken", accessToken);
+            localStorage.setItem("userRefreshToken", refreshToken);
+          }
+          
+          error.config.headers["Authorization"] = `Bearer ${accessToken}`;
+          return axiosInstance.request(error.config);
+          
+        } catch (refreshError) {
+
+         
+          if(isDoctorEndpoint){
+            store.dispatch(logoutDoctor());
+            localStorage.removeItem("doctorAccessToken");
+            localStorage.removeItem("doctorRefreshToken");
+          }else{
+            store.dispatch(logoutUser());
+            localStorage.removeItem("userAccessToken");
+            localStorage.removeItem("userRefreshToken"); 
+             console.log('refreshError failed:', refreshError);
+          }
+          window.location.href = "/login";
+           return Promise.reject(error);
+        }
+        
+      } 
+      
     return Promise.reject(error);
   }
 );
 
 export default axiosInstance;
+

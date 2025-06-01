@@ -267,10 +267,10 @@ const Apply: React.FC = () => {
     }
 
     try {
-      const accessToken = localStorage.getItem("accessToken") || "your-access-token"; 
-      const refreshToken = localStorage.getItem("refreshToken") || "your-refresh-token";
+      const userAccessToken = localStorage.getItem("userAccessToken") || "your-access-token"; 
+      const userRefreshToken = localStorage.getItem("userRefreshToken") || "your-refresh-token";
       
-      const response = await registerDoctorApi(apiData, accessToken, refreshToken);
+      const response = await registerDoctorApi(apiData);
       
       if (response.success === true) {
         navigate('/successForDoctorApplication');

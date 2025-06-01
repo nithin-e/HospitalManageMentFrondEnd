@@ -12,22 +12,22 @@ export const handleAsyncThunk = <T>(
     state.error = null;
   })
   .addCase(asyncThunk.fulfilled, (state: any, action: PayloadAction<T>) => {
-    console.log('inside the addcase', action.payload);
+    console.log('inside the addcase1', action.payload);
     
     // More careful assignment
     if (action.payload) {
+      console.log('inside the addcase2', action.payload);
       // Check if this is a registration response
       if (asyncThunk.typePrefix === 'auth/register') {
         console.log('Processing registration response');
-        
-        // Set proper user data structure for registration
+  
         state.user = action.payload;
-        state.isUserAuthenticated = true; // Ensure this is set!
+        state.isUserAuthenticated = true; 
       } else {
-        // Handle other responses (like checkUser)
+       
         state.isUserAuthenticated = true;
         
-        // Check if action.payload is directly a user or has nested user
+      
         if ('id' in (action.payload as any) || 'email' in (action.payload as any)) {
           state.user = action.payload;
         } else if ((action.payload as any).user) {
@@ -42,6 +42,8 @@ export const handleAsyncThunk = <T>(
     
     // Token handling
     if (payload?.accessToken && payload?.refreshToken) {
+      console.log('<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>',payload);
+      
       const tokenPrefix = (payload.user?.role === 'admin' || payload.role === 'admin') ? 'admin' : 'user';
       localStorage.setItem(`${tokenPrefix}AccessToken`, payload.accessToken);
       localStorage.setItem(`${tokenPrefix}RefreshToken`, payload.refreshToken);
