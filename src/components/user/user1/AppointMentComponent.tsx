@@ -3,11 +3,12 @@ import { useState, useEffect } from 'react';
 import { Calendar, Clock, User, Mail, Phone, MessageSquare, Check, Heart, Activity, Shield, Stethoscope } from 'lucide-react';
 import Navbar from './Navbar';
 import Footer from './Footer';
-import { fetchDoctors } from '@/store/AdminSideApi/fechDoctors';
+import { UserfetchingDoctors } from '@/store/userSideApi/UserfetchingDoctors';
 import { fectingAppointMentSlotes } from '@/store/DoctorSideApi/fectingAppointMentSlotes';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store/redux/store';
 import { makingAppointMent } from '@/store/DoctorSideApi/makingAppointMent';
+import { UserFectingAppointMentSlote } from '@/store/userSideApi/UserFectingAppointMentSlote';
 
 // Background Symbol component with enhanced animations
 const FloatingSymbol = ({ symbol, delay }) => {
@@ -69,6 +70,8 @@ const HealthcareInfoCard = ({ icon, title, description }) => {
     </div>
   );
 };
+
+
 
 export default function AppointmentBooking() {
   const [step, setStep] = useState(1);
@@ -136,7 +139,7 @@ export default function AppointmentBooking() {
   const fetchDoctorData = async () => {
     try {
       setLoading(true);
-      const response = await fetchDoctors();
+      const response = await UserfetchingDoctors();
       console.log('doctor listing table', response);
   
       // Group doctors by specialty
@@ -192,20 +195,7 @@ export default function AppointmentBooking() {
     }
   };
 
-  // const handleChange = (e) => {
-  //   const { name, value } = e.target;
-  //   setFormData(prev => ({ ...prev, [name]: value }));
-    
-  //   // When date changes, filter the time slots for that date
-  //   if (name === 'date') {
-  //     const selectedDateSlots = timeSlots.find(slot => slot.date === value);
-  //     if (selectedDateSlots) {
-  //       setTimeSlots(selectedDateSlots.slots);
-  //     } else {
-  //       setTimeSlots([]);
-  //     }
-  //   }
-  // };
+  
   
 
   const handleChange = (e) => {
@@ -272,11 +262,10 @@ export default function AppointmentBooking() {
     if (step === 1) {
       try {
         setLoading(true);
-        const response = await fectingAppointMentSlotes(email);
+        const response = await UserFectingAppointMentSlote(email);
         console.log('API response:', response);
         
         if (response && response.result && response.result.time_slots) {
-          // Store the entire time slots structure from API
           setTimeSlots(response.result.time_slots);
           
           // Also set available dates for reference

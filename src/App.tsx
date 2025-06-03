@@ -26,9 +26,10 @@ import NotificationList from './pages/user/user1/NotificationList';
 import NotificationDetails from './pages/user/user1/NotificationDetails';
 import DoctorPaymentSucces from './pages/user/user1/DoctorPaymentSucces';
 import DoctorDash from './pages/user/doctor/DoctorDash';
-import SetUpSlotes from './pages/user/doctor/setUpSlotes';
+ import SetUpSlotes from './pages/user/doctor/SetUpSlotes';
 import AppointMent from './pages/user/user1/AppointMent';
 import UserProfile from './components/user/user1/userProfileComponent';
+import AppointMentMangemant from './pages/user/doctor/AppointMentMangemant';
 
 const queryClient = new QueryClient();
 
@@ -128,15 +129,15 @@ const BlockStatusChecker = () => {
     return thisUserIsBlocked;
   }, [userData, isUserBlocked, userBlockStatus]);
   
-  console.log('Inside BlockStatusChecker - userData ID:', userData?.id || userData?._id);
-  console.log('Inside BlockStatusChecker - adminData ID:', adminData?.id || adminData?._id);
-  console.log('Inside BlockStatusChecker **-** isUserAuthenticated:', isUserAuthenticated);
-  console.log('Inside BlockStatusChecker **-** isAdminAuthenticated:', isAdminAuthenticated);
-  console.log('Inside BlockStatusChecker **-** isRegularUserBlocked:', isRegularUserBlocked);
-  console.log('Inside BlockStatusChecker - currentPath:', currentPath);
-  console.log('Inside BlockStatusChecker - isAdmin:', isAdmin);
-  console.log('Inside BlockStatusChecker - isAdminPage:', isAdminPage);
-  console.log('Inside BlockStatusChecker - isPublicRoute:', isPublicRoute);
+  // console.log('Inside BlockStatusChecker - userData ID:', userData?.id || userData?._id);
+  // console.log('Inside BlockStatusChecker - adminData ID:', adminData?.id || adminData?._id);
+  // console.log('Inside BlockStatusChecker **-** isUserAuthenticated:', isUserAuthenticated);
+  // console.log('Inside BlockStatusChecker **-** isAdminAuthenticated:', isAdminAuthenticated);
+  // console.log('Inside BlockStatusChecker **-** isRegularUserBlocked:', isRegularUserBlocked);
+  // console.log('Inside BlockStatusChecker - currentPath:', currentPath);
+  // console.log('Inside BlockStatusChecker - isAdmin:', isAdmin);
+  // console.log('Inside BlockStatusChecker - isAdminPage:', isAdminPage);
+  // console.log('Inside BlockStatusChecker - isPublicRoute:', isPublicRoute);
 
   useEffect(() => {
     // Get this user's ID for precise blocking
@@ -242,6 +243,7 @@ const App = () => {
                   {/* Doctor routes */}
                   <Route path="/DoctorDashboard" element={<DoctorDash />}/>
                   <Route path="/AppointmentScheduler" element={<SetUpSlotes />}/>
+                  <Route path="/AppointListing" element={<AppointMentMangemant />}/>
                 </Routes>
               </TooltipProvider>
             </BrowserRouter>

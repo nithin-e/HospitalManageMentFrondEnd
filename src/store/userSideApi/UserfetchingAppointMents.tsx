@@ -2,19 +2,15 @@
 
 import axiosInstance from "@/cors/axiousInstance";
 
-export const fectingAppointMentSlotes = async (email: string) => {
+export const UserfetchingAppointMents = async (email: string) => {
   try {
    
-    
-    console.log("Making backend API call to fetch doctor slotes data with email:", email);
-    
+
     const response = await axiosInstance.post(
-      "/api/doctor/fectingAppointMentSlotes", 
+      "/api/auth/user/fectingAppointMent", 
       { email: email }, 
     );
 
-   
-    
 
     return response.data; 
   } catch (error) {

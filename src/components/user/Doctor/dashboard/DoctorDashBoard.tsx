@@ -4,7 +4,6 @@ import Sidebar from "../../Doctor/layout/Sidebar";
 import AppointmentCard from "../../Doctor/components/AppointmentCard";
 import AvailableTimeCard from "../../Doctor/components/AvailableTimeCard";
 import StatsCard from "../../Doctor/components/StatusCard";
-import { fetchDoctorDashBoardData } from "@/store/DoctorSideApi/fetchDoctorDashBoardData";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/store/redux/store";
 import { fetchDoctorDashBoardDatas } from "@/store/redux/slices/DoctorSlice";
@@ -47,12 +46,7 @@ interface StatsData {
   newPatientsTrend: number;
 }
 
-interface DashboardData {
-  doctor: DoctorData;
-  appointments: AppointmentData[];
-  availableTimes: AvailableTimeData[];
-  stats: StatsData;
-}
+
 
 const DoctorDashBoard: React.FC = () => {
   const location = useLocation();

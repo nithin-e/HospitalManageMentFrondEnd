@@ -1,14 +1,18 @@
+
 import { useState, useEffect } from 'react';
 import { 
   User, Clock, Calendar, Phone, Mail, MapPin, Clipboard, Activity, 
   Heart, FileText, Shield, Lock, Eye, EyeOff, Edit3, Check, AlertCircle, 
-  ArrowRight, Stethoscope, Pill, Syringe, Thermometer, ClipboardCheck
+  ArrowRight, Stethoscope, Pill, Syringe, Thermometer, ClipboardCheck, X
 } from 'lucide-react';
 import Navbar from './Navbar';
 import { RootState } from '@/store/redux/store';
 import { useSelector } from 'react-redux';
 import { fetchUserProfileData } from '@/store/userSideApi/fetchUserProfile';
 import { changing_UserPassWord } from '@/store/userSideApi/changing_userPassword';
+import { UserfetchingAppointMents } from '@/store/userSideApi/UserfetchingAppointMents';
+import Footer from './Footer';
+import { ChangingUserInfo } from '@/store/userSideApi/ChangingUserInfo';
 
 // TypeScript interface for user data
 interface UserProfile {
@@ -24,7 +28,6 @@ interface UserProfile {
   emergencyContact?: string;
   medicalHistory?: string[];
   upcomingAppointments?: Appointment[];
-  recentVitals?: Vitals;
   insuranceProvider?: string;
   insuranceNumber?: string;
   registrationDate?: string;
@@ -41,9 +44,6 @@ interface Appointment {
   department: string;
   purpose: string;
 }
-
-
-
 
 const sampleAppointments: Appointment[] = [
   {
@@ -88,20 +88,38 @@ const UserProfileComponent = () => {
   });
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState<boolean>(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    phoneNumber: ''
+  });
+  const [editFormErrors, setEditFormErrors] = useState({
+    name: '',
+    phoneNumber: ''
+  });
+  const [editSuccess, setEditSuccess] = useState(false);
 
-
+  const appointmentsPerPage = 1;
 
   const user = useSelector((state: RootState) => state.user);
-  
-  console.log('......Navuser.......',user);
   const userDataa = user?.checkUserEmailAndPhone?.user || user?.user?.user || user?.user || null;
   const userEmail = userDataa?.email || '';
+
+  // Calculate pagination based on userData
+  const totalAppointments = userData?.upcomingAppointments?.length || 0;
+  const totalPages = Math.ceil(totalAppointments / appointmentsPerPage);
+
+  // Get current appointments
+  const currentAppointments = userData?.upcomingAppointments?.slice(
+    (currentPage - 1) * appointmentsPerPage,
+    currentPage * appointmentsPerPage
+  ) || [];
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordError(null);
     
-    // Client-side validation
     if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
       setPasswordError("All fields are required");
       return;
@@ -118,23 +136,16 @@ const UserProfileComponent = () => {
     }
     
     try {
-
-        
-
-        const response = await changing_UserPassWord({
-            email: userEmail,
-            password: passwordData.newPassword
-          });
-        
-          console.log('new.....password changed check the res',response)
-    
+      const response = await changing_UserPassWord({
+        email: userEmail,
+        password: passwordData.newPassword
+      });
       
       if (!response) {
-        setPasswordError( "Failed to update password. Please try again.");
+        setPasswordError("Failed to update password. Please try again.");
         return;
       }
       
-      // Handle successful password change
       setPasswordSuccess(true);
       setPasswordData({
         currentPassword: '',
@@ -142,7 +153,6 @@ const UserProfileComponent = () => {
         confirmPassword: ''
       });
       
-      // Hide success message and close password form after delay
       setTimeout(() => {
         setPasswordSuccess(false);
         setShowChangePassword(false);
@@ -161,7 +171,87 @@ const UserProfileComponent = () => {
     });
   };
 
- 
+  const handleEditClick = () => {
+    setShowEditModal(true);
+    setEditFormData({
+      name: userData?.name || '',
+      phoneNumber: userData?.phoneNumber || userData?.contactNumber || ''
+    });
+  };
+
+  const handleEditFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setEditFormData({
+      ...editFormData,
+      [name]: value
+    });
+    // Clear error when user types
+    setEditFormErrors({
+      ...editFormErrors,
+      [name]: ''
+    });
+  };
+
+  const validateEditForm = () => {
+    let valid = true;
+    const newErrors = {
+      name: '',
+      phoneNumber: ''
+    };
+
+    if (!editFormData.name.trim()) {
+      newErrors.name = 'Name is required';
+      valid = false;
+    }
+
+    if (!editFormData.phoneNumber.trim()) {
+      newErrors.phoneNumber = 'Phone number is required';
+      valid = false;
+    } else if (!/^\d{10,15}$/.test(editFormData.phoneNumber)) {
+      newErrors.phoneNumber = 'Please enter a valid phone number';
+      valid = false;
+    }
+
+    setEditFormErrors(newErrors);
+    return valid;
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateEditForm()) return;
+    
+    try {
+      
+      setUserData(prev => ({
+        ...prev!,
+        name: editFormData.name,
+        phoneNumber: editFormData.phoneNumber,
+        contactNumber: editFormData.phoneNumber
+      }));
+      
+
+      const response = await ChangingUserInfo({
+        email: userEmail,
+        name: editFormData.name,
+        phoneNumber: editFormData.phoneNumber
+      });
+
+
+      setEditSuccess(true);
+      setTimeout(() => {
+        setEditSuccess(false);
+        setShowEditModal(false);
+      }, 2000);
+      
+    } catch (error) {
+      console.error("Error updating user data:", error);
+      setEditFormErrors({
+        ...editFormErrors,
+        name: 'Failed to update. Please try again.'
+      });
+    }
+  };
 
   useEffect(() => {
     fetchUserData();
@@ -170,24 +260,21 @@ const UserProfileComponent = () => {
   const fetchUserData = async () => {
     try {
       setLoading(true);
-      const res = await fetchUserProfileData(userEmail);
-      console.log('/////////////////userProfileData\\\\\\\\\\\\\\\\', res.user);
-      
+      const res = await fetchUserProfileData(userEmail);  
       if (res.user) {
-        // Create a merged profile with API data and sample data for missing fields
         const profile: UserProfile = {
           ...res.user,
           contactNumber: res.user.phoneNumber || "Not provided",
-          age: 42, // Default until API provides this
-          gender: "Not specified", // Default until API provides this
-          bloodType: "Not specified", // Default until API provides this
-          address: "Not provided", // Default until API provides this
-          emergencyContact: "Not provided", // Default until API provides this
+          age: 42, 
+          gender: "Not specified", 
+          bloodType: "Not specified",
+          address: "Not provided",
+          emergencyContact: "Not provided",
           medicalHistory: sampleMedicalHistory,
           upcomingAppointments: sampleAppointments,
-          registrationDate: "January 12, 2022", // Default until API provides this
-          insuranceProvider: "HealthGuard Insurance", // Default until API provides this
-          insuranceNumber: "HG-957834261" // Default until API provides this
+          registrationDate: "January 12, 2022", 
+          insuranceProvider: "HealthGuard Insurance", 
+          insuranceNumber: "HG-957834261"
         };
         
         setUserData(profile);
@@ -197,7 +284,51 @@ const UserProfileComponent = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    fetchUserAppoinMents();
+  }, []);
+
+  const fetchUserAppoinMents = async () => {
+    try {
+      setLoading(true);
+      const res = await UserfetchingAppointMents(userEmail);  
+      
+      if (res.success && res.appointments) {
+        const transformedAppointments = res.appointments.map(appointment => ({
+          id: appointment.id,
+          date: new Date(appointment.appointmentDate).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          }),
+          time: new Date(`1970-01-01T${appointment.appointmentTime}`).toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+          }),
+          doctor: appointment.doctorName,
+          department: appointment.specialty,
+          purpose: appointment.notes || 'General consultation'
+        }));
+        
+        setUserData(prevData => ({
+          ...prevData || {
+            id: '',
+            name: '',
+            email: userEmail,
+            upcomingAppointments: []
+          },
+          upcomingAppointments: transformedAppointments
+        }));
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -234,11 +365,9 @@ const UserProfileComponent = () => {
     <div className="bg-gradient-to-br from-blue-50 to-indigo-50 min-h-screen">
       <Navbar />
       
-      {/* Hospital Banner */}
       <div className="max-w-6xl mx-auto p-6 mt-[90px]">
         <div className="bg-white rounded-xl shadow-lg mb-6 overflow-hidden border border-blue-100">
           <div className="bg-gradient-to-r from-blue-700 to-blue-800 p-6 text-white relative">
-            {/* Medical ID Ribbon */}
             <div className="absolute top-0 right-0 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg shadow-md">
               MEDICAL ID
             </div>
@@ -282,7 +411,6 @@ const UserProfileComponent = () => {
                   </div>
                 </div>
                 
-                {/* Quick Action Buttons */}
                 <div className="mt-4 flex flex-wrap gap-2 justify-center md:justify-start">
                   <button className="flex items-center bg-white bg-opacity-20 hover:bg-opacity-30 text-white text-xs px-3 py-1 rounded-full transition-all border border-white border-opacity-30">
                     <ClipboardCheck className="w-3 h-3 mr-1" />
@@ -292,9 +420,12 @@ const UserProfileComponent = () => {
                     <Phone className="w-3 h-3 mr-1" />
                     Contact Doctor
                   </button>
-                  <button className="flex items-center bg-white bg-opacity-20 hover:bg-opacity-30 text-white text-xs px-3 py-1 rounded-full transition-all border border-white border-opacity-30">
+                  <button 
+                    className="flex items-center bg-white bg-opacity-20 hover:bg-opacity-30 text-white text-xs px-3 py-1 rounded-full transition-all border border-white border-opacity-30"
+                    onClick={handleEditClick}
+                  >
                     <Pill className="w-3 h-3 mr-1" />
-                    Refill Prescription
+                    Edit
                   </button>
                 </div>
               </div>
@@ -302,7 +433,92 @@ const UserProfileComponent = () => {
           </div>
         </div>
 
-        {/* Medical Navigation Tabs */}
+        {/* Edit User Modal */}
+        {showEditModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-xl font-bold text-gray-800">Edit Profile Information</h3>
+                  <button 
+                    onClick={() => setShowEditModal(false)}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+                
+                <form onSubmit={handleEditSubmit}>
+                  <div className="space-y-4">
+                    <div>
+                      <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                        Full Name
+                      </label>
+                      <input
+                        type="text"
+                        id="name"
+                        name="name"
+                        value={editFormData.name}
+                        onChange={handleEditFormChange}
+                        className={`w-full px-4 py-2 border ${editFormErrors.name ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm`}
+                        placeholder="Enter your full name"
+                      />
+                      {editFormErrors.name && (
+                        <p className="mt-1 text-sm text-red-600">{editFormErrors.name}</p>
+                      )}
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                        Phone Number
+                      </label>
+                      <input
+                        type="tel"
+                        id="phoneNumber"
+                        name="phoneNumber"
+                        value={editFormData.phoneNumber}
+                        onChange={handleEditFormChange}
+                        className={`w-full px-4 py-2 border ${editFormErrors.phoneNumber ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm`}
+                        placeholder="Enter your phone number"
+                      />
+                      {editFormErrors.phoneNumber && (
+                        <p className="mt-1 text-sm text-red-600">{editFormErrors.phoneNumber}</p>
+                      )}
+                    </div>
+                    
+                    {editSuccess && (
+                      <div className="p-3 bg-green-50 text-green-700 rounded-lg text-sm border border-green-100">
+                        <div className="flex items-center">
+                          <Check className="w-4 h-4 mr-2" />
+                          Profile updated successfully!
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="pt-2 flex justify-end space-x-3">
+                      <button
+                        type="button"
+                        onClick={() => setShowEditModal(false)}
+                        className="px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-md"
+                      >
+                        Save Changes
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+
+
         <div className="mb-6 bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
           <div className="flex overflow-x-auto scrollbar-hide">
             <button
@@ -352,9 +568,7 @@ const UserProfileComponent = () => {
           </div>
         </div>
 
-        {/* Medical Content Area */}
         <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-          {/* Personal Information Tab */}
           {activeTab === "personal" && (
             <div>
               <div className="flex justify-between items-center mb-6">
@@ -420,7 +634,6 @@ const UserProfileComponent = () => {
             </div>
           )}
 
-          {/* Medical History Tab */}
           {activeTab === "medical" && (
             <div>
               <div className="flex justify-between items-center mb-6">
@@ -476,7 +689,6 @@ const UserProfileComponent = () => {
             </div>
           )}
 
-          {/* Appointments Tab */}
           {activeTab === "appointments" && (
             <div>
               <div className="flex justify-between items-center mb-6">
@@ -491,8 +703,8 @@ const UserProfileComponent = () => {
               </div>
               
               <div className="space-y-5">
-                {userData.upcomingAppointments && userData.upcomingAppointments.length > 0 ? (
-                  userData.upcomingAppointments.map((appointment) => (
+                {currentAppointments.length > 0 ? (
+                  currentAppointments.map((appointment) => (
                     <div key={appointment.id} className="border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-5 hover:shadow-md transition-all">
                       <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
                         <div>
@@ -539,6 +751,38 @@ const UserProfileComponent = () => {
                 )}
               </div>
               
+              {totalPages > 1 && (
+                <div className="flex justify-center mt-6">
+                  <nav className="inline-flex rounded-md shadow-sm -space-x-px">
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className={`px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${currentPage === 1 ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-50'}`}
+                    >
+                      Previous
+                    </button>
+                    
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(number => (
+                      <button
+                        key={number}
+                        onClick={() => setCurrentPage(number)}
+                        className={`px-3 py-2 border-t border-b border-gray-300 text-sm font-medium ${currentPage === number ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                      >
+                        {number}
+                      </button>
+                    ))}
+                    
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className={`px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${currentPage === totalPages ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-50'}`}
+                    >
+                      Next
+                    </button>
+                  </nav>
+                </div>
+              )}
+              
               <div className="mt-8 bg-blue-50 rounded-lg p-4 border border-blue-100">
                 <h3 className="font-medium text-gray-700 mb-2 flex items-center">
                   <Clock className="w-5 h-5 mr-2 text-blue-600" />
@@ -552,7 +796,6 @@ const UserProfileComponent = () => {
             </div>
           )}
 
-          {/* Security Tab */}
           {activeTab === "security" && (
             <div>
               <div className="flex justify-between items-center mb-6">
@@ -719,13 +962,8 @@ const UserProfileComponent = () => {
             </div>
           )}
         </div>
-        
-        {/* Hospital Footer */}
-        <div className="mt-8 text-center text-sm text-gray-500 py-4 border-t border-gray-200">
-          <p>Metropolitan General Hospital Patient Portal • 24/7 Support: (555) 987-6543</p>
-          <p className="mt-1">For medical emergencies, please call 911 or visit the nearest emergency room.</p>
-        </div>
       </div>
+      <Footer/>
     </div>
   );
 };

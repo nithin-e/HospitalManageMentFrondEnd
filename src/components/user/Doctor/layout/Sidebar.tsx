@@ -12,7 +12,7 @@ import {
   
   const sidebarLinks = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/DoctorDashboard" },
-    { icon: Clock, label: "Appointments", path: "/appointments" },
+    { icon: Clock, label: "Appointments", path: "/AppointListing" },
     { icon: Users, label: "Patients", path: "/patients" },
     { icon: BellRing, label: "Reminders", path: "/reminders" },
     { icon: MessageSquare, label: "Chat", path: "/chat" },

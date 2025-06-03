@@ -17,7 +17,6 @@ export const useSocket = () => {
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [connected, setConnected] = useState(false);
-  // State to store user block status (e.g., { userId: isBlocked })
   const [userBlockStatus, setUserBlockStatus] = useState({});
 
   useEffect(() => {
