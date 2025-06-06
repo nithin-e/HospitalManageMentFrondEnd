@@ -236,13 +236,18 @@ const UserProfileComponent = () => {
         name: editFormData.name,
         phoneNumber: editFormData.phoneNumber
       });
+      console.log('just check the responce',response);
+      if(response.success==true){
+        setEditSuccess(true);
+        setTimeout(() => {
+          setEditSuccess(false);
+          setShowEditModal(false);
+        }, 2000);
+      }
+     
+      
 
-
-      setEditSuccess(true);
-      setTimeout(() => {
-        setEditSuccess(false);
-        setShowEditModal(false);
-      }, 2000);
+     
       
     } catch (error) {
       console.error("Error updating user data:", error);

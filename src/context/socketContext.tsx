@@ -23,7 +23,7 @@ export const SocketProvider = ({ children }) => {
     console.log('SocketProvider initializing...');
 
     // Log socket connection details
-    const socketUrl = 'http://localhost:3002/admin';
+    const socketUrl = 'http://localhost:4000/admin';
     console.log('Attempting to connect to socket server at:', socketUrl);
 
     // Initialize socket connection with detailed options

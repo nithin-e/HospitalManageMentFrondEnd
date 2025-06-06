@@ -80,12 +80,6 @@ axiosInstance.interceptors.response.use(
      console.log('<<<<<<<<<<<<<<<<<<<<000000000isDoctorEndpoint000000000>>>>>>>>>>>>',isDoctorEndpoint);
      
      
-      // if (isAdminEndpoint) {
-      //   // localStorage.removeItem("adminAccessToken");
-      //   // refreshToken= localStorage.removeItem("adminRefreshToken");
-      //   // store.dispatch(logoutAdmin());
-      //   // window.location.href = '/login'; 
-      // } else  {
         var refreshToken = null;
 
         

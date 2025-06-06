@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Input } from "@/components/user/admin/ui/input";
 import { Button } from "@/components/user/admin/ui/button";
 import { Switch } from "@/components/user/admin/ui/switch";
@@ -8,59 +8,291 @@ import { fetchUsers } from "@/store/AdminSideApi/fecthUsers";
 import { useSocket } from "@/context/socketContext";
 import { toast } from "@/components/user/admin/ui/use-toast";
 import { cn } from "@/lib/utils";
+import axiosInstance from "@/cors/axiousInstance";
+
+// Custom debounce hook
+const useDebounce = (value, delay) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};
+
+// Separate search API function
+const searchUsers = async (searchParams) => {
+  try {
+    // Build query parameters for search
+    const params = new URLSearchParams();
+    
+    if (searchParams.search) {
+      params.append('q', searchParams.search);
+    }
+    if (searchParams.status && searchParams.status !== 'all') {
+      params.append('status', searchParams.status);
+    }
+    if (searchParams.sortBy) {
+      params.append('sortBy', searchParams.sortBy);
+    }
+    if (searchParams.sortDirection) {
+      params.append('sortDirection', searchParams.sortDirection);
+    }
+    if (searchParams.role) {
+      params.append('role', searchParams.role);
+    }
+    if (searchParams.page) {
+      params.append('page', searchParams.page);
+    }
+    if (searchParams.limit) {
+      params.append('limit', searchParams.limit);
+    }
+
+    // Make the search API call
+    const response = await axiosInstance.get(`/api/admin/search?${params.toString()}`);
+    
+    if (!response.data.success) {
+      throw new Error(`Search failed: ${response.data.message || 'Unknown error'}`);
+    }
+
+    console.log('check this data its an response in from backent in debouncing',response);
+    
+
+    return response.data;
+  } catch (error) {
+    console.error('Search API error:', error);
+    throw error;
+  }
+};
 
 const UserList = () => {
   const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [error, setError] = useState(null);
   const [processingUserId, setProcessingUserId] = useState(null);
-  const [view, setView] = useState("grid"); // "grid" or "list"
+  const [view, setView] = useState("grid"); 
   const [showFilters, setShowFilters] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all"); // "all", "active", "blocked"
   const [sortDirection, setSortDirection] = useState("desc"); // "asc" or "desc"
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [activeUsers, setActiveUsers] = useState(0);
+  const [blockedUsers, setBlockedUsers] = useState(0);
+  const [isSearchMode, setIsSearchMode] = useState(false); // Track if we're in search mode
   const { socket, connected } = useSocket();
 
+  // Debounce search term with 500ms delay
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+
+  // Initial load effect - fetch all users
   useEffect(() => {
     fetchUserData();
   }, []);
 
-  const fetchUserData = async () => {
+
+
+
+
+
+
+
+
+
+
+
+
+  // Effect to handle search when debounced term changes
+  useEffect(() => {
+    if (debouncedSearchTerm !== searchTerm) {
+      setSearchLoading(true);
+    }
+    
+    // Only proceed if not initial load
+    if (!loading) {
+      if (debouncedSearchTerm.trim()) {
+        // Switch to search mode and use search API
+        setIsSearchMode(true);
+        handleSearch();
+      } else {
+        
+        setIsSearchMode(false);
+        fetchUserData();
+      }
+    }
+  }, [debouncedSearchTerm]);
+
+
+
+
+
+
+
+  // Effect to handle filter changes (only when not searching)
+  useEffect(() => {
+    if (!loading && !debouncedSearchTerm.trim()) {
+      fetchUserData();
+    }
+  }, [statusFilter, sortDirection]);
+
+
+  // Effect to handle search loading state
+  useEffect(() => {
+    if (searchTerm !== debouncedSearchTerm) {
+      setSearchLoading(true);
+    } else {
+      setSearchLoading(false);
+    }
+  }, [searchTerm, debouncedSearchTerm]);
+
+  // Original fetch function for all users (no search)
+  const fetchUserData = async (showLoadingSpinner = false) => {
     try {
-      setLoading(true);
+      if (showLoadingSpinner) {
+        setLoading(true);
+      }
+      
+      setError(null);
+
+      // Prepare parameters for fetching all users
+      const searchParams = {
+        status: statusFilter !== "all" ? statusFilter : undefined,
+        sortBy: "createdAt",
+        sortDirection: sortDirection,
+        role: "user", // Only fetch users with role 'user'
+        page: 1,
+        limit: 50 // Adjust as needed
+      };
+
+      // Remove undefined values
+      const cleanParams = Object.fromEntries(
+        Object.entries(searchParams).filter(([_, value]) => value !== undefined)
+      );
+
+      console.log("Fetching all users with params:", cleanParams);
+      
       const response = await fetchUsers();
       console.log("API user data response:", response);
 
-      let userData = [];
-      if (Array.isArray(response)) {
-        userData = response;
-      } else if (response && typeof response === "object") {
-        const possibleArrayKeys = ["users", "data", "items", "results"];
+      processUserResponse(response);
+
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      setError("Failed to load users. Please try again.");
+      setUsers([]);
+      setTotalUsers(0);
+      setActiveUsers(0);
+      setBlockedUsers(0);
+    } finally {
+      setLoading(false);
+      setSearchLoading(false);
+    }
+  };
+
+  // New search function using separate search API
+  const handleSearch = async () => {
+    try {
+      setSearchLoading(true);
+      setError(null);
+
+      // Prepare search parameters
+      const searchParams = {
+        search: debouncedSearchTerm,
+        status: statusFilter !== "all" ? statusFilter : undefined,
+        sortBy: "createdAt",
+        sortDirection: sortDirection,
+        role: "user",
+        page: 1,
+        limit: 50
+      };
+
+      // Remove undefined values
+      const cleanParams = Object.fromEntries(
+        Object.entries(searchParams).filter(([_, value]) => value !== undefined)
+      );
+
+      console.log("Searching users with params:", cleanParams);
+      
+      const response = await searchUsers(cleanParams);
+      console.log("Search API response:", response);
+
+      processUserResponse(response);
+
+    } catch (error) {
+      console.error("Error searching users:", error);
+      setError(`Failed to search users: ${error.message}`);
+      setUsers([]);
+      setTotalUsers(0);
+      setActiveUsers(0);
+      setBlockedUsers(0);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  // Helper function to process API response (used by both fetch and search)
+  const processUserResponse = (response) => {
+    let userData = [];
+    let stats = { total: 0, active: 0, blocked: 0 };
+
+    if (Array.isArray(response)) {
+      userData = response;
+    } else if (response && typeof response === "object") {
+      // Handle different response structures
+      if (response.users && Array.isArray(response.users)) {
+        userData = response.users;
+        stats = response.stats || stats;
+      } else if (response.data && Array.isArray(response.data)) {
+        userData = response.data;
+        stats = response.stats || response.meta || stats;
+      } else {
+        const possibleArrayKeys = ["items", "results"];
         for (const key of possibleArrayKeys) {
           if (Array.isArray(response[key])) {
             userData = response[key];
             break;
           }
         }
+        
         if (userData.length === 0 && response.name) {
           userData = [response];
         }
       }
 
-      // Format data and ensure isActive property exists
-      userData = userData.map(user => ({
-        ...user,
-        isActive: user.isActive !== undefined ? user.isActive : true
-      }));
+      // Extract stats from response if available
+      if (response.totalUsers || response.total) {
+        setTotalUsers(response.totalUsers || response.total || userData.length);
+      }
+      if (response.activeUsers || response.active) {
+        setActiveUsers(response.activeUsers || response.active || userData.filter(u => u.isActive).length);
+      }
+      if (response.blockedUsers || response.blocked) {
+        setBlockedUsers(response.blockedUsers || response.blocked || userData.filter(u => !u.isActive).length);
+      }
+    }
 
-      console.log("Processed user data:", userData);
-      setUsers(userData);
-    } catch (error) {
-      console.error("Error fetching users:", error);
-      setError("Failed to load users. Please try again.");
-      setUsers([]);
-    } finally {
-      setLoading(false);
+    // Format data and ensure isActive property exists
+    userData = userData.map(user => ({
+      ...user,
+      isActive: user.isActive !== undefined ? user.isActive : true
+    }));
+
+    console.log("Processed user data:", userData);
+    setUsers(userData);
+
+    // Calculate stats if not provided by backend
+    if (!response.totalUsers && !response.total) {
+      const filteredForStats = userData.filter(user => user.role === "user" || !user.role);
+      setTotalUsers(filteredForStats.length);
+      setActiveUsers(filteredForStats.filter(user => user.isActive).length);
+      setBlockedUsers(filteredForStats.filter(user => !user.isActive).length);
     }
   };
 
@@ -85,12 +317,21 @@ const UserList = () => {
       setProcessingUserId(null);
 
       if (response && response.success) {
-        // Update the user state immediately to reflect the new isActive status
         setUsers((prevUsers) =>
           prevUsers.map((user) =>
             user.id === id ? { ...user, isActive: !isActive } : user
           )
         );
+        
+        // Update stats
+        if (isActive) {
+          setActiveUsers(prev => prev - 1);
+          setBlockedUsers(prev => prev + 1);
+        } else {
+          setActiveUsers(prev => prev + 1);
+          setBlockedUsers(prev => prev - 1);
+        }
+        
         toast({
           title: isActive ? "User Blocked" : "User Unblocked",
           description: `User has been ${isActive ? "blocked" : "unblocked"} successfully.`,
@@ -109,46 +350,47 @@ const UserList = () => {
     setSortDirection(sortDirection === "asc" ? "desc" : "asc");
   };
 
-  const getFilteredAndSortedUsers = () => {
-    if (!Array.isArray(users)) return [];
-    
-    // Filter by search term, status, and role
-    let filtered = users.filter((user) => {
-      const matchesSearch = user && 
-        user.name && 
-        user.name.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesStatus = 
-        statusFilter === "all" || 
-        (statusFilter === "active" && user.isActive) || 
-        (statusFilter === "blocked" && !user.isActive);
-      
-      const matchesRole = user.role === "user"; // Only include users with role 'user'
-      
-      return matchesSearch && matchesStatus && matchesRole;
-    });
-    
-    // Sort users
-    filtered.sort((a, b) => {
-      const dateA = new Date(a.createdAt || 0);
-      const dateB = new Date(b.createdAt || 0);
-      
-      if (sortDirection === "asc") {
-        return dateA - dateB;
-      } else {
-        return dateB - dateA;
-      }
-    });
-    
-    return filtered;
+  // Handle search input change with immediate visual feedback
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
   };
 
-  const filteredUsers = getFilteredAndSortedUsers();
-  
-  // Stats calculation (only for users with role 'user')
-  const totalUsers = filteredUsers.length;
-  const activeUsers = filteredUsers.filter(user => user.isActive).length;
-  const blockedUsers = filteredUsers.filter(user => !user.isActive).length;
+  // Clear search function
+  const clearSearch = () => {
+    setSearchTerm("");
+    setIsSearchMode(false);
+    setSearchLoading(false);
+  };
+
+  // Handle filter changes
+  const handleStatusFilterChange = (newStatus) => {
+    setStatusFilter(newStatus);
+    
+    // If we're in search mode, trigger a new search with the filter
+    if (isSearchMode && debouncedSearchTerm.trim()) {
+      // The useEffect will handle the search automatically
+    }
+  };
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("all");
+    setIsSearchMode(false);
+    setSearchLoading(false);
+  };
+
+  // Refresh data
+  const handleRefresh = () => {
+    if (isSearchMode && debouncedSearchTerm.trim()) {
+      // Refresh search results
+      handleSearch();
+    } else {
+      // Refresh all users
+      fetchUserData(true);
+    }
+  };
 
   return (
     <div className="p-6 bg-slate-50 min-h-screen">
@@ -162,10 +404,11 @@ const UserList = () => {
           
           <div className="flex gap-2">
             <Button 
-              onClick={fetchUserData}
+              onClick={handleRefresh}
+              disabled={loading || searchLoading}
               className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 flex items-center gap-2"
             >
-              <RefreshCw size={18} />
+              <RefreshCw size={18} className={(loading || searchLoading) ? "animate-spin" : ""} />
               <span className="hidden md:inline">Refresh</span>
             </Button>
             
@@ -222,11 +465,28 @@ const UserList = () => {
           <div className="relative flex-grow">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
             <Input
-              placeholder="Search users by name..."
-              className="pl-10 h-12 border-slate-200 bg-white focus:ring-2 focus:ring-blue-500 rounded-lg shadow-sm w-full"
+              placeholder="Search users by name... "
+              className="pl-10 pr-10 h-12 border-slate-200 bg-white focus:ring-2 focus:ring-blue-500 rounded-lg shadow-sm w-full"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={handleSearchChange}
             />
+            
+            {/* Search loading indicator */}
+            {searchLoading && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <Loader2 className="h-5 w-5 text-blue-500 animate-spin" />
+              </div>
+            )}
+            
+            {/* Clear search button */}
+            {searchTerm && !searchLoading && (
+              <button
+                onClick={clearSearch}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                ×
+              </button>
+            )}
           </div>
           
           <div className="flex items-center gap-2">
@@ -248,6 +508,25 @@ const UserList = () => {
             </Button>
           </div>
         </div>
+
+        {/* Search Status Indicator */}
+        {(searchTerm || debouncedSearchTerm) && (
+          <div className="mb-4 text-sm text-slate-600 bg-white px-4 py-2 rounded-lg border border-slate-200">
+            {searchLoading ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Searching backend for "{searchTerm}"...
+              </span>
+            ) : (
+              <span>
+                {users.length > 0 
+                  ? `Search API returned ${users.length} user(s) matching "${debouncedSearchTerm}"`
+                  : `No users found in search API for "${debouncedSearchTerm}"`
+                }
+              </span>
+            )}
+          </div>
+        )}
         
         {/* Filter Options */}
         {showFilters && (
@@ -255,7 +534,7 @@ const UserList = () => {
             <div className="font-medium mb-2 text-slate-700">Filter by Status</div>
             <div className="flex flex-wrap gap-2">
               <Button
-                onClick={() => setStatusFilter("all")}
+                onClick={() => handleStatusFilterChange("all")}
                 className={cn(
                   "rounded-full px-4 py-1 text-sm font-medium",
                   statusFilter === "all" 
@@ -266,7 +545,7 @@ const UserList = () => {
                 All Users
               </Button>
               <Button
-                onClick={() => setStatusFilter("active")}
+                onClick={() => handleStatusFilterChange("active")}
                 className={cn(
                   "rounded-full px-4 py-1 text-sm font-medium",
                   statusFilter === "active" 
@@ -277,7 +556,7 @@ const UserList = () => {
                 Active Only
               </Button>
               <Button
-                onClick={() => setStatusFilter("blocked")}
+                onClick={() => handleStatusFilterChange("blocked")}
                 className={cn(
                   "rounded-full px-4 py-1 text-sm font-medium",
                   statusFilter === "blocked" 
@@ -295,7 +574,9 @@ const UserList = () => {
         {loading && (
           <div className="flex flex-col items-center justify-center p-16 bg-white rounded-xl shadow-sm border border-slate-100">
             <Loader2 className="h-12 w-12 animate-spin text-blue-500 mb-4" />
-            <p className="text-slate-600">Loading user data...</p>
+            <p className="text-slate-600">
+              {isSearchMode ? "Searching users..." : "Loading user data from backend..."}
+            </p>
           </div>
         )}
         
@@ -304,7 +585,7 @@ const UserList = () => {
           <div className="bg-red-50 p-8 rounded-xl border border-red-100 text-center shadow-sm">
             <div className="text-red-600 font-medium mb-2">{error}</div>
             <Button
-              onClick={fetchUserData}
+              onClick={handleRefresh}
               className="bg-white text-red-600 border border-red-200 hover:bg-red-50 mt-2"
             >
               Try Again
@@ -313,18 +594,20 @@ const UserList = () => {
         )}
         
         {/* No Results */}
-        {!loading && !error && filteredUsers.length === 0 && (
+        {!loading && !error && users.length === 0 && (
           <div className="bg-white p-12 rounded-xl shadow-sm border border-slate-100 text-center">
             <div className="mx-auto w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
               <Search className="h-8 w-8 text-slate-400" />
             </div>
             <h3 className="text-lg font-medium text-slate-800 mb-2">No users found</h3>
-            <p className="text-slate-500 mb-4">Try adjusting your search or filters</p>
+            <p className="text-slate-500 mb-4">
+              {searchTerm 
+                ? `No results from ${isSearchMode ? 'search API' : 'backend'} for "${debouncedSearchTerm}"` 
+                : "Try adjusting your search or filters"
+              }
+            </p>
             <Button
-              onClick={() => {
-                setSearchTerm("");
-                setStatusFilter("all");
-              }}
+              onClick={clearAllFilters}
               className="bg-blue-600 text-white hover:bg-blue-700"
             >
               Clear Filters
@@ -333,9 +616,9 @@ const UserList = () => {
         )}
         
         {/* User Grid View */}
-        {!loading && !error && filteredUsers.length > 0 && view === "grid" && (
+        {!loading && !error && users.length > 0 && view === "grid" && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-            {filteredUsers.map((user) => (
+            {users.map((user) => (
               <div
                 key={user.id}
                 className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-shadow duration-200"
@@ -401,7 +684,7 @@ const UserList = () => {
         )}
         
         {/* User List View */}
-        {!loading && !error && filteredUsers.length > 0 && view === "list" && (
+        {!loading && !error && users.length > 0 && view === "list" && (
           <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mb-8">
             <div className="grid grid-cols-12 p-4 bg-slate-50 font-medium text-slate-600 border-b border-slate-200 text-sm">
               <div className="col-span-5">User</div>
@@ -410,7 +693,7 @@ const UserList = () => {
               <div className="col-span-2 text-center">Actions</div>
             </div>
             
-            {filteredUsers.map((user) => (
+            {users.map((user) => (
               <div
                 key={user.id}
                 className="grid grid-cols-12 p-4 items-center border-b border-slate-100 hover:bg-slate-50 transition-colors"
@@ -467,12 +750,16 @@ const UserList = () => {
           </div>
         )}
         
-        {/* Pagination */}
-        {!loading && !error && filteredUsers.length > 5 && (
+        {/* Pagination - You can implement this based on backend response */}
+        {!loading && !error && users.length > 0 && (
           <div className="mt-6 flex justify-center">
             <Button
               variant="outline"
               className="text-slate-600 border-slate-200 hover:bg-slate-100 px-6 py-2 rounded-lg shadow-sm"
+              onClick={() => {
+                // Implement pagination logic here
+                console.log("Load more users");
+              }}
             >
               Load more users
             </Button>
