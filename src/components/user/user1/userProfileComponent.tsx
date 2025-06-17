@@ -13,6 +13,7 @@ import { changing_UserPassWord } from '@/store/userSideApi/changing_userPassword
 import { UserfetchingAppointMents } from '@/store/userSideApi/UserfetchingAppointMents';
 import Footer from './Footer';
 import { ChangingUserInfo } from '@/store/userSideApi/ChangingUserInfo';
+import { CancelingUserAppointMent } from '@/store/userSideApi/CancelingUserAppointMent';
 
 // TypeScript interface for user data
 interface UserProfile {
@@ -45,24 +46,24 @@ interface Appointment {
   purpose: string;
 }
 
-const sampleAppointments: Appointment[] = [
-  {
-    id: "A-5642",
-    date: "June 15, 2025",
-    time: "10:30 AM",
-    doctor: "Dr. Emily Chen",
-    department: "Cardiology",
-    purpose: "Annual heart checkup"
-  },
-  {
-    id: "A-5698",
-    date: "July 02, 2025",
-    time: "2:15 PM",
-    doctor: "Dr. Robert Miller",
-    department: "General Medicine",
-    purpose: "Follow-up consultation"
-  }
-];
+// const sampleAppointments: Appointment[] = [
+//   {
+//     id: "A-5642",
+//     date: "June 15, 2025",
+//     time: "10:30 AM",
+//     doctor: "Dr. Emily Chen",
+//     department: "Cardiology",
+//     purpose: "Annual heart checkup"
+//   },
+//   {
+//     id: "A-5698",
+//     date: "July 02, 2025",
+//     time: "2:15 PM",
+//     doctor: "Dr. Robert Miller",
+//     department: "General Medicine",
+//     purpose: "Follow-up consultation"
+//   }
+// ];
 
 const sampleMedicalHistory: string[] = [
   "Hypertension diagnosed 2018",
@@ -99,6 +100,11 @@ const UserProfileComponent = () => {
     phoneNumber: ''
   });
   const [editSuccess, setEditSuccess] = useState(false);
+
+  const [showCancelModal, setShowCancelModal] = useState(false);
+const [appointmentToCancel, setAppointmentToCancel] = useState(null);
+const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+const [successMessage, setSuccessMessage] = useState('');
 
   const appointmentsPerPage = 1;
 
@@ -261,22 +267,30 @@ const UserProfileComponent = () => {
   useEffect(() => {
     fetchUserData();
   }, []);
-
+  
   const fetchUserData = async () => {
     try {
       setLoading(true);
       const res = await fetchUserProfileData(userEmail);  
+      
+      
       if (res.user) {
-        const profile: UserProfile = {
-          ...res.user,
-          contactNumber: res.user.phoneNumber || "Not provided",
+        const profile = {
+          // Map actual backend data
+          id: res.user.id,
+          name: res.user.name,
+          email: res.user.email,
+          phoneNumber: res.user.phoneNumber || "Not provided",
+          contactNumber: res.user.phoneNumber || "Not provided", // Same as phoneNumber for backward compatibility
+          role: res.user.role,
+          isActive: res.user.isActive,
+          
+          // Keep your hardcoded values for fields not available in backend
           age: 42, 
           gender: "Not specified", 
           bloodType: "Not specified",
           address: "Not provided",
           emergencyContact: "Not provided",
-          medicalHistory: sampleMedicalHistory,
-          upcomingAppointments: sampleAppointments,
           registrationDate: "January 12, 2022", 
           insuranceProvider: "HealthGuard Insurance", 
           insuranceNumber: "HG-957834261"
@@ -290,16 +304,16 @@ const UserProfileComponent = () => {
       setLoading(false);
     }
   }
-
+  
   useEffect(() => {
     fetchUserAppoinMents();
   }, []);
-
+  
   const fetchUserAppoinMents = async () => {
     try {
       setLoading(true);
       const res = await UserfetchingAppointMents(userEmail);  
-      
+      console.log('UserfetchingAppointMentsUserfetchingAppointMents', res);
       if (res.success && res.appointments) {
         const transformedAppointments = res.appointments.map(appointment => ({
           id: appointment.id,
@@ -308,14 +322,12 @@ const UserProfileComponent = () => {
             month: 'long',
             day: 'numeric'
           }),
-          time: new Date(`1970-01-01T${appointment.appointmentTime}`).toLocaleTimeString('en-US', {
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true
-          }),
+          time: appointment.appointmentTime, // Use directly since it's already "4:30 PM"
           doctor: appointment.doctorName,
           department: appointment.specialty,
-          purpose: appointment.notes || 'General consultation'
+          purpose: appointment.notes || 'General consultation',
+          status: appointment.status,
+          message: appointment.message
         }));
         
         setUserData(prevData => ({
@@ -334,6 +346,54 @@ const UserProfileComponent = () => {
       setLoading(false);
     }
   }
+  
+
+  const cancelAppointment = async (time, date, doctorEmail) => {
+    try {
+      const res = await CancelingUserAppointMent(time, date, doctorEmail);
+      if(res.success){
+        setShowCancelModal(false);
+        setAppointmentToCancel(null);
+        
+        // Show success message
+        setSuccessMessage('Your appointment has been successfully cancelled!');
+        setShowSuccessMessage(true);
+        
+        // Hide success message after 5 seconds
+        setTimeout(() => {
+          setShowSuccessMessage(false);
+        }, 5000);
+        
+        // Refresh appointments list or remove the cancelled appointment
+        // You might want to call a function to refresh your appointments here
+        // fetchAppointments(); // if you have such function
+      } else {
+        // Handle failure case
+        setSuccessMessage('Failed to cancel appointment. Please try again.');
+        setShowSuccessMessage(true);
+        setTimeout(() => {
+          setShowSuccessMessage(false);
+        }, 5000);
+      }
+      
+    } catch (error) {
+      console.log(error);
+      // Show error message
+      setSuccessMessage('An error occurred while cancelling the appointment.');
+      setShowSuccessMessage(true);
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+      }, 5000);
+    }
+  };
+
+  const handleCancelClick = (appointment) => {
+    setAppointmentToCancel(appointment);
+    setShowCancelModal(true);
+  };
+
+
+
 
   if (loading) {
     return (
@@ -522,7 +582,24 @@ const UserProfileComponent = () => {
           </div>
         )}
 
-
+{showSuccessMessage && (
+  <div className="fixed top-4 right-4 z-50 animate-slide-in-right">
+    <div className="bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg flex items-center max-w-sm">
+      <div className="flex items-center">
+        <svg className="w-5 h-5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+        </svg>
+        <span className="text-sm font-medium">{successMessage}</span>
+      </div>
+      <button
+        onClick={() => setShowSuccessMessage(false)}
+        className="ml-3 text-white hover:text-gray-200 transition-colors"
+      >
+        <X className="w-4 h-4" />
+      </button>
+    </div>
+  </div>
+)}
 
         <div className="mb-6 bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
           <div className="flex overflow-x-auto scrollbar-hide">
@@ -574,70 +651,89 @@ const UserProfileComponent = () => {
         </div>
 
         <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+         
+
           {activeTab === "personal" && (
-            <div>
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-800 flex items-center">
-                  <User className="w-6 h-6 mr-2 text-blue-600" />
-                  Personal Information
-                </h2>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                    <div className="flex items-center text-gray-600 mb-2">
-                      <Phone className="w-5 h-5 mr-2 text-blue-600" />
-                      <span className="text-sm font-medium">Contact Number</span>
-                    </div>
-                    <p className="text-gray-900 font-medium">{userData.phoneNumber || userData.contactNumber || "Not provided"}</p>
-                  </div>
-                  
-                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                    <div className="flex items-center text-gray-600 mb-2">
-                      <Mail className="w-5 h-5 mr-2 text-blue-600" />
-                      <span className="text-sm font-medium">Email Address</span>
-                    </div>
-                    <p className="text-gray-900 font-medium">{userData.email}</p>
-                  </div>
-                  
-                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                    <div className="flex items-center text-gray-600 mb-2">
-                      <MapPin className="w-5 h-5 mr-2 text-blue-600" />
-                      <span className="text-sm font-medium">Address</span>
-                    </div>
-                    <p className="text-gray-900 font-medium">{userData.address || "Not provided"}</p>
-                  </div>
-                </div>
-                
-                <div className="space-y-4">
-                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                    <div className="flex items-center text-gray-600 mb-2">
-                      <Phone className="w-5 h-5 mr-2 text-blue-600" />
-                      <span className="text-sm font-medium">Emergency Contact</span>
-                    </div>
-                    <p className="text-gray-900 font-medium">{userData.emergencyContact || "Not provided"}</p>
-                  </div>
-                  
-                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                    <div className="flex items-center text-gray-600 mb-2">
-                      <Calendar className="w-5 h-5 mr-2 text-blue-600" />
-                      <span className="text-sm font-medium">Registration Date</span>
-                    </div>
-                    <p className="text-gray-900 font-medium">{userData.registrationDate || "Not provided"}</p>
-                  </div>
-                  
-                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                    <div className="flex items-center text-gray-600 mb-2">
-                      <User className="w-5 h-5 mr-2 text-blue-600" />
-                      <span className="text-sm font-medium">User Role</span>
-                    </div>
-                    <p className="text-gray-900 font-medium capitalize">{userData.role || "Not specified"}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+  <div>
+    <div className="flex justify-between items-center mb-6">
+      <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+        <User className="w-6 h-6 mr-2 text-blue-600" />
+        Personal Information
+      </h2>
+    </div>
+    
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="space-y-4">
+        <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+          <div className="flex items-center text-gray-600 mb-2">
+            <User className="w-5 h-5 mr-2 text-blue-600" />
+            <span className="text-sm font-medium">Full Name</span>
+          </div>
+          <p className="text-gray-900 font-medium">{userData.name || "Not provided"}</p>
+        </div>
+        
+        <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+          <div className="flex items-center text-gray-600 mb-2">
+            <Phone className="w-5 h-5 mr-2 text-blue-600" />
+            <span className="text-sm font-medium">Contact Number</span>
+          </div>
+          <p className="text-gray-900 font-medium">{userData.phoneNumber || "Not provided"}</p>
+        </div>
+        
+        <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+          <div className="flex items-center text-gray-600 mb-2">
+            <Mail className="w-5 h-5 mr-2 text-blue-600" />
+            <span className="text-sm font-medium">Email Address</span>
+          </div>
+          <p className="text-gray-900 font-medium">{userData.email || "Not provided"}</p>
+        </div>
+        
+        <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+          <div className="flex items-center text-gray-600 mb-2">
+            <MapPin className="w-5 h-5 mr-2 text-blue-600" />
+            <span className="text-sm font-medium">Address</span>
+          </div>
+          <p className="text-gray-900 font-medium">{userData.address || "Not provided"}</p>
+        </div>
+      </div>
+      
+      <div className="space-y-4">
+        <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+          <div className="flex items-center text-gray-600 mb-2">
+            <Phone className="w-5 h-5 mr-2 text-blue-600" />
+            <span className="text-sm font-medium">Emergency Contact</span>
+          </div>
+          <p className="text-gray-900 font-medium">{userData.emergencyContact || "Not provided"}</p>
+        </div>
+        
+        <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+          <div className="flex items-center text-gray-600 mb-2">
+            <Calendar className="w-5 h-5 mr-2 text-blue-600" />
+            <span className="text-sm font-medium">Registration Date</span>
+          </div>
+          <p className="text-gray-900 font-medium">{userData.registrationDate || "Not provided"}</p>
+        </div>
+        
+        <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+          <div className="flex items-center text-gray-600 mb-2">
+            <User className="w-5 h-5 mr-2 text-blue-600" />
+            <span className="text-sm font-medium">User Role</span>
+          </div>
+          <p className="text-gray-900 font-medium capitalize">{userData.role || "Not specified"}</p>
+        </div>
+        
+        <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+          <div className="flex items-center text-gray-600 mb-2">
+            <div className={`w-3 h-3 rounded-full mr-2 ${userData.isActive ? 'bg-green-500' : 'bg-red-500'}`}></div>
+            <span className="text-sm font-medium">Account Status</span>
+          </div>
+          <p className="text-gray-900 font-medium">{userData.isActive ? "Active" : "Inactive"}</p>
+        </div>
+      </div>
+    </div>
+  </div>
           )}
+
 
           {activeTab === "medical" && (
             <div>
@@ -693,113 +789,180 @@ const UserProfileComponent = () => {
               </div>
             </div>
           )}
+          
+
+          
 
           {activeTab === "appointments" && (
-            <div>
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-800 flex items-center">
-                  <Calendar className="w-6 h-6 mr-2 text-blue-600" />
-                  Upcoming Appointments
-                </h2>
-                <button className="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors shadow-sm">
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Schedule New
-                </button>
-              </div>
-              
-              <div className="space-y-5">
-                {currentAppointments.length > 0 ? (
-                  currentAppointments.map((appointment) => (
-                    <div key={appointment.id} className="border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-5 hover:shadow-md transition-all">
-                      <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-                        <div>
-                          <h3 className="font-bold text-lg text-gray-800">{appointment.purpose}</h3>
-                          <p className="text-gray-600 mt-1">
-                            <span className="text-blue-700 font-medium">{appointment.doctor}</span> • {appointment.department}
-                          </p>
-                        </div>
-                        <div className="mt-3 md:mt-0 md:text-right">
-                          <div className="inline-flex items-center bg-white border border-blue-200 text-blue-800 rounded-lg px-4 py-2 font-medium shadow-sm">
-                            <Clock className="w-4 h-4 mr-2 text-blue-600" />
-                            {appointment.time}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="mt-4 flex items-center text-gray-700 bg-white p-3 rounded-lg border border-blue-100">
-                        <Calendar className="w-5 h-5 mr-2 text-blue-600" />
-                        <span className="font-medium">{appointment.date}</span>
-                      </div>
-                      
-                      <div className="mt-4 flex flex-wrap gap-3">
-                        <button className="text-sm font-medium px-4 py-2 bg-white text-blue-600 hover:bg-blue-50 border border-blue-200 rounded-lg transition-colors shadow-sm">
-                          Reschedule
-                        </button>
-                        <button className="text-sm font-medium px-4 py-2 bg-white text-red-600 hover:bg-red-50 border border-red-200 rounded-lg transition-colors shadow-sm">
-                          Cancel
-                        </button>
-                        <button className="text-sm font-medium px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors shadow-sm ml-auto">
-                          View Details
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center p-8 bg-blue-50 rounded-lg border border-blue-100">
-                    <Calendar className="w-12 h-12 text-blue-300 mx-auto mb-3" />
-                    <h3 className="text-lg font-medium text-gray-700 mb-2">No Upcoming Appointments</h3>
-                    <p className="text-gray-500 mb-4">You don't have any scheduled appointments at this time.</p>
-                    <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
-                      Schedule Your First Appointment
-                    </button>
-                  </div>
+  <div>
+    <div className="flex justify-between items-center mb-6">
+      <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+        <Calendar className="w-6 h-6 mr-2 text-blue-600" />
+        Upcoming Appointments
+      </h2>
+      <button className="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors shadow-sm">
+        <Calendar className="w-4 h-4 mr-2" />
+        Schedule New
+      </button>
+    </div>
+    
+    <div className="space-y-5">
+      {currentAppointments.length > 0 ? (
+        currentAppointments.map((appointment) => (
+          <div key={appointment.id} className="border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-5 hover:shadow-md transition-all">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+              <div>
+                <h3 className="font-bold text-lg text-gray-800">{appointment.purpose}</h3>
+                <p className="text-gray-600 mt-1">
+                  <span className="text-blue-700 font-medium">{appointment.doctor}</span> • {appointment.department}
+                </p>
+                {appointment.message && (
+                  <p className="text-sm text-gray-500 mt-2 italic">
+                    📝 {appointment.message}
+                  </p>
                 )}
               </div>
-              
-              {totalPages > 1 && (
-                <div className="flex justify-center mt-6">
-                  <nav className="inline-flex rounded-md shadow-sm -space-x-px">
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                      disabled={currentPage === 1}
-                      className={`px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${currentPage === 1 ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-50'}`}
-                    >
-                      Previous
-                    </button>
-                    
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(number => (
-                      <button
-                        key={number}
-                        onClick={() => setCurrentPage(number)}
-                        className={`px-3 py-2 border-t border-b border-gray-300 text-sm font-medium ${currentPage === number ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-                      >
-                        {number}
-                      </button>
-                    ))}
-                    
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                      disabled={currentPage === totalPages}
-                      className={`px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${currentPage === totalPages ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-50'}`}
-                    >
-                      Next
-                    </button>
-                  </nav>
+              <div className="mt-3 md:mt-0 md:text-right">
+                <div className="inline-flex items-center bg-white border border-blue-200 text-blue-800 rounded-lg px-4 py-2 font-medium shadow-sm">
+                  <Clock className="w-4 h-4 mr-2 text-blue-600" />
+                  {appointment.time}
                 </div>
-              )}
-              
-              <div className="mt-8 bg-blue-50 rounded-lg p-4 border border-blue-100">
-                <h3 className="font-medium text-gray-700 mb-2 flex items-center">
-                  <Clock className="w-5 h-5 mr-2 text-blue-600" />
-                  Appointment Instructions
-                </h3>
-                <p className="text-gray-600 text-sm">
-                  Please arrive 15 minutes before your scheduled time. Bring your insurance card, photo ID, 
-                  and any relevant medical records. Fasting may be required for some tests.
+              </div>
+            </div>
+            
+            <div className="mt-4 flex items-center text-gray-700 bg-white p-3 rounded-lg border border-blue-100">
+              <Calendar className="w-5 h-5 mr-2 text-blue-600" />
+              <span className="font-medium">{appointment.date}</span>
+            </div>
+            
+            <div className="mt-4 flex flex-wrap gap-3">
+              <button className="text-sm font-medium px-4 py-2 bg-white text-blue-600 hover:bg-blue-50 border border-blue-200 rounded-lg transition-colors shadow-sm">
+                Reschedule
+              </button>
+              <button
+                onClick={() => handleCancelClick(appointment)}
+                className="text-sm font-medium px-4 py-2 bg-white text-red-600 hover:bg-red-50 border border-red-200 rounded-lg transition-colors shadow-sm">
+                Cancel
+              </button>
+              <button className="text-sm font-medium px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors shadow-sm ml-auto">
+                View Details
+              </button>
+            </div>
+          </div>
+        ))
+      ) : (
+        <div className="text-center p-8 bg-blue-50 rounded-lg border border-blue-100">
+          <Calendar className="w-12 h-12 text-blue-300 mx-auto mb-3" />
+          <h3 className="text-lg font-medium text-gray-700 mb-2">No Upcoming Appointments</h3>
+          <p className="text-gray-500 mb-4">You don't have any scheduled appointments at this time.</p>
+          <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
+            Schedule Your First Appointment
+          </button>
+        </div>
+      )}
+    </div>
+    
+    {totalPages > 1 && (
+      <div className="flex justify-center mt-6">
+        <nav className="inline-flex rounded-md shadow-sm -space-x-px">
+          <button
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className={`px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${currentPage === 1 ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-50'}`}
+          >
+            Previous
+          </button>
+          
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map(number => (
+            <button
+              key={number}
+              onClick={() => setCurrentPage(number)}
+              className={`px-3 py-2 border-t border-b border-gray-300 text-sm font-medium ${currentPage === number ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+            >
+              {number}
+            </button>
+          ))}
+          
+          <button
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className={`px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${currentPage === totalPages ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-50'}`}
+          >
+            Next
+          </button>
+        </nav>
+      </div>
+    )}
+    
+    <div className="mt-8 bg-blue-50 rounded-lg p-4 border border-blue-100">
+      <h3 className="font-medium text-gray-700 mb-2 flex items-center">
+        <Clock className="w-5 h-5 mr-2 text-blue-600" />
+        Appointment Instructions
+      </h3>
+      <p className="text-gray-600 text-sm">
+        Please arrive 15 minutes before your scheduled time. Bring your insurance card, photo ID, 
+        and any relevant medical records. Fasting may be required for some tests.
+      </p>
+    </div>
+
+    {/* Cancel Confirmation Modal */}
+    {showCancelModal && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold text-gray-800">Cancel Appointment</h3>
+            <button
+              onClick={() => setShowCancelModal(false)}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          
+          {appointmentToCancel && (
+            <div className="mb-6">
+              <p className="text-gray-600 mb-4">
+                Are you sure you want to cancel your appointment?
+              </p>
+              <div className="bg-gray-50 rounded-lg p-4 border">
+                <p className="font-medium text-gray-800">{appointmentToCancel.purpose}</p>
+                <p className="text-gray-600 text-sm mt-1">
+                  <span className="font-medium">{appointmentToCancel.doctor}</span> • {appointmentToCancel.department}
+                </p>
+                <p className="text-gray-600 text-sm mt-2">
+                  📅 {appointmentToCancel.date} at {appointmentToCancel.time}
                 </p>
               </div>
             </div>
           )}
+          
+          <div className="flex gap-3 justify-end">
+            <button
+              onClick={() => setShowCancelModal(false)}
+              className="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+            >
+              Keep Appointment
+            </button>
+            <button
+              onClick={() => cancelAppointment(
+                appointmentToCancel.time,
+                appointmentToCancel.date,
+                appointmentToCancel.doctorEmail || appointmentToCancel.doctor
+              )}
+              className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg transition-colors"
+            >
+              Yes, Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+)}
+
+
+
+
 
           {activeTab === "security" && (
             <div>
@@ -966,11 +1129,29 @@ const UserProfileComponent = () => {
               )}
             </div>
           )}
+          
         </div>
       </div>
       <Footer/>
     </div>
   );
 };
+
+<style jsx>{`
+  @keyframes slide-in-right {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+  
+  .animate-slide-in-right {
+    animation: slide-in-right 0.3s ease-out;
+  }
+`}</style>
 
 export default UserProfileComponent;

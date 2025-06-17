@@ -122,8 +122,8 @@ const Sidebar = () => {
         <SidebarItem
           icon={Stethoscope}
           label="Services"
-          href="/services"
-          active={pathname === "/services"}
+          href="/servics"
+          active={pathname === "/servics"}
         />
         <SidebarItem
           icon={Bell}
@@ -133,9 +133,9 @@ const Sidebar = () => {
         />
         <SidebarItem
           icon={MessageSquare}
-          label="Feedback"
-          href="/feedback"
-          active={pathname === "/feedback"}
+          label="Payments"
+          href="/adminSidePayments"
+          active={pathname === "/adminSidePayments"}
         />
       </div>
       

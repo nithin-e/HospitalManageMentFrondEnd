@@ -2,8 +2,6 @@ import axiosInstance from "@/cors/axiousInstance";
 
 export const storeNotificationData = async (email:any) => {
     try {
-     
-      
       const response = await axiosInstance.post("/api/notifiction/storeNotificationData", 
         { email }
       );

@@ -31,7 +31,7 @@ export const handleDoctorAsyncThunk = <ThunkArg, ThunkReturn>(
     })
     .addCase(asyncThunk.fulfilled, (state: DoctorState, action: PayloadAction<ThunkReturn>) => {
 
-      console.log('<<<<>>>>>',action.payload  ,'<<<<<<<>>>>>');
+     
       
       state[stateKey] = action.payload;
       state.loading = false;

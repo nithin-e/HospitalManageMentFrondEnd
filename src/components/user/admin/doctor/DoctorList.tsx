@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Search, Filter, ChevronDown, ArrowUpDown, Shield, User, Briefcase, Clock, X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/user/ui/docui/avatar";
-import { Badge } from "@/components/user/ui/docui/badge1";
 import { Input } from "@/components/user/ui/docui/input";
 import { Button } from "@/components/user/ui/docui/button";
 import { fetchDoctors } from "@/store/AdminSideApi/fechDoctors";
@@ -53,6 +52,8 @@ export const DoctorsList = () => {
     }
   };
 
+  
+
   const fetchDoctorData = async () => {
     try {
       setLoading(true);
@@ -99,6 +100,7 @@ export const DoctorsList = () => {
       setLoading(false);
     }
   };
+
 
   const toggleSort = (field) => {
     if (sortField === field) {

@@ -30,6 +30,8 @@ import DoctorDash from './pages/user/doctor/DoctorDash';
 import AppointMent from './pages/user/user1/AppointMent';
 import UserProfile from './components/user/user1/userProfileComponent';
 import AppointMentMangemant from './pages/user/doctor/AppointMentMangemant';
+import AppoinmentSuccess from './pages/user/user1/appoinmentSuccess';
+import AdminPaymentListing from './pages/user/admin/adminPaymentListing';
 
 const queryClient = new QueryClient();
 
@@ -231,6 +233,7 @@ const App = () => {
                   <Route path="/payment-success" element={<DoctorPaymentSucces />} />
                   <Route path="/AppointMent" element={<AppointMent />} />
                   <Route path="/userprofile" element={<UserProfile />} />
+                  <Route path="/success" element={<AppoinmentSuccess />} />
 
                   
                   {/* Admin routes */}
@@ -239,6 +242,8 @@ const App = () => {
                   <Route path="/successForDoctorApplication" element={<SuccesForDoctorApply />} />
                   <Route path="/Doctors" element={<DoctorListing/>} />
                   <Route path="/adminDetails/:id" element={<DoctorDetailsPage />} />
+                  <Route path="/adminSidePayments" element={<AdminPaymentListing />} />
+
 
                   {/* Doctor routes */}
                   <Route path="/DoctorDashboard" element={<DoctorDash />}/>

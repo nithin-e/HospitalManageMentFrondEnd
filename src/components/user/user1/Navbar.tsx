@@ -8,8 +8,7 @@ import NavItem from '../navbar/NavItem';
 import AuthButtons from '../navbar/AuthButton';
 import { RootState } from '../../../store/redux/store';
 import { logoutUser } from '@/store/redux/slices/authSlice';
-import { GetFetchNotifications } from '@/store/userSideApi/GetNotificationApi';
-import { SocketProvider, useSocket } from '@/context/socketContext';
+import { useSocket } from '@/context/socketContext';
 
 
 
@@ -50,6 +49,183 @@ interface MobileMenuProps {
 }
 
 // Separate MobileMenu component
+// const MobileMenu: React.FC<MobileMenuProps> = ({
+//   isOpen,
+//   navItems,
+//   onItemClick,
+//   user,
+//   userInitial,
+//   isAuthenticated,
+//   onLogout,
+//   notifications,
+//   markAsRead,
+//   markAllAsRead,
+//   hasNotifications,
+// }) => {
+//   const [isLoggingOut, setIsLoggingOut] = useState(false);
+//   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+//   const navigate = useNavigate();
+
+//   const handleMobileLogout = async () => {
+//     setIsLoggingOut(true);
+//     await onLogout();
+//     onItemClick();
+//     setIsLoggingOut(false);
+//   };
+
+//   const handleNotificationClick = (id: string) => {
+//     markAsRead(id);
+//   };
+
+//   if (!isOpen) return null;
+
+//   const unreadCount = notifications.filter(n => !n.isRead).length;
+
+//   return (
+//     <motion.div
+//       className="md:hidden fixed inset-0 bg-white z-40 flex flex-col"
+//       initial={{ opacity: 0, x: '100%' }}
+//       animate={{ opacity: 1, x: 0 }}
+//       exit={{ opacity: 0, x: '100%' }}
+//       transition={{ duration: 0.3 }}
+//     >
+//       <div className="flex justify-between items-center p-4 border-b">
+//         <Logo />
+//         <button
+//           onClick={onItemClick}
+//           className="text-gray-700"
+//         >
+//           <X size={24} />
+//         </button>
+//       </div>
+
+//       <div className="flex-1 flex flex-col items-center justify-start p-8 overflow-y-auto">
+//         {isAuthenticated && (
+//           <div className="w-full mb-6 flex flex-col items-center">
+//             <div
+//               className="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-semibold mb-2"
+//               style={{ backgroundColor: '#003B73' }}
+//             >
+//               {userInitial || '?'}
+//             </div>
+//             <p className="text-lg font-medium text-gray-800">{user?.name || 'User'}</p>
+//             <p className="text-sm text-gray-500">{user?.email || ''}</p>
+//           </div>
+//         )}
+
+//         {navItems.map((item, index) => (
+//           <a
+//             key={index}
+//             href={item.href}
+//             className="w-full py-3 text-xl font-medium text-gray-800 hover:text-primary transition-colors border-b border-gray-100"
+//             onClick={onItemClick}
+//           >
+//             {item.name}
+//           </a>
+//         ))}
+
+//         {isAuthenticated && (
+//           <>
+//             {hasNotifications && (
+//               <button
+//                 onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+//                 className="w-full py-3 flex justify-between items-center text-xl font-medium text-gray-800 hover:text-primary transition-colors border-b border-gray-100 relative"
+//               >
+//                 <div className="flex items-center">
+//                   <Bell size={20} className="mr-2" />
+//                   <span>Notifications</span>
+//                 </div>
+//                 {unreadCount > 0 && (
+//                   <span className="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+//                     {unreadCount}
+//                   </span>
+//                 )}
+//               </button>
+//             )}
+
+//             {isNotificationsOpen && hasNotifications && (
+//               <div className="w-full mt-2 mb-4 bg-gray-50 rounded-lg overflow-hidden border border-gray-200">
+//                 <div className="flex justify-between items-center p-3 bg-gray-100">
+//                   <h3 className="font-medium">Notifications</h3>
+//                   {unreadCount > 0 && (
+//                     <button 
+//                       onClick={markAllAsRead}
+//                       className="text-sm text-blue-600 hover:text-blue-800 flex items-center"
+//                     >
+//                       <Check size={16} className="mr-1" />
+//                       Mark all as read
+//                     </button>
+//                   )}
+//                 </div>
+                
+//                 <div className="max-h-64 overflow-y-auto">
+//                   {notifications.length > 0 ? (
+//                     notifications.map(notification => (
+//                       <div 
+//                         key={notification.id} 
+//                         className={`p-3 border-t border-gray-200 ${notification.isRead ? 'bg-white' : 'bg-blue-50'}`}
+//                         onClick={() => handleNotificationClick(notification.id)}
+//                       >
+//                         <div className="flex justify-between">
+//                           <h4 className="font-medium text-sm">{notification.title}</h4>
+//                           <span className="text-xs text-gray-500">{notification.timestamp}</span>
+//                         </div>
+//                         <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
+//                       </div>
+//                     ))
+//                   ) : (
+//                     <div className="p-4 text-center text-gray-500">
+//                       No notifications yet
+//                     </div>
+//                   )}
+//                 </div>
+//               </div>
+//             )}
+
+//             <a
+//               href="/profile"
+//               className="w-full py-3 flex items-center text-xl font-medium text-gray-800 hover:text-primary transition-colors border-b border-gray-100"
+//               onClick={onItemClick}
+//             >
+//               <User size={20} className="mr-2" />
+//               <span>Profile</span>
+//             </a>
+
+//             <a
+//               href="/settings"
+//               className="w-full py-3 flex items-center text-xl font-medium text-gray-800 hover:text-primary transition-colors border-b border-gray-100"
+//               onClick={onItemClick}
+//             >
+//               <Settings size={20} className="mr-2" />
+//               <span>Settings</span>
+//             </a>
+
+//             <button
+//               onClick={handleMobileLogout}
+//               disabled={isLoggingOut}
+//               className="w-full mt-4 py-3 flex items-center text-xl font-medium text-red-500 hover:text-red-700 transition-colors disabled:opacity-50"
+//             >
+//               {isLoggingOut ? (
+//                 <Loader size={20} className="mr-2 animate-spin" />
+//               ) : (
+//                 <LogOut size={20} className="mr-2" />
+//               )}
+//               <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
+//             </button>
+//           </>
+//         )}
+
+//         {!isAuthenticated && (
+//           <div className="mt-6 w-full flex flex-col items-center">
+//             <AuthButtons />
+//           </div>
+//         )}
+//       </div>
+//     </motion.div>
+//   );
+// };
+
+
 const MobileMenu: React.FC<MobileMenuProps> = ({
   isOpen,
   navItems,
@@ -78,6 +254,15 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
     markAsRead(id);
   };
 
+  const formatTimestamp = (timestamp: string) => {
+    try {
+      const date = new Date(timestamp);
+      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return 'Just now';
+    }
+  };
+
   if (!isOpen) return null;
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
@@ -102,12 +287,18 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
 
       <div className="flex-1 flex flex-col items-center justify-start p-8 overflow-y-auto">
         {isAuthenticated && (
-          <div className="w-full mb-6 flex flex-col items-center">
+          <div className="w-full mb-6 flex flex-col items-center relative">
             <div
-              className="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-semibold mb-2"
+              className="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-semibold mb-2 relative"
               style={{ backgroundColor: '#003B73' }}
             >
               {userInitial || '?'}
+              {/* Mobile notification badge on avatar */}
+              {hasNotifications && unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center shadow-sm">
+                  {unreadCount}
+                </span>
+              )}
             </div>
             <p className="text-lg font-medium text-gray-800">{user?.name || 'User'}</p>
             <p className="text-sm text-gray-500">{user?.email || ''}</p>
@@ -164,14 +355,25 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                     notifications.map(notification => (
                       <div 
                         key={notification.id} 
-                        className={`p-3 border-t border-gray-200 ${notification.isRead ? 'bg-white' : 'bg-blue-50'}`}
+                        className={`p-3 border-t border-gray-200 cursor-pointer ${notification.isRead ? 'bg-white' : 'bg-blue-50'}`}
                         onClick={() => handleNotificationClick(notification.id)}
                       >
-                        <div className="flex justify-between">
-                          <h4 className="font-medium text-sm">{notification.title}</h4>
-                          <span className="text-xs text-gray-500">{notification.timestamp}</span>
+                        <div className="flex justify-between items-start">
+                          <h4 className="font-medium text-sm text-gray-900">
+                            {notification.title || 'Notification'}
+                          </h4>
+                          <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
+                            {formatTimestamp(notification.timestamp)}
+                          </span>
                         </div>
-                        <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
+                        <p className="text-sm text-gray-600 mt-1 leading-relaxed">
+                          {notification.message}
+                        </p>
+                        {!notification.isRead && (
+                          <div className="mt-2">
+                            <span className="inline-block w-2 h-2 bg-blue-500 rounded-full"></span>
+                          </div>
+                        )}
                       </div>
                     ))
                   ) : (
@@ -184,7 +386,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
             )}
 
             <a
-              href="/profile"
+              href="/userprofile"
               className="w-full py-3 flex items-center text-xl font-medium text-gray-800 hover:text-primary transition-colors border-b border-gray-100"
               onClick={onItemClick}
             >
@@ -226,6 +428,10 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
   );
 };
 
+
+
+
+
 const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -237,10 +443,7 @@ const Navbar: React.FC = () => {
   const [hasNotifications, setHasNotifications] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
-  const { 
-    notificationSocket,
-    notificationConnected 
-  } = useSocket();
+  const { socket, connected } = useSocket();
 
   // Get auth and user data from Redux store
     const user = useSelector((state: RootState) => state.user)
@@ -279,66 +482,48 @@ const Navbar: React.FC = () => {
     };
   }, [dropdownRef]);
 
-  // Fetch notifications when user is authenticated
-  useEffect(() => {
-    if (userData?.email) {
-      fetchNotifications();
-    }
-  }, [])
+  
 
 
-  const fetchNotifications = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const response = await GetFetchNotifications(userData?.email || '');
 
-      console.log('check this notification in navbar',response.notification.notification[0]);
+
+useEffect(() => {
+  if (userData?.email && socket) {
+    setIsLoading(true);
+    
+    // Emit socket event to fetch notifications
+    socket.emit('fetchNotifications', { email: userData.email });
+    
+    // Listen for notifications response
+    socket.on('notificationsResponse', (response) => {
+      setIsLoading(false);
+      console.log('check here kittando responce', response);
       
-      
-  if (response && response.notification && response.notification.notification) {
-        
-       
-        // Process the data from your backend response structure
-        const notificationsData = response.notification.notification.map((notification: any) => ({
-          ...notification,
-          isRead: notification.isRead || false,
-          timestamp: notification.createdAt || new Date().toISOString(),
-        }));
-        
-        setNotifications(notificationsData);
+      // CORRECTED: Access response.notification directly (not response.notification.notification)
+      if (response?.notification && Array.isArray(response.notification) && response.notification.length > 0) {
+        setNotifications(response.notification);
         setHasNotifications(true);
-      } else if (response && response.res === false) {
-        // No notifications found
+      } else {
         setNotifications([]);
         setHasNotifications(false);
-      } else {
-        throw new Error('Invalid response format');
       }
-    } catch (err) {
-      console.error('Error fetching notifications:', err);
-      setError(err instanceof Error ? err.message : 'An error occurred');
-      setNotifications([]);
-      setHasNotifications(false);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    });
+    
+    // Listen for new notifications
+    socket.on('newNotification', (newNotification) => {
+      setNotifications(prev => [newNotification, ...prev]);
+      setHasNotifications(true);
+    });
+    
+    // Cleanup
+    return () => {
+      socket.off('notificationsResponse');
+      socket.off('newNotification');
+    };
+  }
+}, [userData?.email, socket]);
 
 
-
-
-  //   useEffect(() => {
-  //   if (userData?.email && notificationSocket) {
-  //     console.log('Setting up socket with user data', userData.email);
-      
-  //     notificationSocket.emit('user_data', { 
-  //       userEmail: userData.email 
-  //     }, (response) => {
-  //       console.log("Socket response:", response);
-  //     });
-  //   }
-  // }, [userData?.email, notificationSocket]);
 
 
 

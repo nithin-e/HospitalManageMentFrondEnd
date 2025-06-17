@@ -9,6 +9,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '@/store/redux/store';
 import { makingAppointMent } from '@/store/DoctorSideApi/makingAppointMent';
 import { UserFectingAppointMentSlote } from '@/store/userSideApi/UserFectingAppointMentSlote';
+import axiosInstance from '@/cors/axiousInstance';
 
 // Background Symbol component with enhanced animations
 const FloatingSymbol = ({ symbol, delay }) => {
@@ -55,21 +56,6 @@ const PulsingCircle = ({ size, color, delay, top, left }) => (
   ></div>
 );
 
-// Healthcare info card component
-const HealthcareInfoCard = ({ icon, title, description }) => {
-  const Icon = icon;
-  return (
-    <div className="bg-white p-4 rounded-lg shadow-md border-l-4 border-blue-500 hover:shadow-lg transition-all duration-300 flex group">
-      <div className="bg-blue-100 p-3 rounded-full mr-4 group-hover:bg-blue-200 transition-colors duration-300">
-        <Icon size={20} className="text-blue-600" />
-      </div>
-      <div>
-        <h3 className="font-medium text-gray-800">{title}</h3>
-        <p className="text-sm text-gray-600">{description}</p>
-      </div>
-    </div>
-  );
-};
 
 
 
@@ -85,6 +71,7 @@ export default function AppointmentBooking() {
     doctor: '',
     specialty: ''
   });
+
   const [submitted, setSubmitted] = useState(false);
   const [symbols, setSymbols] = useState([]);
   const [circles, setCircles] = useState([]);
@@ -132,6 +119,8 @@ export default function AppointmentBooking() {
     setCircles(newCircles);
   }, []);
 
+
+
   useEffect(() => {
     fetchDoctorData();
   }, []);
@@ -140,7 +129,7 @@ export default function AppointmentBooking() {
     try {
       setLoading(true);
       const response = await UserfetchingDoctors();
-      console.log('doctor listing table', response);
+      console.log('<<<<<<<>>>>>>>>>>>>>>check the responce its comming from backent<<<<<<<<<<<<<>>>>>>>>>', response);
   
       // Group doctors by specialty
       const groupedDoctors = {};
@@ -214,28 +203,39 @@ export default function AppointmentBooking() {
   const userData = user?.checkUserEmailAndPhone?.user || user?.user?.user || user?.user || null;
   const userEmail = userData?.email || '';
 
-  const handleSubmit = async(e) => {
-    if (e) e.preventDefault();
-    
-   
-    const appointmentData = {
-      ...formData,
-      userEmail: userEmail 
-    };
-    
-    console.log('Appointment booked:', appointmentData);
-    
-    
-   const res= await makingAppointMent(appointmentData);
+ 
 
-   console.log('check responce bro',res);
-   if(res.result.success){
-    setSubmitted(true);
-   }
-   
-    
-    // setSubmitted(true);
-  };
+
+  const handleSubmit = async(e) => {
+    e.preventDefault(); // Add this to prevent form submission
+
+    const appointmentData = {
+        ...formData,
+        userEmail: userEmail 
+    };
+
+    try {
+        // Send appointment data with the request
+        const response = await axiosInstance.post("/api/auth/user/create-checkout-session", {
+            appointmentData: appointmentData
+        });
+        
+        console.log('handle submit backend response', response);
+
+ 
+
+        if (response.data.success) {
+            console.log('Redirecting to Stripe checkout...');
+            window.location.href = response.data.checkout_url;
+        } else {
+            console.error('Checkout session creation failed');
+        }
+    } catch (error) {
+        console.error('Error creating checkout session:', error);
+    }
+}
+
+
   
   const selectSpecialty = (specialty) => {
     if (doctorsBySpecialty[specialty] && doctorsBySpecialty[specialty].length > 0) {
@@ -268,7 +268,7 @@ export default function AppointmentBooking() {
         if (response && response.result && response.result.time_slots) {
           setTimeSlots(response.result.time_slots);
           
-          // Also set available dates for reference
+       
           if (response.result.dates && response.result.dates.length > 0) {
             setAvailableDates(response.result.dates);
           }
@@ -300,98 +300,9 @@ export default function AppointmentBooking() {
   const isPersonalInfoComplete = Boolean(formData.name && formData.email && formData.phone);
   
   // Get slots for the selected date
-  const getSlotsForSelectedDate = () => {
-    if (!formData.date) return [];
-    
-    const dateSlots = timeSlots.find(slot => slot.date === formData.date);
-    return dateSlots ? dateSlots.slots : [];
-  };
 
-  if (submitted) {
-    return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-50 via-white to-blue-50 relative">
-        {/* Background Elements */}
-        <div className="fixed inset-0 pointer-events-none overflow-hidden">
-          {symbols.map((sym) => (
-            <FloatingSymbol key={sym.id} symbol={sym.symbol} delay={sym.delay} />
-          ))}
-          {circles.map((circle) => (
-            <PulsingCircle key={circle.id} {...circle} />
-          ))}
-        </div>
-        
-        {/* Background pattern and decorative elements */}
-        <div className="absolute inset-0 bg-grid-pattern opacity-5 pointer-events-none"></div>
-        
-        <Navbar />
-        
-        <div className="flex-grow container mx-auto px-4 py-12 relative z-10">
-          <div className="max-w-md mx-auto bg-white p-8 rounded-2xl shadow-2xl border border-blue-100 transform transition-all duration-500 hover:shadow-blue-100">
-            <div className="mb-8 mt-4 flex justify-center">
-              <div className="bg-green-500 p-5 rounded-full animate-pulse shadow-lg shadow-green-200">
-                <Check className="text-white" size={52} />
-              </div>
-            </div>
-            <h2 className="text-3xl font-bold text-center text-gray-800 mb-3">Appointment Confirmed!</h2>
-            <p className="text-gray-600 mb-8 text-center text-lg">
-              Thank you for booking with us. We've sent a confirmation to {formData.email}.
-            </p>
-            
-            <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-100 text-left mb-8 transform transition hover:scale-[1.02] duration-300">
-              <div className="mb-3 pb-3 border-b border-blue-200">
-                <span className="text-blue-700 font-semibold mr-2">Specialty:</span> 
-                <span className="text-gray-700">{formData.specialty}</span>
-              </div>
-              <div className="mb-3 pb-3 border-b border-blue-200">
-                <span className="text-blue-700 font-semibold mr-2">Doctor:</span> 
-                <span className="text-gray-700">{formData.doctor}</span>
-              </div>
-              <div className="mb-3 pb-3 border-b border-blue-200">
-                <span className="text-blue-700 font-semibold mr-2">Date:</span> 
-                <span className="text-gray-700">{formData.date}</span>
-              </div>
-              <div className="mb-3 pb-3 border-b border-blue-200">
-                <span className="text-blue-700 font-semibold mr-2">Time:</span>
-                <span className="text-gray-700">{formData.time}</span>
-              </div>
-              <div>
-                <span className="text-blue-700 font-semibold mr-2">Name:</span>
-                <span className="text-gray-700">{formData.name}</span>
-              </div>
-            </div>
-            
-            <div className="text-sm text-gray-600 mb-8 p-5 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg shadow-sm">
-              <p className="font-medium text-yellow-800 mb-2">Important Information:</p>
-              <p>Please arrive 15 minutes before your scheduled appointment time. Don't forget to bring your ID and insurance card.</p>
-            </div>
-            
-            <button 
-              onClick={() => {
-                setSubmitted(false);
-                setStep(1);
-                setFormData({
-                  name: '',
-                  email: '',
-                  phone: '',
-                  date: '',
-                  time: '',
-                  notes: '',
-                  doctor: '',
-                  specialty: ''
-                });
-              }}
-              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-4 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-medium flex items-center justify-center shadow-lg shadow-blue-200 hover:shadow-blue-300"
-            >
-              <Calendar size={18} className="mr-2" />
-              Book Another Appointment
-            </button>
-          </div>
-        </div>
-        
-        <Footer/>
-      </div>
-    );
-  }
+
+  
   
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-50 via-white to-blue-50 relative">
@@ -653,20 +564,7 @@ export default function AppointmentBooking() {
                           />
                         </div>
                         
-                        {/* <div className="bg-white p-5 rounded-xl border border-blue-200 shadow-sm hover:shadow-md transition-all duration-300">
-                          <label className="block text-gray-700 mb-2 font-medium flex items-center">
-                            <Mail size={18} className="mr-2 text-blue-600" />
-                            Email Address
-                          </label>
-                          <input
-                            type="email"
-                            name="email"
-                            value={formData.email}
-                            onChange={handleChange}
-                            placeholder="john@example.com"
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                          />
-                        </div> */}
+                        
                         
                         <div className="bg-white p-5 rounded-xl border border-blue-200 shadow-sm hover:shadow-md transition-all duration-300">
                           <label className="block text-gray-700 mb-2 font-medium flex items-center">
@@ -727,9 +625,10 @@ export default function AppointmentBooking() {
                 </div>
             </div>
             
-            {/* Right side - Appointment Summary & Health tips */}
+          
             <div className="w-full md:w-1/3">
-              {/* Appointment Summary */}
+       
+
               {step > 1 && (
                 <div className="bg-white p-6 rounded-xl shadow-xl border border-blue-100 mb-6 transform transition-all hover:shadow-blue-100 duration-300">
                   <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
@@ -826,7 +725,7 @@ export default function AppointmentBooking() {
       </div>
       <Footer/>
       
-      {/* CSS styles */}
+     
       <style jsx global>{`
         .bg-grid-pattern {
           background-image: linear-gradient(to right, rgba(59, 130, 246, 0.05) 1px, transparent 1px),
@@ -889,6 +788,8 @@ export default function AppointmentBooking() {
           }
         }
       `}</style>
+
+
     </div>
   );
 }

@@ -7,8 +7,15 @@ import {
   storeAppointmentSlots,  
   fetchDoctorAppointmentSlots 
 } from '@/store/redux/slices/DoctorSlice';
+import { useToast } from '@/hooks/use-toast';
+import PopUpMessage from '../components/popUpMessege';
+
+import { useSocket } from '@/context/socketContext';
+
+
 
 export default function DoctorAppointmentScheduler() {
+  const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [dateRange, setDateRange] = useState('oneWeek');
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
@@ -20,18 +27,23 @@ const [dateValidationError, setDateValidationError] = useState<string | null>(nu
   const [endTime, setEndTime] = useState('17:00');
   const [slotDuration, setSlotDuration] = useState(30);
   const [includeRestPeriods, setIncludeRestPeriods] = useState(true);
-  const restDuration = 15;
+ 
   
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isEditingMode, setIsEditingMode] = useState(false);
 
-  const [saveSuccess, setSaveSuccess] = useState(false);
+
   
   const [savedDates, setSavedDates] = useState<string[]>([]);
   const [slotsCreated, setSlotsCreated] = useState(0);
   const [showSavedInfo, setShowSavedInfo] = useState(false);
   const [showScheduleOverview, setShowScheduleOverview] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
+   const [selectedSlot, setSelectedSlot] = useState(null);
+   const [existingTimes, setExistingTimes] = useState([]);
+   const [saveSucces,setSaveSuccess]=useState(false)
+
   
   
   const dispatch = useDispatch<AppDispatch>();
@@ -40,12 +52,20 @@ const [dateValidationError, setDateValidationError] = useState<string | null>(nu
   
   const doctorEmail = doctorData?.email || '';
   const doctorName = doctorData?.firstName || 'Doctor';
+ const { socket, connected } = useSocket();
+
+
+  
 
   useEffect(() => {
     if (doctorEmail) {
-      dispatch(fetchDoctorAppointmentSlots(doctorEmail));
+        dispatch(fetchDoctorAppointmentSlots(doctorEmail));
+  
+      
     }
   }, [dispatch, doctorEmail]);
+
+
 
   useEffect(() => {
     if (savedAppointmentData?.result?.success) {
@@ -255,14 +275,7 @@ const [dateValidationError, setDateValidationError] = useState<string | null>(nu
 };
 
 
-  const getTotalAppointmentSlots = () => {
-    let total = 0;
-    Object.values(timeSlots).forEach(slots => {
-      total += slots.filter(slot => slot.type === 'appointment').length;
-    });
-    return total;
-  };
-
+ 
   const getAppointmentSlotsForDate = (date: string) => {
     return timeSlots[date]?.filter(slot => slot.type === 'appointment') || [];
   };
@@ -541,64 +554,7 @@ const [dateValidationError, setDateValidationError] = useState<string | null>(nu
 
 
 
-  // const handleAddNewSlots = (dateString: string) => {
-  //   console.log('Adding new slots for date:', dateString);
-    
-  //   // Generate new time slots based on current settings
-  //   const newSlots = generateTimeSlots(startTime, endTime, slotDuration);
-    
-  //   // Get existing slots from database for this date (excluding removed ones)
-  //   const existingDbSlots = savedAppointmentData?.result?.slots
-  //     ?.filter(slot => slot.date === dateString && !removedSlots.includes(slot.id))
-  //     ?.map(slot => slot.time) || [];
   
-  //   // Get existing slots from current state for this date
-  //   const existingStateSlots = timeSlots[dateString]
-  //     ?.filter(slot => slot.type === 'appointment')
-  //     ?.map(slot => slot.time) || [];
-  
-  //   // Combine all existing slot times to avoid duplicates
-  //   const allExistingTimes = [...new Set([...existingDbSlots, ...existingStateSlots])];
-    
-  //   console.log('Existing slot times:', allExistingTimes);
-  //   console.log('New slots generated:', newSlots);
-  
-  //   // Filter out slots that already exist
-  //   const uniqueNewSlots = newSlots.filter(slot => 
-  //     !allExistingTimes.includes(slot.time)
-  //   );
-  
-  //   console.log('Unique new slots to add:', uniqueNewSlots);
-  
-  //   // If no new unique slots, show a message
-  //   if (uniqueNewSlots.length === 0) {
-  //     console.log('No new slots to add - all time slots already exist for this date');
-  //     // You might want to show a toast/alert here
-  //     return;
-  //   }
-  
-  //   // Get current slots for this date (from state or create empty array)
-  //   const currentSlots = timeSlots[dateString] || [];
-  
-  //   // Add the unique new slots to existing slots
-  //   const updatedSlots = [...currentSlots, ...uniqueNewSlots];
-  
-  //   // Sort all slots by time
-  //   updatedSlots.sort((a, b) => {
-  //     const timeA = new Date(`2000-01-01 ${a.time}`);
-  //     const timeB = new Date(`2000-01-01 ${b.time}`);
-  //     return timeA.getTime() - timeB.getTime();
-  //   });
-  
-  //   // Update the timeSlots state
-  //   setTimeSlots(prev => ({
-  //     ...prev,
-  //     [dateString]: updatedSlots
-  //   }));
-  
-  //   console.log('Updated slots for', dateString, ':', updatedSlots);
-  // };
- 
 
   const renderStep1 = () => (
     <div className="space-y-6">
@@ -788,663 +744,764 @@ const [dateValidationError, setDateValidationError] = useState<string | null>(nu
   };
 
  
-  const renderStep3 = () => {
   
-    // Function to format time to 12-hour format
-    const formatTimeForDisplay = (timeString) => {
-      const [hours, minutes] = timeString.split(':');
-      const date = new Date();
-      date.setHours(parseInt(hours), parseInt(minutes));
-      return date.toLocaleTimeString('en-US', { 
-        hour: 'numeric', 
-        minute: '2-digit',
-        hour12: true 
+
+const renderStep3 = () => {
+ 
+
+
+  const formatTimeForDisplay = (timeString) => {
+    const [hours, minutes] = timeString.split(':');
+    const date = new Date();
+    date.setHours(parseInt(hours), parseInt(minutes));
+    return date.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    });
+  };
+
+  const getExistingTimesForDate = (dateString) => {
+    const existingTimes = [];
+    
+    if (savedAppointmentData?.result?.slots) {
+      const existingSlotsForDate = savedAppointmentData.result.slots
+        .filter(slot => slot.date === dateString && !removedSlots.includes(slot.id))
+        .map(slot => slot.time);
+      existingTimes.push(...existingSlotsForDate);
+    }
+    
+    // Get times from current timeSlots state (newly added slots)
+    if (timeSlots[dateString]) {
+      const newSlotsForDate = timeSlots[dateString]
+        .filter(slot => slot.type === 'appointment')
+        .map(slot => slot.time);
+      existingTimes.push(...newSlotsForDate);
+    }
+    
+    return existingTimes;
+  };
+
+
+
+
+  const handleSlotRemoval = (slot) => {
+
+    const existingTimes = getExistingTimesForDate(slot.date);
+    
+    
+    if (slot.is_booked) {
+      console.log('savedAppointmentData check this:',slot);
+      // Set the selected slot and show popup
+      setSelectedSlot(slot);
+     
+      setExistingTimes(existingTimes); // Store existing times in state
+      setShowPopup(true);
+    } else {
+      setRemovedSlots(prev => [...prev, slot.id]);
+      toast({
+        title: "Slot Removed",
+        description: "Available slot removed successfully.",
       });
-    };
+    }
+};
+
+
+
+
+
+
+const handleConfirmReshedule = (data) => {
+  console.log('chek thessssssssssss data', data);
   
-    const getExistingTimesForDate = (dateString) => {
-      const existingTimes = [];
+  // Extract the required information from the data
+  const rescheduleData = {
+    action: data.action, // 'reschedule'
+    patientEmail: data.originalSlot.patientEmail, // 'sribin@gmail.com'
+    doctorEmail: doctorEmail, // your doctor email variable
+    originalSlot: {
+      id: data.originalSlot.id,
+      date: data.originalSlot.date,
+      time: data.originalSlot.time,
+      doctor_id: data.originalSlot.doctor_id
+    },
+    newSlot: {
+      id: data.newSlot.id,
+      time24: data.newSlot.time24,
+      time12: data.newSlot.time12,
+      available: data.newSlot.available
+    }
+  };
+
+  // Emit the socket event
+  socket.emit('reschedule-appointment', rescheduleData, (response) => {
+    console.log("Socket response:", response);
+  });
+  
+  setShowPopup(false);
+  setSelectedSlot(null);
+};
+  
+
+
+
+  const handleCancelAction = () => {
+    setShowPopup(false);
+    setSelectedSlot(null);
+  };
+
+
+
+  // Function to handle removing all available slots for date with booking confirmation
+  const handleRemoveAllSlotsForDate = (daySlots) => {
+    const availableSlots = daySlots.filter(slot => !slot.is_booked);
+    const bookedSlots = daySlots.filter(slot => slot.is_booked);
+    
+    if (bookedSlots.length > 0) {
+      const confirmed = window.confirm(
+        `Are you sure you want to remove all slots for this date?\n\n` +
+        `This will remove:\n` +
+        `• ${availableSlots.length} available slots\n` +
+        `• ${bookedSlots.length} booked slots (will cancel user appointments)\n\n` +
+        `Removing booked slots will cancel user appointments. This action cannot be undone.`
+      );
       
-      if (savedAppointmentData?.result?.slots) {
-        const existingSlotsForDate = savedAppointmentData.result.slots
-          .filter(slot => slot.date === dateString && !removedSlots.includes(slot.id))
-          .map(slot => slot.time);
-        existingTimes.push(...existingSlotsForDate);
+      if (confirmed) {
+        const slotsToRemove = daySlots.map(slot => slot.id);
+        setRemovedSlots(prev => [...prev, ...slotsToRemove]);
       }
+    } else {
+      // Only available slots, remove directly
+      const slotsToRemove = availableSlots.map(slot => slot.id);
+      setRemovedSlots(prev => [...prev, ...slotsToRemove]);
+    }
+  };
+
+  const handleTimeSlotSetupWithAvoidance = (dateString) => {
+    if (!startTime || !endTime) {
+      alert('Please set start and end times first');
+      return;
+    }
+
+    const existingTimes = getExistingTimesForDate(dateString);
+    const slots = [];
+    const start = new Date(`2000-01-01 ${startTime}`);
+    const end = new Date(`2000-01-01 ${endTime}`);
+    
+    if (start >= end) {
+      alert('End time must be after start time');
+      return;
+    }
+
+    let current = new Date(start);
+    
+    while (current < end) {
+      const timeString = current.toTimeString().slice(0, 5);
       
-      // Get times from current timeSlots state (newly added slots)
-      if (timeSlots[dateString]) {
-        const newSlotsForDate = timeSlots[dateString]
-          .filter(slot => slot.type === 'appointment')
-          .map(slot => slot.time);
-        existingTimes.push(...newSlotsForDate);
-      }
-      
-      return existingTimes;
-    };
-  
-    const handleTimeSlotSetupWithAvoidance = (dateString) => {
-      if (!startTime || !endTime) {
-        alert('Please set start and end times first');
-        return;
-      }
-  
-      const existingTimes = getExistingTimesForDate(dateString);
-      const slots = [];
-      const start = new Date(`2000-01-01 ${startTime}`);
-      const end = new Date(`2000-01-01 ${endTime}`);
-      
-      if (start >= end) {
-        alert('End time must be after start time');
-        return;
-      }
-  
-      let current = new Date(start);
-      
-      while (current < end) {
-        const timeString = current.toTimeString().slice(0, 5);
-        
-        // Check if this time already exists
-        if (!existingTimes.includes(timeString)) {
-          slots.push({
-            time: timeString,
-            type: 'appointment'
-          });
-  
-          if (includeRestPeriods) {
-            const restTime = new Date(current.getTime() + slotDuration * 60000);
-            const restTimeString = restTime.toTimeString().slice(0, 5);
-            
-            // Only add rest period if it doesn't conflict and is before end time
-            if (restTime < end && !existingTimes.includes(restTimeString)) {
-              slots.push({
-                time: restTimeString,
-                type: 'rest'
-              });
-            }
+      // Check if this time already exists
+      if (!existingTimes.includes(timeString)) {
+        slots.push({
+          time: timeString,
+          type: 'appointment'
+        });
+
+        if (includeRestPeriods) {
+          const restTime = new Date(current.getTime() + slotDuration * 60000);
+          const restTimeString = restTime.toTimeString().slice(0, 5);
+          
+          // Only add rest period if it doesn't conflict and is before end time
+          if (restTime < end && !existingTimes.includes(restTimeString)) {
+            slots.push({
+              time: restTimeString,
+              type: 'rest'
+            });
           }
         }
-  
-        // Move to next slot (including rest period if enabled)
-        const increment = includeRestPeriods ? slotDuration + 15 : slotDuration;
-        current = new Date(current.getTime() + increment * 60000);
       }
-  
-      if (slots.length === 0) {
-        alert('No available time slots can be created. All times in the specified range already exist or conflict with existing appointments.');
-        return;
-      }
-  
-      setTimeSlots(prev => ({
-        ...prev,
-        [dateString]: slots
-      }));
-    };
-  
-    return (
-      <div className="space-y-6">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4">
-            {isEditingMode ? 'Step 3: Edit Your Existing Time Slots' : 'Step 3: Set Time Slots'}
-          </h2>
-  
-          {/* Show different content based on editing mode */}
-          {isEditingMode ? (
-            // EDITING MODE - Show existing slots from backend data
-            <div className="mb-6">
-              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-blue-700 text-sm">
-                  <strong>Editing Mode:</strong> Below are your existing appointment slots from the database. 
-                  You can remove individual slots or entire days as needed. You can also add new slots to existing dates.
-                  <br />
-                  <strong>Note:</strong> When adding new slots, the system will automatically avoid conflicting with existing appointment times.
-                </p>
-              </div>
-  
-              <h3 className="text-lg font-medium mb-3 flex items-center">
-                <Edit size={18} className="mr-2" />
-                Your Current Time Slots from Database
-              </h3>
-  
-              <div className="space-y-4">
-                {savedAppointmentData?.result?.slots && savedAppointmentData.result.slots.length > 0 ? (
-         
-                  (() => {
-                    const slotsByDate = savedAppointmentData.result.slots
-                      .filter(slot => !removedSlots.includes(slot.id))
-                      .reduce((acc, slot) => {
-                        if (!acc[slot.date]) {
-                          acc[slot.date] = [];
-                        }
-                        acc[slot.date].push(slot);
-                        return acc;
-                      }, {});
-  
-                    return Object.keys(slotsByDate).sort().map((dateString) => {
-                      const date = new Date(dateString);
-                      const formattedDate = date.toLocaleDateString('en-US', { 
-                        weekday: 'long', 
-                        month: 'long', 
-                        day: 'numeric' 
-                      });
-  
-                      const daySlots = slotsByDate[dateString];
-                      const availableSlots = daySlots.filter(slot => !slot.is_booked);
-                      const bookedSlots = daySlots.filter(slot => slot.is_booked);
-                      const existingTimes = getExistingTimesForDate(dateString);
-  
-                      return (
-                        <div key={dateString} className="border rounded-md p-4 bg-gray-50">
-                          <div className="flex justify-between items-center mb-3">
-                            <div className="flex items-center">
-                              <Calendar size={16} className="mr-2" />
-                              <span className="font-medium">{formattedDate}</span>
-                            </div>
-  
-                            <div className="flex items-center space-x-2">
-                              <span className="text-sm text-gray-600">
-                                Total: {daySlots.length} | Available: {availableSlots.length} | Booked: {bookedSlots.length}
-                              </span>
-                              <button 
-                                onClick={() => {
-                                  const slotsToRemove = daySlots
-                                    .filter(slot => !slot.is_booked)
-                                    .map(slot => slot.id);
-                                  setRemovedSlots(prev => [...prev, ...slotsToRemove]);
-                                }}
-                                className="text-red-500 text-sm hover:text-red-700 flex items-center"
-                                disabled={availableSlots.length === 0}
-                              >
-                                <AlertCircle size={14} className="mr-1" />
-                                Remove All Available Slots
-                              </button>
-                            </div>
-                          </div>
-  
-                          <div className="mt-3">
-                            <h4 className="text-sm font-medium mb-2 flex items-center">
-                              <Clock size={14} className="mr-1" /> 
-                              Existing Time Slots (Click × to remove available slots):
-                            </h4>
-  
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                              {daySlots
-                                .sort((a, b) => {
-                                  const timeA = new Date(`2000-01-01 ${a.time}`);
-                                  const timeB = new Date(`2000-01-01 ${b.time}`);
-                                  return timeA.getTime() - timeB.getTime();
-                                })
-                                .map((slot) => (
-                                  <div 
-                                    key={slot.id} 
-                                    className={`px-3 py-2 rounded text-sm flex items-center justify-between group border-2 ${
-                                      slot.is_booked
-                                        ? 'bg-red-50 text-red-700 border-red-300 opacity-75' 
-                                        : 'bg-blue-50 text-blue-700 border-blue-300'
-                                    }`}
-                                  >
-                                    <div className="flex items-center">
-                                      <Clock size={12} className="mr-1" />
-                                      <span>
-                                        {formatTimeForDisplay(slot.time)}
-                                        {slot.is_booked && ' (Booked)'}
-                                      </span>
-                                    </div>
-  
-                                    {!slot.is_booked && (
-                                      <button
-                                        onClick={() => {
-                                          setRemovedSlots(prev => [...prev, slot.id]);
-                                        }}
-                                        className="ml-2 text-red-500 hover:text-red-700 hover:bg-red-100 rounded px-1 font-bold transition-all"
-                                        title="Remove this slot"
-                                      >
-                                        ×
-                                      </button>
-                                    )}
-  
-                                    {slot.is_booked && (
-                                      <div className="ml-2 text-red-500" title="This slot is booked and cannot be removed">
-                                        🔒
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
-                            </div>
-  
-                            <div className="mt-4 p-4 bg-white border border-blue-200 rounded-lg">
-                              <div className="flex justify-between items-center mb-2">
-                                <div className="flex items-center">
-                                  <Calendar size={16} className="mr-2" />
-                                  <span className="font-medium">{formattedDate}</span>
-                                  <span className="ml-2 text-xs text-gray-500">
-                                    ({existingTimes.length} existing time slots)
-                                  </span>
-                                </div>
-  
-                                {timeSlots[dateString] ? (
-                                  <button onClick={() => handleRemoveTimeSlots(dateString)}
-                                    className="text-red-500 text-sm hover:text-red-700"
-                                  >
-                                    Remove All New Slots
-                                  </button>
-                                ) : (
-                                  <button 
-                                    onClick={() => handleTimeSlotSetupWithAvoidance(dateString)}
-                                    className="text-blue-500 text-sm hover:text-blue-700 flex items-center"
-                                    disabled={!startTime || !endTime}
-                                  >
-                                    <Plus size={14} className="mr-1" />
-                                    Add New Slots 
-                                  </button>
-                                )}
-                              </div>
-  
-                              {/* Show new slots if they exist for this date */}
-                              {timeSlots[dateString] && (
-                                <div className="mt-3">
-                                  <h4 className="text-sm font-medium mb-2 flex items-center">
-                                    <Plus size={14} className="mr-1" /> 
-                                    New Time Slots to Add:
-                                  </h4>
-  
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                                    {timeSlots[dateString].map((slot, index) => (
-                                      <div 
-                                        key={index} 
-                                        className={`px-3 py-2 rounded text-sm flex items-center justify-between group ${
-                                          slot.type === 'rest' 
-                                            ? 'bg-amber-50 text-amber-700 border border-amber-200' 
-                                            : 'bg-green-50 text-green-700 border border-green-200'
-                                        }`}
-                                      >
-                                        <div className="flex items-center">
-                                          {slot.type === 'rest' ? (
-                                            <>
-                                              <Coffee size={12} className="mr-1" /> 
-                                              <span>{formatTimeForDisplay(slot.time)} (Rest)</span>
-                                            </>
-                                          ) : (
-                                            <>
-                                              <Clock size={12} className="mr-1" />
-                                              <span>{formatTimeForDisplay(slot.time)} (New)</span>
-                                            </>
-                                          )}
-                                        </div>
-  
-                                        <button
-                                          onClick={() => handleRemoveIndividualSlot(dateString, index)}
-                                          className="ml-2 text-red-500 hover:text-red-700 opacity-0 group-hover:opacity-100 transition-opacity"
-                                          title="Remove this slot"
-                                        >
-                                          ×
-                                        </button>
-                                      </div>
-                                    ))}
-                                  </div>
-  
-                                  <div className="mt-2 text-xs text-gray-500">
-                                    {timeSlots[dateString].filter(slot => slot.type === 'appointment').length} new appointment slots
-                                    {timeSlots[dateString].filter(slot => slot.type === 'rest').length > 0 && 
-                                      `, ${timeSlots[dateString].filter(slot => slot.type === 'rest').length} rest periods`
-                                    }
-                                  </div>
-                                </div>
-                              )}
-  
-                              {/* Show setup form only when no slots exist for this date */}
-                              {!timeSlots[dateString] && (
-                                <div className="mt-3">
-                                  <h4 className="text-sm font-medium mb-3 flex items-center">
-                                    <Plus size={14} className="mr-1" />
-                                    Configure New Slots for This Date
-                                  </h4>
-  
-                                  <div className="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-700">
-                                    <strong>Smart Conflict Avoidance:</strong> New slots will automatically skip times that conflict with existing appointments ({existingTimes.length} existing times will be avoided).
-                                  </div>
-  
-                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
-                                    <div>
-                                      <label className="block text-gray-700 text-sm mb-1">
-                                        Start Time
-                                      </label>
-                                      <input
-                                        type="time"
-                                        value={startTime}
-                                        onChange={(e) => setStartTime(e.target.value)}
-                                        className="w-full border rounded-md px-2 py-1 text-sm"
-                                      />
-                                    </div>
-  
-                                    <div>
-                                      <label className="block text-gray-700 text-sm mb-1">
-                                        End Time
-                                      </label>
-                                      <input
-                                        type="time"
-                                        value={endTime}
-                                        onChange={(e) => setEndTime(e.target.value)}
-                                        className="w-full border rounded-md px-2 py-1 text-sm"
-                                      />
-                                    </div>
-  
-                                    <div>
-                                      <label className="block text-gray-700 text-sm mb-1">
-                                        Duration
-                                      </label>
-                                      <select
-                                        value={slotDuration}
-                                        onChange={(e) => setSlotDuration(parseInt(e.target.value))}
-                                        className="w-full border rounded-md px-2 py-1 text-sm"
-                                      >
-                                        <option value="15">15 minutes</option>
-                                        <option value="30">30 minutes</option>
-                                        <option value="45">45 minutes</option>
-                                        <option value="60">60 minutes</option>
-                                      </select>
-                                    </div>
-                                  </div>
-  
-                                  <div className="flex items-center mb-3">
-                                    <input
-                                      type="checkbox"
-                                      id={`includeRestPeriods-${dateString}`}
-                                      checked={includeRestPeriods}
-                                      onChange={(e) => setIncludeRestPeriods(e.target.checked)}
-                                      className="h-4 w-4"
-                                    />
-                                    <label htmlFor={`includeRestPeriods-${dateString}`} className="ml-2 text-sm flex items-center">
-                                      <Coffee size={12} className="mr-1 text-blue-500" /> 
-                                      Include rest periods
-                                    </label>
-                                  </div>
-  
-                                  {existingTimes.length > 0 && (
-                                    <div className="mt-3 p-2 bg-gray-50 border rounded text-xs">
-                                      <strong>Existing times that will be avoided:</strong>
-                                      <div className="mt-1 flex flex-wrap gap-1">
-                                        {existingTimes.sort().map((time, idx) => (
-                                          <span key={idx} className="bg-gray-200 px-2 py-1 rounded text-xs">
-                                            {formatTimeForDisplay(time)}
-                                          </span>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-  
-                            <div className="mt-3 p-3 bg-white rounded border">
-                              <div className="text-sm text-gray-600 space-y-1">
-                                <div><strong>Existing Slots:</strong> {daySlots.length}</div>
-                                <div className="text-green-600"><strong>Available:</strong> {availableSlots.length}</div>
-                                <div className="text-red-600"><strong>Booked:</strong> {bookedSlots.length}</div>
-                                {timeSlots[dateString] && (
-                                  <div className="text-blue-600">
-                                    <strong>New Slots to Add:</strong> {timeSlots[dateString].filter(slot => slot.type === 'appointment').length}
-                                  </div>
-                                )}
-                                {bookedSlots.length > 0 && (
-                                  <div className="text-xs text-red-500 mt-1">
-                                    * Booked slots cannot be removed
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    });
-                  })()
-                ) : (
-                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <div className="flex items-center">
-                      <AlertCircle size={16} className="text-yellow-600 mr-2" />
-                      <span className="text-yellow-700">
-                        No existing time slots found in the database. 
-                        Please create a new schedule to add time slots.
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-  
-              {savedAppointmentData?.result?.slots && savedAppointmentData.result.slots.length > 0 && (
-                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <h4 className="font-medium text-green-800 mb-2">Database Information:</h4>
-                  <div className="text-sm text-green-700 space-y-1">
-                    <div>• Total dates in database: {savedAppointmentData.result.dates?.length || 0}</div>
-                    <div>• Total slots in database: {savedAppointmentData.result.slots.length}</div>
-                    <div>• Available slots: {savedAppointmentData.result.slots.filter((slot) => !slot.is_booked).length}</div>
-                    <div>• Booked slots: {savedAppointmentData.result.slots.filter((slot) => slot.is_booked).length}</div>
-                    {removedSlots.length > 0 && (
-                      <div className="text-orange-600">• Slots marked for removal: {removedSlots.length}</div>
-                    )}
-                    {Object.keys(timeSlots).length > 0 && (
-                      <div className="text-blue-600">• New slots to be added: {
-                        Object.values(timeSlots).reduce((total, slots) => 
-                          total + slots.filter(slot => slot.type === 'appointment').length, 0
-                        )
-                      }</div>
-                    )}
-                  </div>
-                </div>
-              )}
-  
-              {removedSlots.length > 0 && (
-                <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                  <h4 className="font-medium text-orange-800 mb-2 flex items-center">
-                    <AlertCircle size={16} className="mr-2" />
-                    Pending Changes
-                  </h4>
-                  <div className="text-sm text-orange-700 space-y-1">
-                    <div>• {removedSlots.length} slot(s) will be removed when you save</div>
-                    <button
-                      onClick={() => setRemovedSlots([])}
-                      className="text-orange-600 text-xs underline hover:text-orange-800"
-                    >
-                      Undo all removals
-                    </button>
-                  </div>
-                </div>
-              )}
+
+      // Move to next slot (including rest period if enabled)
+      const increment = includeRestPeriods ? slotDuration + 15 : slotDuration;
+      current = new Date(current.getTime() + increment * 60000);
+    }
+
+    if (slots.length === 0) {
+      alert('No available time slots can be created. All times in the specified range already exist or conflict with existing appointments.');
+      return;
+    }
+
+    setTimeSlots(prev => ({
+      ...prev,
+      [dateString]: slots
+    }));
+  };
+
+
+
+  return (
+
+    <div className="space-y-6">
+      <PopUpMessage
+  showPopup={showPopup}
+  onCancel={handleCancelAction}
+  onConfirm={handleConfirmReshedule}
+  selectedSlot={selectedSlot}
+  existingTimes={existingTimes}
+/>
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h2 className="text-xl font-semibold mb-4">
+          {isEditingMode ? 'Step 3: Edit Your Existing Time Slots' : 'Step 3: Set Time Slots'}
+        </h2>
+
+        {/* Show different content based on editing mode */}
+        {isEditingMode ? (
+          // EDITING MODE - Show existing slots from backend data
+          <div className="mb-6">
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-blue-700 text-sm">
+                <strong>Editing Mode:</strong> Below are your existing appointment slots from the database. 
+                You can remove individual slots or entire days as needed. You can also add new slots to existing dates.
+                <br />
+                <strong>Note:</strong> When adding new slots, the system will automatically avoid conflicting with existing appointment times.
+                <br />
+                <strong>Warning:</strong> Removing booked slots will cancel user appointments.
+              </p>
             </div>
-          ) : (
-            // NORMAL MODE - Creating new schedule
-            <div className="mb-6">
-              <h3 className="text-lg font-medium mb-3">Default Time Settings</h3>
-  
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div>
-                  <label className="block text-gray-700 mb-2">
-                    Start Time
-                  </label>
-                  <input
-                    type="time"
-                    value={startTime}
-                    onChange={(e) => setStartTime(e.target.value)}
-                    className="w-full border rounded-md px-3 py-2"
-                  />
-                </div>
-  
-                <div>
-                  <label className="block text-gray-700 mb-2">
-                    End Time
-                  </label>
-                  <input
-                    type="time"
-                    value={endTime}
-                    onChange={(e) => setEndTime(e.target.value)}
-                    className="w-full border rounded-md px-3 py-2"
-                  />
-                </div>
-  
-                <div>
-                  <label className="block text-gray-700 mb-2">
-                    Appointment Duration (minutes)
-                  </label>
-                  <select
-                    value={slotDuration}
-                    onChange={(e) => setSlotDuration(parseInt(e.target.value))}
-                    className="w-full border rounded-md px-3 py-2"
-                  >
-                    <option value="15">15 minutes</option>
-                    <option value="30">30 minutes</option>
-                    <option value="45">45 minutes</option>
-                    <option value="60">60 minutes</option>
-                  </select>
-                </div>
-              </div>
-  
-              <div className="flex items-center mb-4">
-                <input
-                  type="checkbox"
-                  id="includeRestPeriods"
-                  checked={includeRestPeriods}
-                  onChange={(e) => setIncludeRestPeriods(e.target.checked)}
-                  className="h-4 w-4"
-                />
-                <label htmlFor="includeRestPeriods" className="ml-2 flex items-center">
-                  <Coffee size={16} className="mr-1 text-blue-500" /> 
-                  Include 15-minute rest periods between appointments
-                </label>
-              </div>
-  
-              <div className="mb-6">
-                <h3 className="text-lg font-medium mb-3">Selected Days</h3>
-  
-                <div className="space-y-4">
-                  {selectedDates.sort().map((dateString) => {
+
+            <h3 className="text-lg font-medium mb-3 flex items-center">
+              <Edit size={18} className="mr-2" />
+              Your Current Time Slots from Database
+            </h3>
+
+            <div className="space-y-4">
+              {savedAppointmentData?.result?.slots && savedAppointmentData.result.slots.length > 0 ? (
+       
+                (() => {
+                  const slotsByDate = savedAppointmentData.result.slots
+                    .filter(slot => !removedSlots.includes(slot.id))
+                    .reduce((acc, slot) => {
+                      if (!acc[slot.date]) {
+                        acc[slot.date] = [];
+                      }
+                      acc[slot.date].push(slot);
+                      return acc;
+                    }, {});
+
+                  return Object.keys(slotsByDate).sort().map((dateString) => {
                     const date = new Date(dateString);
                     const formattedDate = date.toLocaleDateString('en-US', { 
                       weekday: 'long', 
                       month: 'long', 
                       day: 'numeric' 
                     });
-  
+
+                    const daySlots = slotsByDate[dateString];
+                    const availableSlots = daySlots.filter(slot => !slot.is_booked);
+                    const bookedSlots = daySlots.filter(slot => slot.is_booked);
+                    const existingTimes = getExistingTimesForDate(dateString);
+
                     return (
-                      <div key={dateString} className="border rounded-md p-4">
-                        <div className="flex justify-between items-center mb-2">
+                      <div key={dateString} className="border rounded-md p-4 bg-gray-50">
+                        <div className="flex justify-between items-center mb-3">
                           <div className="flex items-center">
                             <Calendar size={16} className="mr-2" />
                             <span className="font-medium">{formattedDate}</span>
                           </div>
-  
-                          {timeSlots[dateString] ? (
-                            <button onClick={() => handleRemoveTimeSlots(dateString)}
-                              className="text-red-500 text-sm hover:text-red-700"
+
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm text-gray-600">
+                              Total: {daySlots.length} | Available: {availableSlots.length} | Booked: {bookedSlots.length}
+                            </span>
+                            <button 
+                              onClick={() => handleRemoveAllSlotsForDate(daySlots)}
+                              className="text-red-500 text-sm hover:text-red-700 flex items-center"
+                              disabled={daySlots.length === 0}
                             >
+                              <AlertCircle size={14} className="mr-1" />
                               Remove All Slots
                             </button>
-                          ) : (
-                            <button onClick={() => handleTimeSlotSetup(dateString)}
-                              className="text-blue-500 text-sm hover:text-blue-700"
-                            >
-                              Set Up Time Slots
-                            </button>
-                          )}
+                          </div>
                         </div>
-  
-                        {timeSlots[dateString] && (
-                          <div className="mt-3">
-                            <h4 className="text-sm font-medium mb-2 flex items-center">
-                              <Clock size={14} className="mr-1" /> Time Slots:
-                            </h4>
-  
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                              {timeSlots[dateString].map((slot, index) => (
+
+                        <div className="mt-3">
+                          <h4 className="text-sm font-medium mb-2 flex items-center">
+                            <Clock size={14} className="mr-1" /> 
+                            Existing Time Slots (Click × to remove):
+                          </h4>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                            {daySlots
+                              .sort((a, b) => {
+                                const timeA = new Date(`2000-01-01 ${a.time}`);
+                                const timeB = new Date(`2000-01-01 ${b.time}`);
+                                return timeA.getTime() - timeB.getTime();
+                              })
+                              .map((slot) => (
                                 <div 
-                                  key={index} 
-                                  className={`px-3 py-2 rounded text-sm flex items-center justify-between group ${
-                                    slot.type === 'rest' 
-                                      ? 'bg-amber-50 text-amber-700 border border-amber-200' 
-                                      : 'bg-blue-50 text-blue-700 border border-blue-200'
+                                  key={slot.id} 
+                                  className={`px-3 py-2 rounded text-sm flex items-center justify-between group border-2 ${
+                                    slot.is_booked
+                                      ? 'bg-red-50 text-red-700 border-red-300 opacity-75' 
+                                      : 'bg-blue-50 text-blue-700 border-blue-300'
                                   }`}
                                 >
                                   <div className="flex items-center">
-                                    {slot.type === 'rest' ? (
-                                      <>
-                                        <Coffee size={12} className="mr-1" /> 
-                                        <span>{formatTimeForDisplay(slot.time)} (Rest)</span>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Clock size={12} className="mr-1" />
-                                        <span>{formatTimeForDisplay(slot.time)}</span>
-                                      </>
-                                    )}
+                                    <Clock size={12} className="mr-1" />
+                                    <span>
+                                      {formatTimeForDisplay(slot.time)}
+                                      {slot.is_booked && ' (Booked)'}
+                                    </span>
                                   </div>
-  
+
                                   <button
-                                    onClick={() => handleRemoveIndividualSlot(dateString, index)}
-                                    className="ml-2 text-red-500 hover:text-red-700 opacity-0 group-hover:opacity-100 transition-opacity"
-                                    title="Remove this slot"
+                                    onClick={() => handleSlotRemoval(slot)}
+                                    className={`ml-2 hover:bg-red-100 rounded px-1 font-bold transition-all ${
+                                      slot.is_booked 
+                                        ? 'text-red-600 hover:text-red-800' 
+                                        : 'text-red-500 hover:text-red-700'
+                                    }`}
+                                    title={slot.is_booked ? "Remove this booked slot (will cancel appointment)" : "Remove this slot"}
                                   >
                                     ×
                                   </button>
                                 </div>
                               ))}
+                          </div>
+
+                          <div className="mt-4 p-4 bg-white border border-blue-200 rounded-lg">
+                            <div className="flex justify-between items-center mb-2">
+                              <div className="flex items-center">
+                                <Calendar size={16} className="mr-2" />
+                                <span className="font-medium">{formattedDate}</span>
+                                <span className="ml-2 text-xs text-gray-500">
+                                  ({existingTimes.length} existing time slots)
+                                </span>
+                              </div>
+
+                              {timeSlots[dateString] ? (
+                                <button onClick={() => handleRemoveTimeSlots(dateString)}
+                                  className="text-red-500 text-sm hover:text-red-700"
+                                >
+                                  Remove All New Slots
+                                </button>
+                              ) : (
+                                <button 
+                                  onClick={() => handleTimeSlotSetupWithAvoidance(dateString)}
+                                  className="text-blue-500 text-sm hover:text-blue-700 flex items-center"
+                                  disabled={!startTime || !endTime}
+                                >
+                                  <Plus size={14} className="mr-1" />
+                                  Add New Slots 
+                                </button>
+                              )}
                             </div>
-  
-                            <div className="mt-2 text-xs text-gray-500">
-                              {timeSlots[dateString].filter(slot => slot.type === 'appointment').length} appointment slots
-                              {timeSlots[dateString].filter(slot => slot.type === 'rest').length > 0 && 
-                                `, ${timeSlots[dateString].filter(slot => slot.type === 'rest').length} rest periods`
-                              }
+
+                            {/* Show new slots if they exist for this date */}
+                            {timeSlots[dateString] && (
+                              <div className="mt-3">
+                                <h4 className="text-sm font-medium mb-2 flex items-center">
+                                  <Plus size={14} className="mr-1" /> 
+                                  New Time Slots to Add:
+                                </h4>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                                  {timeSlots[dateString].map((slot, index) => (
+                                    <div 
+                                      key={index} 
+                                      className={`px-3 py-2 rounded text-sm flex items-center justify-between group ${
+                                        slot.type === 'rest' 
+                                          ? 'bg-amber-50 text-amber-700 border border-amber-200' 
+                                          : 'bg-green-50 text-green-700 border border-green-200'
+                                      }`}
+                                    >
+                                      <div className="flex items-center">
+                                        {slot.type === 'rest' ? (
+                                          <>
+                                            <Coffee size={12} className="mr-1" /> 
+                                            <span>{formatTimeForDisplay(slot.time)} (Rest)</span>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Clock size={12} className="mr-1" />
+                                            <span>{formatTimeForDisplay(slot.time)} (New)</span>
+                                          </>
+                                        )}
+                                      </div>
+
+                                      <button
+                                        onClick={() => handleRemoveIndividualSlot(dateString, index)}
+                                        className="ml-2 text-red-500 hover:text-red-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        title="Remove this slot"
+                                      >
+                                        ×
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+
+                                <div className="mt-2 text-xs text-gray-500">
+                                  {timeSlots[dateString].filter(slot => slot.type === 'appointment').length} new appointment slots
+                                  {timeSlots[dateString].filter(slot => slot.type === 'rest').length > 0 && 
+                                    `, ${timeSlots[dateString].filter(slot => slot.type === 'rest').length} rest periods`
+                                  }
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Show setup form only when no slots exist for this date */}
+                            {!timeSlots[dateString] && (
+                              <div className="mt-3">
+                                <h4 className="text-sm font-medium mb-3 flex items-center">
+                                  <Plus size={14} className="mr-1" />
+                                  Configure New Slots for This Date
+                                </h4>
+
+                                <div className="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-700">
+                                  <strong>Smart Conflict Avoidance:</strong> New slots will automatically skip times that conflict with existing appointments ({existingTimes.length} existing times will be avoided).
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+                                  <div>
+                                    <label className="block text-gray-700 text-sm mb-1">
+                                      Start Time
+                                    </label>
+                                    <input
+                                      type="time"
+                                      value={startTime}
+                                      onChange={(e) => setStartTime(e.target.value)}
+                                      className="w-full border rounded-md px-2 py-1 text-sm"
+                                    />
+                                  </div>
+
+                                  <div>
+                                    <label className="block text-gray-700 text-sm mb-1">
+                                      End Time
+                                    </label>
+                                    <input
+                                      type="time"
+                                      value={endTime}
+                                      onChange={(e) => setEndTime(e.target.value)}
+                                      className="w-full border rounded-md px-2 py-1 text-sm"
+                                    />
+                                  </div>
+
+                                  <div>
+                                    <label className="block text-gray-700 text-sm mb-1">
+                                      Duration
+                                    </label>
+                                    <select
+                                      value={slotDuration}
+                                      onChange={(e) => setSlotDuration(parseInt(e.target.value))}
+                                      className="w-full border rounded-md px-2 py-1 text-sm"
+                                    >
+                                      <option value="15">15 minutes</option>
+                                      <option value="30">30 minutes</option>
+                                      <option value="45">45 minutes</option>
+                                      <option value="60">60 minutes</option>
+                                    </select>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center mb-3">
+                                  <input
+                                    type="checkbox"
+                                    id={`includeRestPeriods-${dateString}`}
+                                    checked={includeRestPeriods}
+                                    onChange={(e) => setIncludeRestPeriods(e.target.checked)}
+                                    className="h-4 w-4"
+                                  />
+                                  <label htmlFor={`includeRestPeriods-${dateString}`} className="ml-2 text-sm flex items-center">
+                                    <Coffee size={12} className="mr-1 text-blue-500" /> 
+                                    Include rest periods
+                                  </label>
+                                </div>
+
+                                {existingTimes.length > 0 && (
+                                  <div className="mt-3 p-2 bg-gray-50 border rounded text-xs">
+                                    <strong>Existing times that will be avoided:</strong>
+                                    <div className="mt-1 flex flex-wrap gap-1">
+                                      {existingTimes.sort().map((time, idx) => (
+                                        <span key={idx} className="bg-gray-200 px-2 py-1 rounded text-xs">
+                                          {formatTimeForDisplay(time)}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="mt-3 p-3 bg-white rounded border">
+                            <div className="text-sm text-gray-600 space-y-1">
+                              <div><strong>Existing Slots:</strong> {daySlots.length}</div>
+                              <div className="text-green-600"><strong>Available:</strong> {availableSlots.length}</div>
+                              <div className="text-red-600"><strong>Booked:</strong> {bookedSlots.length}</div>
+                              {timeSlots[dateString] && (
+                                <div className="text-blue-600">
+                                  <strong>New Slots to Add:</strong> {timeSlots[dateString].filter(slot => slot.type === 'appointment').length}
+                                </div>
+                              )}
+                              {bookedSlots.length > 0 && (
+                                <div className="text-xs text-red-500 mt-1">
+                                  * Removing booked slots will cancel user appointments
+                                </div>
+                              )}
                             </div>
                           </div>
-                        )}
+                        </div>
+
+
                       </div>
                     );
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-  
-          <div className="flex justify-between items-center">
-            <button
-              onClick={prevStep}
-              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-            >
-              Back
-            </button>
-            <div>
-              {saveError && (
-                <div className="flex items-center text-red-500 text-sm mb-2">
-                  <AlertCircle size={14} className="mr-1" /> {saveError}
+                  });
+                })()
+              ) : (
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="flex items-center">
+                    <AlertCircle size={16} className="text-yellow-600 mr-2" />
+                    <span className="text-yellow-700">
+                      No existing time slots found in the database. 
+                      Please create a new schedule to add time slots.
+                    </span>
+                  </div>
                 </div>
               )}
-              <button
-                onClick={saveSettings}
-                disabled={
-                  isSaving || 
-                  (isEditingMode 
-                    ? !savedAppointmentData?.result?.slots || savedAppointmentData.result.slots.length === 0
-                    : Object.keys(timeSlots).length === 0
-                  )
-                }
-                className={`px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center ${
-                  isSaving || 
-                  (isEditingMode 
-                    ? !savedAppointmentData?.result?.slots || savedAppointmentData.result.slots.length === 0
-                    : Object.keys(timeSlots).length === 0
-                  ) ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-              >
-                {isSaving ? 'Saving...' : (isEditingMode ? 'Update Schedule' : 'Save Settings')}
-              </button>
             </div>
+
+            {savedAppointmentData?.result?.slots && savedAppointmentData.result.slots.length > 0 && (
+              <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <h4 className="font-medium text-green-800 mb-2">Database Information:</h4>
+                <div className="text-sm text-green-700 space-y-1">
+                  <div>• Total dates in database: {savedAppointmentData.result.dates?.length || 0}</div>
+                  <div>• Total slots in database: {savedAppointmentData.result.slots.length}</div>
+                  <div>• Available slots: {savedAppointmentData.result.slots.filter((slot) => !slot.is_booked).length}</div>
+                  <div>• Booked slots: {savedAppointmentData.result.slots.filter((slot) => slot.is_booked).length}</div>
+                  {removedSlots.length > 0 && (
+                    <div className="text-orange-600">• Slots marked for removal: {removedSlots.length}</div>
+                  )}
+                  {Object.keys(timeSlots).length > 0 && (
+                    <div className="text-blue-600">• New slots to be added: {
+                      Object.values(timeSlots).reduce((total, slots) => 
+                        total + slots.filter(slot => slot.type === 'appointment').length, 0
+                      )
+                    }</div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {removedSlots.length > 0 && (
+              <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                <h4 className="font-medium text-orange-800 mb-2 flex items-center">
+                  <AlertCircle size={16} className="mr-2" />
+                  Pending Changes
+                </h4>
+                <div className="text-sm text-orange-700 space-y-1">
+                  <div>• {removedSlots.length} slot(s) will be removed when you save</div>
+                  <div className="text-xs text-red-600">
+                    * This includes any booked slots that will cancel user appointments
+                  </div>
+                  <button
+                    onClick={() => setRemovedSlots([])}
+                    className="text-orange-600 text-xs underline hover:text-orange-800"
+                  >
+                    Undo all removals
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          // NORMAL MODE - Creating new schedule
+          <div className="mb-6">
+            <h3 className="text-lg font-medium mb-3">Default Time Settings</h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div>
+                <label className="block text-gray-700 mb-2">
+                  Start Time
+                </label>
+                <input
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  className="w-full border rounded-md px-3 py-2"
+                />
+              </div>
+
+              <div>
+                <label className="block text-gray-700 mb-2">
+                  End Time
+                </label>
+                <input
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  className="w-full border rounded-md px-3 py-2"
+                />
+              </div>
+
+              <div>
+                <label className="block text-gray-700 mb-2">
+                  Appointment Duration (minutes)
+                </label>
+                <select
+                  value={slotDuration}
+                  onChange={(e) => setSlotDuration(parseInt(e.target.value))}
+                  className="w-full border rounded-md px-3 py-2"
+                >
+                  <option value="15">15 minutes</option>
+                  <option value="30">30 minutes</option>
+                  <option value="45">45 minutes</option>
+                  <option value="60">60 minutes</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-center mb-4">
+              <input
+                type="checkbox"
+                id="includeRestPeriods"
+                checked={includeRestPeriods}
+                onChange={(e) => setIncludeRestPeriods(e.target.checked)}
+                className="h-4 w-4"
+              />
+              <label htmlFor="includeRestPeriods" className="ml-2 flex items-center">
+                <Coffee size={16} className="mr-1 text-blue-500" /> 
+                Include 15-minute rest periods between appointments
+              </label>
+            </div>
+
+            <div className="mb-6">
+              <h3 className="text-lg font-medium mb-3">Selected Days</h3>
+
+              <div className="space-y-4">
+                {selectedDates.sort().map((dateString) => {
+                  const date = new Date(dateString);
+                  const formattedDate = date.toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  });
+
+                  return (
+                    <div key={dateString} className="border rounded-md p-4">
+                      <div className="flex justify-between items-center mb-2">
+                        <div className="flex items-center">
+                          <Calendar size={16} className="mr-2" />
+                          <span className="font-medium">{formattedDate}</span>
+                        </div>
+
+                        {timeSlots[dateString] ? (
+                          <button onClick={() => handleRemoveTimeSlots(dateString)}
+                            className="text-red-500 text-sm hover:text-red-700"
+                          >
+                            Remove All Slots
+                          </button>
+                        ) : (
+                          <button onClick={() => handleTimeSlotSetup(dateString)}
+                            className="text-blue-500 text-sm hover:text-blue-700"
+                          >
+                            Set Up Time Slots
+                          </button>
+                        )}
+                      </div>
+
+                      {timeSlots[dateString] && (
+                        <div className="mt-3">
+                          <h4 className="text-sm font-medium mb-2 flex items-center">
+                            <Clock size={14} className="mr-1" /> Time Slots:
+                          </h4>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                            {timeSlots[dateString].map((slot, index) => (
+                              <div 
+                                key={index} 
+                                className={`px-3 py-2 rounded text-sm flex items-center justify-between group ${
+                                  slot.type === 'rest' 
+                                    ? 'bg-amber-50 text-amber-700 border border-amber-200' 
+                                    : 'bg-blue-50 text-blue-700 border border-blue-200'
+                                }`}
+                              >
+                                <div className="flex items-center">
+                                  {slot.type === 'rest' ? (
+                                    <>
+                                      <Coffee size={12} className="mr-1" /> 
+                                      <span>{formatTimeForDisplay(slot.time)} (Rest)</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Clock size={12} className="mr-1" />
+                                      <span>{formatTimeForDisplay(slot.time)}</span>
+                                    </>
+                                  )}
+                                </div>
+
+                                <button
+                                  onClick={() => handleRemoveIndividualSlot(dateString, index)}
+                                  className="ml-2 text-red-500 hover:text-red-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  title="Remove this slot"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className="mt-2 text-xs text-gray-500">
+                            {timeSlots[dateString].filter(slot => slot.type === 'appointment').length} appointment slots
+                            {timeSlots[dateString].filter(slot => slot.type === 'rest').length > 0 && 
+                              `, ${timeSlots[dateString].filter(slot => slot.type === 'rest').length} rest periods`
+                            }
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="flex justify-between items-center">
+          <button
+            onClick={prevStep}
+            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+          >
+            Back
+          </button>
+          <div>
+            {saveError && (
+              <div className="flex items-center text-red-500 text-sm mb-2">
+                <AlertCircle size={14} className="mr-1" /> {saveError}
+              </div>
+            )}
+            <button
+              onClick={saveSettings}
+              disabled={
+                isSaving || 
+                (isEditingMode 
+                  ? !savedAppointmentData?.result?.slots || savedAppointmentData.result.slots.length === 0
+                  : Object.keys(timeSlots).length === 0
+                )
+              }
+              className={`px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center ${
+                isSaving || 
+                (isEditingMode 
+                  ? !savedAppointmentData?.result?.slots || savedAppointmentData.result.slots.length === 0
+                  : Object.keys(timeSlots).length === 0
+                ) ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+            >
+              {isSaving ? 'Saving...' : (isEditingMode ? 'Update Schedule' : 'Save Settings')}
+            </button>
           </div>
         </div>
       </div>
-    );
-  };
-
-
-
+    </div>
+  );
+};
 
   const renderProgressBar = () => (
     <div className="flex items-center justify-center mb-8">

@@ -9,7 +9,7 @@ import { Separator } from "@/components/user/ui/docui/separator";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/user/ui/docui/sheet";
 import { 
   AlertDialog,
-  AlertDialogAction,
+
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -17,7 +17,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from "@/components/user/ui/alert-dialog";
-import { Textarea } from "@/components/user/admin/ui/textarea";
 import { Checkbox } from "@/components/user/ui/checkbox";
 import { toast } from "sonner";
 import { storeNotificationData } from "@/store/AdminSideApi/NotificationApi";
@@ -30,10 +29,8 @@ export const DoctorDetails = () => {
   const doctor = location.state?.doctor;
   const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
-  const [rejectionReason, setRejectionReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
-  const [isSubmittingg, setIsSubmittingg] = useState(false);
   const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
   const [isRejectionSuccessDialogOpen, setIsRejectionSuccessDialogOpen] = useState(false);
 
@@ -69,6 +66,7 @@ export const DoctorDetails = () => {
     toast.success("Request for more information sent successfully");
   };
 
+  
   const handleApprove = async () => {
     try {
       setIsSubmitting(true);

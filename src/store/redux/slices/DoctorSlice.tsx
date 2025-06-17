@@ -17,11 +17,7 @@ interface Doctor {
   firstName?: string;
 }
 
-// Appointment Slots Interface
-interface AppointmentSlot {
-  date: string;
-  slots: string[];
-}
+
 
 // Doctor State
 interface DoctorState {
@@ -100,6 +96,9 @@ export const fetchDoctorAppointmentSlots = createAsyncThunk(
   async (doctorEmail: string, { rejectWithValue }) => {
     try {
       const result = await fetchDoctorSlotsAPI(doctorEmail);
+
+      console.log('check eda check',result);
+      
       return JSON.parse(JSON.stringify(result));
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || "Failed to fetch doctor appointment slots");
