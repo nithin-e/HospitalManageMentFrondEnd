@@ -1,9 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { 
   User, Clock, Calendar, Phone, Mail, MapPin, Clipboard, Activity, 
   Heart, FileText, Shield, Lock, Eye, EyeOff, Edit3, Check, AlertCircle, 
-  ArrowRight, Stethoscope, Pill, Syringe, Thermometer, ClipboardCheck, X
+  ArrowRight, Stethoscope, Pill, Syringe, Thermometer, ClipboardCheck, X,
+  MessageCircle, ArrowLeft, Smile, Mic, Paperclip, Camera, Send
 } from 'lucide-react';
 import Navbar from './Navbar';
 import { RootState } from '@/store/redux/store';
@@ -14,6 +14,7 @@ import { UserfetchingAppointMents } from '@/store/userSideApi/UserfetchingAppoin
 import Footer from './Footer';
 import { ChangingUserInfo } from '@/store/userSideApi/ChangingUserInfo';
 import { CancelingUserAppointMent } from '@/store/userSideApi/CancelingUserAppointMent';
+import { useSocket } from '@/context/socketContext';
 
 // TypeScript interface for user data
 interface UserProfile {
@@ -44,26 +45,10 @@ interface Appointment {
   doctor: string;
   department: string;
   purpose: string;
+  status?: string;
+  message?: string;
+  doctorEmail?: string;
 }
-
-// const sampleAppointments: Appointment[] = [
-//   {
-//     id: "A-5642",
-//     date: "June 15, 2025",
-//     time: "10:30 AM",
-//     doctor: "Dr. Emily Chen",
-//     department: "Cardiology",
-//     purpose: "Annual heart checkup"
-//   },
-//   {
-//     id: "A-5698",
-//     date: "July 02, 2025",
-//     time: "2:15 PM",
-//     doctor: "Dr. Robert Miller",
-//     department: "General Medicine",
-//     purpose: "Follow-up consultation"
-//   }
-// ];
 
 const sampleMedicalHistory: string[] = [
   "Hypertension diagnosed 2018",
@@ -102,15 +87,23 @@ const UserProfileComponent = () => {
   const [editSuccess, setEditSuccess] = useState(false);
 
   const [showCancelModal, setShowCancelModal] = useState(false);
-const [appointmentToCancel, setAppointmentToCancel] = useState(null);
-const [showSuccessMessage, setShowSuccessMessage] = useState(false);
-const [successMessage, setSuccessMessage] = useState('');
+  const [appointmentToCancel, setAppointmentToCancel] = useState<Appointment | null>(null);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+
+  // Chat state variables
+  const [showChatModal, setShowChatModal] = useState(false);
+  const [chatAppointment, setChatAppointment] = useState<Appointment | null>(null);
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [newMessage, setNewMessage] = useState('');
 
   const appointmentsPerPage = 1;
 
   const user = useSelector((state: RootState) => state.user);
   const userDataa = user?.checkUserEmailAndPhone?.user || user?.user?.user || user?.user || null;
   const userEmail = userDataa?.email || '';
+
+  const { socket, connected } = useSocket();
 
   // Calculate pagination based on userData
   const totalAppointments = userData?.upcomingAppointments?.length || 0;
@@ -121,6 +114,47 @@ const [successMessage, setSuccessMessage] = useState('');
     (currentPage - 1) * appointmentsPerPage,
     currentPage * appointmentsPerPage
   ) || [];
+
+  useEffect(() => {
+    const addMedicalSymbols = () => {
+      const symbolsContainer = document.getElementById('medical-symbols-container');
+      if (!symbolsContainer) return;
+      
+      const symbols = ['⚕️', '+', '🩺', '💊', '🏥', '🫀', '🧠', '🦴', '💉', '🧬', '⚕️'];
+      const count = 24;
+      
+      for (let i = 0; i < count; i++) {
+        const symbol = document.createElement('div');
+        symbol.className = 'medical-symbol';
+        symbol.innerText = symbols[Math.floor(Math.random() * symbols.length)];
+        
+        // Random positions and animations
+        const size = Math.random() * 22 + 14;
+        const isPlus = symbol.innerText === '+';
+        
+        symbol.style.position = 'absolute';
+        symbol.style.fontSize = `${isPlus ? size * 2 : size}px`;
+        symbol.style.color = isPlus ? 'rgba(0, 59, 115, 0.2)' : 'rgba(255, 255, 255, 0.2)';
+        symbol.style.left = `${Math.random() * 90 + 5}%`;
+        symbol.style.top = `${Math.random() * 70 + 15}%`;
+        symbol.style.opacity = '0';
+        symbol.style.transform = 'translateY(20px) rotate(0deg)';
+        symbol.style.transition = 'all 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
+        symbol.style.animation = `float ${Math.random() * 8 + 12}s ease-in-out infinite`;
+        symbol.style.animationDelay = `${Math.random() * 5}s`;
+        symbol.style.zIndex = '0';
+        
+        symbolsContainer.appendChild(symbol);
+        
+        setTimeout(() => {
+          symbol.style.opacity = '1';
+          symbol.style.transform = `translateY(0) rotate(${Math.random() * 20 - 10}deg)`;
+        }, Math.random() * 1200 + 500);
+      }
+    };
+
+    addMedicalSymbols();
+  }, []);
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -228,14 +262,12 @@ const [successMessage, setSuccessMessage] = useState('');
     if (!validateEditForm()) return;
     
     try {
-      
       setUserData(prev => ({
         ...prev!,
         name: editFormData.name,
         phoneNumber: editFormData.phoneNumber,
         contactNumber: editFormData.phoneNumber
       }));
-      
 
       const response = await ChangingUserInfo({
         email: userEmail,
@@ -250,11 +282,6 @@ const [successMessage, setSuccessMessage] = useState('');
           setShowEditModal(false);
         }, 2000);
       }
-     
-      
-
-     
-      
     } catch (error) {
       console.error("Error updating user data:", error);
       setEditFormErrors({
@@ -273,19 +300,15 @@ const [successMessage, setSuccessMessage] = useState('');
       setLoading(true);
       const res = await fetchUserProfileData(userEmail);  
       
-      
       if (res.user) {
         const profile = {
-          // Map actual backend data
           id: res.user.id,
           name: res.user.name,
           email: res.user.email,
           phoneNumber: res.user.phoneNumber || "Not provided",
-          contactNumber: res.user.phoneNumber || "Not provided", // Same as phoneNumber for backward compatibility
+          contactNumber: res.user.phoneNumber || "Not provided",
           role: res.user.role,
           isActive: res.user.isActive,
-          
-          // Keep your hardcoded values for fields not available in backend
           age: 42, 
           gender: "Not specified", 
           bloodType: "Not specified",
@@ -322,12 +345,13 @@ const [successMessage, setSuccessMessage] = useState('');
             month: 'long',
             day: 'numeric'
           }),
-          time: appointment.appointmentTime, // Use directly since it's already "4:30 PM"
+          time: appointment.appointmentTime,
           doctor: appointment.doctorName,
           department: appointment.specialty,
           purpose: appointment.notes || 'General consultation',
           status: appointment.status,
-          message: appointment.message
+          message: appointment.message,
+          doctorEmail: appointment.doctorEmail
         }));
         
         setUserData(prevData => ({
@@ -346,39 +370,34 @@ const [successMessage, setSuccessMessage] = useState('');
       setLoading(false);
     }
   }
-  
 
-  const cancelAppointment = async (time, date, doctorEmail) => {
+  const cancelAppointment = async (time: string, date: string, doctorEmail: string) => {
     try {
       const res = await CancelingUserAppointMent(time, date, doctorEmail);
       if(res.success){
         setShowCancelModal(false);
         setAppointmentToCancel(null);
         
-        // Show success message
-        setSuccessMessage('Your appointment has been successfully cancelled!');
+        // Show centered success message
+        setSuccessMessage('Appointment cancelled successfully!');
         setShowSuccessMessage(true);
         
-        // Hide success message after 5 seconds
+        // Automatically hide after 3 seconds
         setTimeout(() => {
           setShowSuccessMessage(false);
-        }, 5000);
+        }, 3000);
         
-        // Refresh appointments list or remove the cancelled appointment
-        // You might want to call a function to refresh your appointments here
-        // fetchAppointments(); // if you have such function
+        // Refresh appointments after cancellation
+        fetchUserAppoinMents();
       } else {
-        // Handle failure case
         setSuccessMessage('Failed to cancel appointment. Please try again.');
         setShowSuccessMessage(true);
         setTimeout(() => {
           setShowSuccessMessage(false);
         }, 5000);
       }
-      
     } catch (error) {
       console.log(error);
-      // Show error message
       setSuccessMessage('An error occurred while cancelling the appointment.');
       setShowSuccessMessage(true);
       setTimeout(() => {
@@ -387,11 +406,200 @@ const [successMessage, setSuccessMessage] = useState('');
     }
   };
 
-  const handleCancelClick = (appointment) => {
+  const handleCancelClick = (appointment: Appointment) => {
     setAppointmentToCancel(appointment);
     setShowCancelModal(true);
   };
 
+  // Chat handler functions
+  const handleChatWithDoctor = (appointment: Appointment) => {
+    setChatAppointment(appointment);
+    setShowChatModal(true);
+    
+   
+    setChatMessages([
+      {
+        id: 1,
+        text: "Hello! I'm here to help with any questions about your upcoming appointment.",
+        sender: 'doctor',
+        timestamp: 'Jun 4, 2025, 10:37 AM',
+        unavailable: true
+      },
+    ]);
+  };
+
+
+
+
+
+
+
+
+  const sendMessage = (messageType = 'text', content = null) => {
+    if (messageType === 'text' && !newMessage.trim()) return;
+    
+    const message = {
+      id: Date.now(),
+      type: messageType, 
+      text: messageType === 'text' ? newMessage : '', 
+      content: content, 
+      fileName: content?.name || null,
+      fileSize: content?.size || null,
+      sender: 'user',
+      timestamp: new Date().toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      }),
+      unavailable: false
+    };
+    
+    const updatedMessages = [...chatMessages, message];
+    setChatMessages(updatedMessages);
+    
+    if (messageType === 'text') {
+      setNewMessage('');
+    }
+    
+    console.log('Sending messages to backend:', message);
+    // Send to backend
+    sendMessageToBackend(message);
+  };
+
+
+// Inside your UserProfileComponent, add this useEffect hook to listen for incoming messages
+useEffect(() => {
+  if (!socket || !connected) return;
+
+  // Set up the message listener
+  const handleReceiveMessage = (messageData: any) => {
+    console.log('Received message:', messageData);
+    
+    // Create a new message object
+    const newMessage = {
+      id: Date.now(),
+      text: messageData.text,
+      sender: messageData.sender === 'user' ? 'user' : 'doctor',
+      timestamp: new Date().toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      }),
+      unavailable: false
+    };
+
+    // Update the chat messages state
+    setChatMessages(prev => [...prev, newMessage]);
+  };
+
+  // Listen for 'receive' events from the socket
+  socket.on('receive', handleReceiveMessage);
+
+  // Clean up the listener when the component unmounts
+  return () => {
+    socket.off('receive', handleReceiveMessage);
+  };
+}, [socket, connected]);
+
+
+
+
+
+
+
+
+  const sendMessageToBackend = async (message) => {
+    try {
+      interface MessageData {
+        type: string;
+        text: string;
+        sender: string;
+        senderId: string;  
+        timestamp: string;
+        appointmentId: string;
+        fileContent?: any;
+        fileName?: string;
+        fileSize?: number;
+        mimeType?: string;
+      }
+  
+      // Prepare message data object
+      const messageData: MessageData = {
+        type: message.type,
+        text: message.text,
+        sender: message.sender,
+        senderId: userData?.id || '',  // Include the sender's ID from userData
+        timestamp: message.timestamp,
+        appointmentId: chatAppointment?.id || '',
+      };
+  
+      // Handle file content (same as before)
+      if (message.content && (message.type === 'image' || message.type === 'voice' || message.type === 'file')) {
+        if (message.content instanceof File || message.content instanceof Blob) {
+          const base64 = await convertToBase64(message.content);
+          messageData.fileContent = base64;
+          messageData.fileName = message.fileName;
+          messageData.fileSize = message.fileSize;
+          messageData.mimeType = message.content.type;
+        } else {
+          messageData.fileContent = message.content;
+          messageData.fileName = message.fileName;
+          messageData.fileSize = message.fileSize;
+        }
+      }
+  
+      console.log('Message data to emit:', messageData);
+  
+      // Emit socket event with the senderId included
+      socket.emit('sendMessage', messageData);
+  
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
+  };
+
+  const convertToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = error => reject(error);
+    });
+  };
+
+
+
+  // Text message (existing)
+const handleTextMessage = () => {
+  sendMessage('text');
+};
+
+// Image upload
+const handleImageUpload = (event) => {
+  const file = event.target.files[0];
+  if (file && file.type.startsWith('image/')) {
+    sendMessage('image', file);
+  }
+};
+
+// Voice recording (you'll need to implement voice recording logic)
+const handleVoiceMessage = (audioBlob) => {
+  sendMessage('voice', audioBlob);
+};
+
+// File attachment
+const handleFileUpload = (event) => {
+  const file = event.target.files[0];
+  if (file) {
+    sendMessage('file', file);
+  }
+};
 
 
 
@@ -427,13 +635,16 @@ const [successMessage, setSuccessMessage] = useState('');
   }
 
   return (
-    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 min-h-screen">
+    <div className="bg-gradient-to-br from-blue-50 to-blue-100 min-h-screen relative overflow-hidden">
+      {/* Medical symbols background */}
+      <div id="medical-symbols-container" className="fixed inset-0 pointer-events-none z-0"></div>
+      
       <Navbar />
       
-      <div className="max-w-6xl mx-auto p-6 mt-[90px]">
+      <div className="max-w-6xl mx-auto p-6 mt-[90px] relative z-10">
         <div className="bg-white rounded-xl shadow-lg mb-6 overflow-hidden border border-blue-100">
           <div className="bg-gradient-to-r from-blue-700 to-blue-800 p-6 text-white relative">
-            <div className="absolute top-0 right-0 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg shadow-md">
+            <div className="absolute top-0 right-0 bg-white text-blue-800 text-xs font-bold px-3 py-1 rounded-bl-lg shadow-md">
               MEDICAL ID
             </div>
 
@@ -450,7 +661,7 @@ const [successMessage, setSuccessMessage] = useState('');
                     <User size={56} className="text-blue-600" />
                   </div>
                 )}
-                <div className="absolute -bottom-2 -right-2 bg-green-500 p-1 rounded-full shadow-md">
+                <div className="absolute -bottom-2 -right-2 bg-blue-600 p-1 rounded-full shadow-md">
                   <Check className="w-5 h-5 text-white" />
                 </div>
               </div>
@@ -458,19 +669,19 @@ const [successMessage, setSuccessMessage] = useState('');
               <div className="mt-4 md:mt-0 md:ml-8 text-center md:text-left">
                 <h1 className="text-3xl font-bold">{userData.name}</h1>
                 <div className="flex flex-wrap gap-3 mt-3 text-xs justify-center md:justify-start">
-                  <div className="flex items-center bg-blue-600 bg-opacity-20 rounded-full px-3 py-1 backdrop-blur-sm">
+                  <div className="flex items-center bg-white bg-opacity-20 rounded-full px-3 py-1 backdrop-blur-sm">
                     <Clipboard className="w-3 h-3 mr-1" />
                     <span>ID: {userData.id.substring(0, 8)}</span>
                   </div>
-                  <div className="flex items-center bg-blue-600 bg-opacity-20 rounded-full px-3 py-1 backdrop-blur-sm">
+                  <div className="flex items-center bg-white bg-opacity-20 rounded-full px-3 py-1 backdrop-blur-sm">
                     <Calendar className="w-3 h-3 mr-1" />
                     <span>Age: {userData.age || 'N/A'}</span>
                   </div>
-                  <div className="flex items-center bg-blue-600 bg-opacity-20 rounded-full px-3 py-1 backdrop-blur-sm">
+                  <div className="flex items-center bg-white bg-opacity-20 rounded-full px-3 py-1 backdrop-blur-sm">
                     <User className="w-3 h-3 mr-1" />
                     <span>{userData.gender || 'Not specified'}</span>
                   </div>
-                  <div className="flex items-center bg-blue-600 bg-opacity-20 rounded-full px-3 py-1 backdrop-blur-sm">
+                  <div className="flex items-center bg-white bg-opacity-20 rounded-full px-3 py-1 backdrop-blur-sm">
                     <Heart className="w-3 h-3 mr-1" />
                     <span>Blood: {userData.bloodType || 'Not specified'}</span>
                   </div>
@@ -582,24 +793,24 @@ const [successMessage, setSuccessMessage] = useState('');
           </div>
         )}
 
-{showSuccessMessage && (
-  <div className="fixed top-4 right-4 z-50 animate-slide-in-right">
-    <div className="bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg flex items-center max-w-sm">
-      <div className="flex items-center">
-        <svg className="w-5 h-5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-        </svg>
-        <span className="text-sm font-medium">{successMessage}</span>
-      </div>
-      <button
-        onClick={() => setShowSuccessMessage(false)}
-        className="ml-3 text-white hover:text-gray-200 transition-colors"
-      >
-        <X className="w-4 h-4" />
-      </button>
-    </div>
-  </div>
-)}
+        {showSuccessMessage && (
+          <div className="fixed top-4 right-4 z-50 animate-slide-in-right">
+            <div className="bg-blue-600 text-white px-6 py-4 rounded-lg shadow-lg flex items-center max-w-sm">
+              <div className="flex items-center">
+                <svg className="w-5 h-5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+                <span className="text-sm font-medium">{successMessage}</span>
+              </div>
+              <button
+                onClick={() => setShowSuccessMessage(false)}
+                className="ml-3 text-white hover:text-gray-200 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="mb-6 bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
           <div className="flex overflow-x-auto scrollbar-hide">
@@ -651,88 +862,126 @@ const [successMessage, setSuccessMessage] = useState('');
         </div>
 
         <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-         
-
           {activeTab === "personal" && (
-  <div>
-    <div className="flex justify-between items-center mb-6">
-      <h2 className="text-2xl font-bold text-gray-800 flex items-center">
-        <User className="w-6 h-6 mr-2 text-blue-600" />
-        Personal Information
-      </h2>
-    </div>
-    
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div className="space-y-4">
-        <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-          <div className="flex items-center text-gray-600 mb-2">
-            <User className="w-5 h-5 mr-2 text-blue-600" />
-            <span className="text-sm font-medium">Full Name</span>
-          </div>
-          <p className="text-gray-900 font-medium">{userData.name || "Not provided"}</p>
-        </div>
-        
-        <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-          <div className="flex items-center text-gray-600 mb-2">
-            <Phone className="w-5 h-5 mr-2 text-blue-600" />
-            <span className="text-sm font-medium">Contact Number</span>
-          </div>
-          <p className="text-gray-900 font-medium">{userData.phoneNumber || "Not provided"}</p>
-        </div>
-        
-        <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-          <div className="flex items-center text-gray-600 mb-2">
-            <Mail className="w-5 h-5 mr-2 text-blue-600" />
-            <span className="text-sm font-medium">Email Address</span>
-          </div>
-          <p className="text-gray-900 font-medium">{userData.email || "Not provided"}</p>
-        </div>
-        
-        <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-          <div className="flex items-center text-gray-600 mb-2">
-            <MapPin className="w-5 h-5 mr-2 text-blue-600" />
-            <span className="text-sm font-medium">Address</span>
-          </div>
-          <p className="text-gray-900 font-medium">{userData.address || "Not provided"}</p>
-        </div>
+            <div>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+                  <User className="w-6 h-6 mr-2 text-blue-600" />
+                  Personal Information
+                </h2>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                    <div className="flex items-center text-gray-600 mb-2">
+                      <User className="w-5 h-5 mr-2 text-blue-600" />
+                      <span className="text-sm font-medium">Full Name</span>
+                    </div>
+                    <p className="text-gray-900 font-medium">{userData.name || "Not provided"}</p>
+                  </div>
+                  
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                    <div className="flex items-center text-gray-600 mb-2">
+                      <Phone className="w-5 h-5 mr-2 text-blue-600" />
+                      <span className="text-sm font-medium">Contact Number</span>
+                    </div>
+                    <p className="text-gray-900 font-medium">{userData.phoneNumber || "Not provided"}</p>
+                  </div>
+                  
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                    <div className="flex items-center text-gray-600 mb-2">
+                      <Mail className="w-5 h-5 mr-2 text-blue-600" />
+                      <span className="text-sm font-medium">Email Address</span>
+                    </div>
+                    <p className="text-gray-900 font-medium">{userData.email || "Not provided"}</p>
+                  </div>
+                  
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                    <div className="flex items-center text-gray-600 mb-2">
+                      <MapPin className="w-5 h-5 mr-2 text-blue-600" />
+                      <span className="text-sm font-medium">Address</span>
+                    </div>
+                    <p className="text-gray-900 font-medium">{userData.address || "Not provided"}</p>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                    <div className="flex items-center text-gray-600 mb-2">
+                      <Phone className="w-5 h-5 mr-2 text-blue-600" />
+                      <span className="text-sm font-medium">Emergency Contact</span>
+                    </div>
+                    <p className="text-gray-900 font-medium">{userData.emergencyContact || "Not provided"}</p>
+                  </div>
+                  
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                    <div className="flex items-center text-gray-600 mb-2">
+                      <Calendar className="w-5 h-5 mr-2 text-blue-600" />
+                      <span className="text-sm font-medium">Registration Date</span>
+                    </div>
+                    <p className="text-gray-900 font-medium">{userData.registrationDate || "Not provided"}</p>
+                  </div>
+                  
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                    <div className="flex items-center text-gray-600 mb-2">
+                      <User className="w-5 h-5 mr-2 text-blue-600" />
+                      <span className="text-sm font-medium">User Role</span>
+                    </div>
+                    <p className="text-gray-900 font-medium capitalize">{userData.role || "Not specified"}</p>
+                  </div>
+                  
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                    <div className="flex items-center text-gray-600 mb-2">
+                      <div className={`w-3 h-3 rounded-full mr-2 ${userData.isActive ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                      <span className="text-sm font-medium">Account Status</span>
+                    </div>
+                    <p className="text-gray-900 font-medium">{userData.isActive ? "Active" : "Inactive"}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+
+
+
+{showSuccessMessage && (
+  <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+    <div 
+      id="success-animation"
+      className="bg-blue-600 text-white px-8 py-6 rounded-xl shadow-2xl flex flex-col items-center justify-center transform transition-all duration-300"
+    >
+      {/* Checkmark circle */}
+      <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center mb-4">
+        <svg 
+          className="w-10 h-10 text-white" 
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
       </div>
       
-      <div className="space-y-4">
-        <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-          <div className="flex items-center text-gray-600 mb-2">
-            <Phone className="w-5 h-5 mr-2 text-blue-600" />
-            <span className="text-sm font-medium">Emergency Contact</span>
-          </div>
-          <p className="text-gray-900 font-medium">{userData.emergencyContact || "Not provided"}</p>
-        </div>
-        
-        <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-          <div className="flex items-center text-gray-600 mb-2">
-            <Calendar className="w-5 h-5 mr-2 text-blue-600" />
-            <span className="text-sm font-medium">Registration Date</span>
-          </div>
-          <p className="text-gray-900 font-medium">{userData.registrationDate || "Not provided"}</p>
-        </div>
-        
-        <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-          <div className="flex items-center text-gray-600 mb-2">
-            <User className="w-5 h-5 mr-2 text-blue-600" />
-            <span className="text-sm font-medium">User Role</span>
-          </div>
-          <p className="text-gray-900 font-medium capitalize">{userData.role || "Not specified"}</p>
-        </div>
-        
-        <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-          <div className="flex items-center text-gray-600 mb-2">
-            <div className={`w-3 h-3 rounded-full mr-2 ${userData.isActive ? 'bg-green-500' : 'bg-red-500'}`}></div>
-            <span className="text-sm font-medium">Account Status</span>
-          </div>
-          <p className="text-gray-900 font-medium">{userData.isActive ? "Active" : "Inactive"}</p>
-        </div>
+      <span className="text-lg font-semibold">{successMessage}</span>
+      
+      {/* Progress bar */}
+      <div className="w-full bg-white bg-opacity-30 h-1 mt-4 rounded-full overflow-hidden">
+        <div 
+          className="bg-white h-full animate-progress"
+          style={{ animationDuration: '3s' }}
+        ></div>
       </div>
     </div>
   </div>
-          )}
+)}
+
+
 
 
           {activeTab === "medical" && (
@@ -775,12 +1024,12 @@ const [successMessage, setSuccessMessage] = useState('');
                   )}
                 </ul>
                 
-                <div className="mt-6 bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <div className="mt-6 bg-blue-100 border border-blue-200 rounded-lg p-4">
                   <div className="flex items-start">
-                    <AlertCircle className="w-5 h-5 text-amber-500 mt-1 mr-3 flex-shrink-0" />
+                    <AlertCircle className="w-5 h-5 text-blue-600 mt-1 mr-3 flex-shrink-0" />
                     <div>
-                      <h4 className="font-medium text-amber-800">Medical Records Notice</h4>
-                      <p className="mt-1 text-amber-700 text-sm">
+                      <h4 className="font-medium text-blue-800">Medical Records Notice</h4>
+                      <p className="mt-1 text-blue-700 text-sm">
                         To add or update your medical history records, please visit the hospital or contact your physician.
                       </p>
                     </div>
@@ -790,10 +1039,13 @@ const [successMessage, setSuccessMessage] = useState('');
             </div>
           )}
           
+        
 
-          
 
-          {activeTab === "appointments" && (
+
+
+
+{activeTab === "appointments" && (
   <div>
     <div className="flex justify-between items-center mb-6">
       <h2 className="text-2xl font-bold text-gray-800 flex items-center">
@@ -806,62 +1058,127 @@ const [successMessage, setSuccessMessage] = useState('');
       </button>
     </div>
     
-    <div className="space-y-5">
-      {currentAppointments.length > 0 ? (
-        currentAppointments.map((appointment) => (
-          <div key={appointment.id} className="border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-5 hover:shadow-md transition-all">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-              <div>
-                <h3 className="font-bold text-lg text-gray-800">{appointment.purpose}</h3>
-                <p className="text-gray-600 mt-1">
-                  <span className="text-blue-700 font-medium">{appointment.doctor}</span> • {appointment.department}
-                </p>
-                {appointment.message && (
-                  <p className="text-sm text-gray-500 mt-2 italic">
-                    📝 {appointment.message}
-                  </p>
-                )}
+    {/* Cancelled Appointments Section */}
+    {currentAppointments.some(a => a.status === "cancelled") && (
+      <div className="mb-8">
+        <h3 className="text-lg font-semibold text-gray-700 mb-4">Cancelled Appointments</h3>
+        <div className="space-y-4">
+          {currentAppointments
+            .filter(appointment => appointment.status === "cancelled")
+            .map((appointment) => (
+              <div key={appointment.id} className="border border-gray-200 bg-gray-50 rounded-xl p-5">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+                  <div>
+                    <h3 className="font-bold text-lg text-gray-600 line-through">{appointment.purpose}</h3>
+                    <p className="text-gray-500 mt-1">
+                      <span className="text-gray-600 font-medium">{appointment.doctor}</span> • {appointment.department}
+                    </p>
+                    {appointment.message && (
+                      <p className="text-sm text-gray-500 mt-2 italic">
+                        📝 {appointment.message}
+                      </p>
+                    )}
+                  </div>
+                  <div className="mt-3 md:mt-0 md:text-right">
+                    <div className="inline-flex items-center bg-gray-100 border border-gray-200 text-gray-600 rounded-lg px-4 py-2 font-medium">
+                      <Clock className="w-4 h-4 mr-2 text-gray-500" />
+                      {appointment.time}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-4 flex items-center text-gray-500 bg-gray-100 p-3 rounded-lg border border-gray-200">
+                  <Calendar className="w-5 h-5 mr-2 text-gray-500" />
+                  <span className="font-medium">{appointment.date}</span>
+                  <span className="ml-4 px-3 py-1 bg-red-100 text-red-800 text-xs font-medium rounded-full">
+                    Cancelled
+                  </span>
+                </div>
+                
+                {/* <div className="mt-4 flex flex-wrap gap-3">
+                  <button className="text-sm font-medium px-4 py-2 bg-white text-blue-600 hover:bg-blue-50 border border-blue-200 rounded-lg transition-colors shadow-sm">
+                    Reschedule
+                  </button>
+                  <button className="text-sm font-medium px-4 py-2 bg-white text-gray-600 hover:bg-gray-50 border border-gray-200 rounded-lg transition-colors shadow-sm">
+                    View Details
+                  </button>
+                </div> */}
               </div>
-              <div className="mt-3 md:mt-0 md:text-right">
-                <div className="inline-flex items-center bg-white border border-blue-200 text-blue-800 rounded-lg px-4 py-2 font-medium shadow-sm">
-                  <Clock className="w-4 h-4 mr-2 text-blue-600" />
-                  {appointment.time}
+            ))}
+        </div>
+      </div>
+    )}
+    
+    {/* Active Appointments Section */}
+    <div className="space-y-5">
+      {currentAppointments.filter(a => a.status !== "cancelled").length > 0 ? (
+        currentAppointments
+          .filter(appointment => appointment.status !== "cancelled")
+          .map((appointment) => (
+            <div key={appointment.id} className="border border-blue-200 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-5 hover:shadow-md transition-all">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+                <div>
+                  <h3 className="font-bold text-lg text-gray-800">{appointment.purpose}</h3>
+                  <p className="text-gray-600 mt-1">
+                    <span className="text-blue-700 font-medium">{appointment.doctor}</span> • {appointment.department}
+                  </p>
+                  {appointment.message && (
+                    <p className="text-sm text-gray-500 mt-2 italic">
+                      📝 {appointment.message}
+                    </p>
+                  )}
+                </div>
+                <div className="mt-3 md:mt-0 md:text-right">
+                  <div className="inline-flex items-center bg-white border border-blue-200 text-blue-800 rounded-lg px-4 py-2 font-medium shadow-sm">
+                    <Clock className="w-4 h-4 mr-2 text-blue-600" />
+                    {appointment.time}
+                  </div>
                 </div>
               </div>
+              
+              <div className="mt-4 flex items-center text-gray-700 bg-white p-3 rounded-lg border border-blue-100">
+                <Calendar className="w-5 h-5 mr-2 text-blue-600" />
+                <span className="font-medium">{appointment.date}</span>
+                {appointment.status === "confirmed" && (
+                  <span className="ml-4 px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                    Confirmed
+                  </span>
+                )}
+              </div>
+              
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button
+                  onClick={() => handleCancelClick(appointment)}
+                  className="text-sm font-medium px-4 py-2 bg-white text-red-600 hover:bg-red-50 border border-red-200 rounded-lg transition-colors shadow-sm">
+                  Cancel
+                </button>
+                <button 
+                  onClick={() => handleChatWithDoctor(appointment)}
+                  className="text-sm font-medium px-4 py-2 bg-white text-blue-600 hover:bg-blue-50 border border-blue-200 rounded-lg transition-colors shadow-sm flex items-center">
+                  <MessageCircle className="w-4 h-4 mr-1" />
+                  Chat with Doctor
+                </button>
+                <button className="text-sm font-medium px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors shadow-sm ml-auto">
+                  View Details
+                </button>
+              </div>
             </div>
-            
-            <div className="mt-4 flex items-center text-gray-700 bg-white p-3 rounded-lg border border-blue-100">
-              <Calendar className="w-5 h-5 mr-2 text-blue-600" />
-              <span className="font-medium">{appointment.date}</span>
-            </div>
-            
-            <div className="mt-4 flex flex-wrap gap-3">
-              <button className="text-sm font-medium px-4 py-2 bg-white text-blue-600 hover:bg-blue-50 border border-blue-200 rounded-lg transition-colors shadow-sm">
-                Reschedule
-              </button>
-              <button
-                onClick={() => handleCancelClick(appointment)}
-                className="text-sm font-medium px-4 py-2 bg-white text-red-600 hover:bg-red-50 border border-red-200 rounded-lg transition-colors shadow-sm">
-                Cancel
-              </button>
-              <button className="text-sm font-medium px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors shadow-sm ml-auto">
-                View Details
-              </button>
-            </div>
-          </div>
-        ))
+          ))
       ) : (
-        <div className="text-center p-8 bg-blue-50 rounded-lg border border-blue-100">
-          <Calendar className="w-12 h-12 text-blue-300 mx-auto mb-3" />
-          <h3 className="text-lg font-medium text-gray-700 mb-2">No Upcoming Appointments</h3>
-          <p className="text-gray-500 mb-4">You don't have any scheduled appointments at this time.</p>
-          <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
-            Schedule Your First Appointment
-          </button>
-        </div>
+        !currentAppointments.some(a => a.status === "cancelled") && (
+          <div className="text-center p-8 bg-blue-50 rounded-lg border border-blue-100">
+            <Calendar className="w-12 h-12 text-blue-300 mx-auto mb-3" />
+            <h3 className="text-lg font-medium text-gray-700 mb-2">No Upcoming Appointments</h3>
+            <p className="text-gray-500 mb-4">You don't have any scheduled appointments at this time.</p>
+            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
+              Schedule Your First Appointment
+            </button>
+          </div>
+        )
       )}
     </div>
     
+    {/* Rest of your existing code (pagination, instructions, modal) */}
     {totalPages > 1 && (
       <div className="flex justify-center mt-6">
         <nav className="inline-flex rounded-md shadow-sm -space-x-px">
@@ -949,7 +1266,7 @@ const [successMessage, setSuccessMessage] = useState('');
                 appointmentToCancel.date,
                 appointmentToCancel.doctorEmail || appointmentToCancel.doctor
               )}
-              className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg transition-colors"
+              className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors"
             >
               Yes, Cancel
             </button>
@@ -959,10 +1276,6 @@ const [successMessage, setSuccessMessage] = useState('');
     )}
   </div>
 )}
-
-
-
-
 
           {activeTab === "security" && (
             <div>
@@ -1129,15 +1442,169 @@ const [successMessage, setSuccessMessage] = useState('');
               )}
             </div>
           )}
-          
         </div>
+
+        {/* Chat Modal - Now positioned on the right side */}
+{showChatModal && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-end pr-4">
+    <div className="w-full max-w-md h-[70vh] max-h-[600px] min-h-[400px]">
+      <div className="bg-white h-full shadow-xl flex flex-col rounded-lg overflow-hidden">
+        {/* Chat Header */}
+        <div className="bg-blue-600 p-4 flex items-start justify-between flex-shrink-0">
+          <div className="flex items-center">
+            <button
+              onClick={() => setShowChatModal(false)}
+              className="text-white hover:text-blue-200 mr-3 -mt-1" // Added negative margin to push up
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center mr-3">
+              <User className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h3 className="text-white font-medium">
+                {chatAppointment?.doctor || 'Dr. Smith'}
+              </h3>
+              <p className="text-blue-200 text-xs">
+                {chatAppointment?.department || 'General Medicine'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-start space-x-2 -mt-1"> {/* Changed to items-start and added negative margin */}
+            <button className="text-white hover:text-blue-200">
+              <Phone className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setShowChatModal(false)}
+              className="text-white hover:text-blue-200"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Chat Messages */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white">
+          {chatMessages.map((message) => (
+            <div key={message.id} className="flex flex-col">
+              {message.sender === 'doctor' ? (
+                <div className="flex items-start">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-2 flex-shrink-0">
+                    <User className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div className="flex-1">
+                    {message.unavailable ? (
+                      <div className="bg-blue-50 rounded-lg p-3 max-w-xs">
+                        <p className="text-blue-800 font-medium text-sm mb-1">Message unavailable</p>
+                        <p className="text-blue-600 text-xs">
+                          This content may have been deleted by its owner or hidden by their privacy settings.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="bg-blue-50 rounded-lg p-3 max-w-xs">
+                        <p className="text-blue-800 text-sm">{message.text}</p>
+                      </div>
+                    )}
+                    <p className="text-blue-400 text-xs mt-1 text-center">
+                      {message.timestamp}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex justify-end">
+                  <div className="flex flex-col items-end max-w-xs">
+                    <div className="bg-blue-600 rounded-lg p-3">
+                      <p className="text-white text-sm">{message.text}</p>
+                    </div>
+                    <p className="text-blue-400 text-xs mt-1">
+                      {message.timestamp}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Message Input */}
+       
+<div className="bg-white p-4 border-t border-blue-100 flex-shrink-0">
+  <div className="flex items-center space-x-2">
+    <button className="text-blue-400 hover:text-blue-600">
+      <Smile className="w-5 h-5" />
+    </button>
+    <div className="flex-1 relative">
+      <input
+        type="text"
+        value={newMessage}
+        onChange={(e) => setNewMessage(e.target.value)}
+        onKeyPress={(e) => e.key === 'Enter' && handleTextMessage()}
+        placeholder="Message..."
+        className="w-full bg-blue-50 text-blue-800 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+    </div>
+    
+    {/* Voice Recording Button */}
+    <button 
+      className="text-blue-400 hover:text-blue-600"
+      // onClick={startVoiceRecording} 
+    >
+      <Mic className="w-5 h-5" />
+    </button>
+    
+    {/* File Upload */}
+    <label className="text-blue-400 hover:text-blue-600 cursor-pointer">
+      <Paperclip className="w-5 h-5" />
+      <input
+        type="file"
+        hidden
+        onChange={handleFileUpload}
+        accept="*/*"
+      />
+    </label>
+    
+    {/* Image Upload */}
+    <label className="text-blue-400 hover:text-blue-600 cursor-pointer">
+      <Camera className="w-5 h-5" />
+      <input
+        type="file"
+        hidden
+        onChange={handleImageUpload}
+        accept="image/*"
+      />
+    </label>
+    
+    {newMessage.trim() ? (
+      <button
+        onClick={handleTextMessage}
+        className="text-blue-600 hover:text-blue-800"
+      >
+        <Send className="w-5 h-5" />
+      </button>
+    ) : (
+      <button className="text-blue-400 hover:text-blue-600">
+        <Smile className="w-5 h-5" />
+      </button>
+    )}
+  </div>
+</div>
+      </div>
+    </div>
+  </div>
+)}
       </div>
       <Footer/>
     </div>
   );
 };
 
+
+
+
+
+
 <style jsx>{`
+  /* Slide in animation */
   @keyframes slide-in-right {
     from {
       transform: translateX(100%);
@@ -1148,10 +1615,132 @@ const [successMessage, setSuccessMessage] = useState('');
       opacity: 1;
     }
   }
-  
+
+  /* Floating animation for medical symbols */
+  @keyframes float {
+    0% {
+      transform: translateY(0) rotate(0deg);
+    }
+    50% {
+      transform: translateY(-20px) rotate(5deg);
+    }
+    100% {
+      transform: translateY(0) rotate(0deg);
+    }
+  }
+
+  /* Success animation components */
+  @keyframes fade-in-up {
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes circle {
+    0% {
+      stroke-dashoffset: 157;
+    }
+    50% {
+      stroke-dasharray: 157;
+      stroke-dashoffset: 0;
+    }
+    100% {
+      stroke-dasharray: 157;
+    }
+  }
+
+  @keyframes check {
+    0% {
+      stroke-dashoffset: 36;
+    }
+    50% {
+      stroke-dasharray: 36;
+      stroke-dashoffset: 0;
+    }
+    100% {
+      stroke-dasharray: 36;
+    }
+  }
+
+  @keyframes progress {
+    from {
+      width: 0%;
+    }
+    to {
+      width: 100%;
+    }
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+  }
+
+  /* Animation classes */
   .animate-slide-in-right {
-    animation: slide-in-right 0.3s ease-out;
+    animation: slide-in-right 0.3s ease-out forwards;
+  }
+
+  .medical-symbol {
+    animation: float 8s ease-in-out infinite;
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.4s ease-out forwards;
+  }
+
+  .animate-circle {
+    stroke-dasharray: 157;
+    stroke-dashoffset: 157;
+    animation: circle 1s cubic-bezier(0.77, 0, 0.175, 1) forwards;
+  }
+
+  .animate-check {
+    stroke-dasharray: 36;
+    stroke-dashoffset: 36;
+    animation: check 0.5s cubic-bezier(0.77, 0, 0.175, 1) 0.5s forwards;
+  }
+
+  .animate-progress {
+    animation: progress linear forwards;
+  }
+
+  .animate-pulse {
+    animation: pulse 1s ease-in-out;
+  }
+
+  /* Success notification specific animations */
+  .success-notification {
+    animation: fade-in-up 0.4s ease-out forwards;
+  }
+
+  .success-checkmark-circle {
+    stroke-dasharray: 157;
+    stroke-dashoffset: 157;
+    animation: circle 1s cubic-bezier(0.77, 0, 0.175, 1) forwards;
+  }
+
+  .success-checkmark {
+    stroke-dasharray: 36;
+    stroke-dashoffset: 36;
+    animation: check 0.5s cubic-bezier(0.77, 0, 0.175, 1) 0.5s forwards;
+  }
+
+  .success-progress-bar {
+    animation: progress 3s linear forwards;
   }
 `}</style>
+
+
+
 
 export default UserProfileComponent;

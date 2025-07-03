@@ -8,7 +8,7 @@ export const fetchDoctorDashBoardData = async (email: string) => {
     
     
     
-    console.log("Making backend API call to fetch doctor dashboard data with email:", email);
+  
     
     const response = await axiosInstance.post(
       "/api/auth/user/fetchDoctorDashBoardData", 
@@ -16,6 +16,7 @@ export const fetchDoctorDashBoardData = async (email: string) => {
     );
 
    
+    console.log('.....................<<<<<<<<<<6>>>>>>>>>>>>>>>>>.........................',response.data);
     
 
     return response.data; 

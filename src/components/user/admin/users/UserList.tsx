@@ -27,7 +27,7 @@ const useDebounce = (value, delay) => {
   return debouncedValue;
 };
 
-// Separate search API function
+
 const searchUsers = async (searchParams) => {
   try {
     // Build query parameters for search
@@ -81,12 +81,12 @@ const UserList = () => {
   const [processingUserId, setProcessingUserId] = useState(null);
   const [view, setView] = useState("grid"); 
   const [showFilters, setShowFilters] = useState(false);
-  const [statusFilter, setStatusFilter] = useState("all"); // "all", "active", "blocked"
-  const [sortDirection, setSortDirection] = useState("desc"); // "asc" or "desc"
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sortDirection, setSortDirection] = useState("desc");
   const [totalUsers, setTotalUsers] = useState(0);
   const [activeUsers, setActiveUsers] = useState(0);
   const [blockedUsers, setBlockedUsers] = useState(0);
-  const [isSearchMode, setIsSearchMode] = useState(false); // Track if we're in search mode
+  const [isSearchMode, setIsSearchMode] = useState(false);
   const { socket, connected } = useSocket();
 
   // Debounce search term with 500ms delay
@@ -109,7 +109,7 @@ const UserList = () => {
 
 
 
-  // Effect to handle search when debounced term changes
+
   useEffect(() => {
     if (debouncedSearchTerm !== searchTerm) {
       setSearchLoading(true);
@@ -135,7 +135,6 @@ const UserList = () => {
 
 
 
-  // Effect to handle filter changes (only when not searching)
   useEffect(() => {
     if (!loading && !debouncedSearchTerm.trim()) {
       fetchUserData();
@@ -143,7 +142,6 @@ const UserList = () => {
   }, [statusFilter, sortDirection]);
 
 
-  // Effect to handle search loading state
   useEffect(() => {
     if (searchTerm !== debouncedSearchTerm) {
       setSearchLoading(true);
@@ -152,7 +150,7 @@ const UserList = () => {
     }
   }, [searchTerm, debouncedSearchTerm]);
 
-  // Original fetch function for all users (no search)
+  
   const fetchUserData = async (showLoadingSpinner = false) => {
     try {
       if (showLoadingSpinner) {
@@ -161,7 +159,7 @@ const UserList = () => {
       
       setError(null);
 
-      // Prepare parameters for fetching all users
+     
       const searchParams = {
         status: statusFilter !== "all" ? statusFilter : undefined,
         sortBy: "createdAt",

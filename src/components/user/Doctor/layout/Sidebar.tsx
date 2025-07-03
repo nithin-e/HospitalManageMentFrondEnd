@@ -17,7 +17,7 @@ import {
     { icon: BellRing, label: "Reminders", path: "/reminders" },
     { icon: MessageSquare, label: "Chat", path: "/chat" },
     { icon: CalendarDays, label: "Set Dates", path: "/AppointmentScheduler" },
-    { icon: Wallet, label: "Payments", path: "/payments" },
+    { icon: Wallet, label: "Payments", path: "/ListPaymentDoctor" },
   ];
   
   interface SidebarProps {

@@ -30,8 +30,10 @@ import DoctorDash from './pages/user/doctor/DoctorDash';
 import AppointMent from './pages/user/user1/AppointMent';
 import UserProfile from './components/user/user1/userProfileComponent';
 import AppointMentMangemant from './pages/user/doctor/AppointMentMangemant';
-import AppoinmentSuccess from './pages/user/user1/appoinmentSuccess';
-import AdminPaymentListing from './pages/user/admin/adminPaymentListing';
+import AppoinmentSuccess from './pages/user/user1/AppoinmentSuccess';
+import AdminPaymentListing from './pages/user/admin/AdminPaymentListing';
+import ListPayment from './pages/user/doctor/ListPayment';
+import UserWallet from './pages/user/user1/userWallet';
 
 const queryClient = new QueryClient();
 
@@ -131,15 +133,7 @@ const BlockStatusChecker = () => {
     return thisUserIsBlocked;
   }, [userData, isUserBlocked, userBlockStatus]);
   
-  // console.log('Inside BlockStatusChecker - userData ID:', userData?.id || userData?._id);
-  // console.log('Inside BlockStatusChecker - adminData ID:', adminData?.id || adminData?._id);
-  // console.log('Inside BlockStatusChecker **-** isUserAuthenticated:', isUserAuthenticated);
-  // console.log('Inside BlockStatusChecker **-** isAdminAuthenticated:', isAdminAuthenticated);
-  // console.log('Inside BlockStatusChecker **-** isRegularUserBlocked:', isRegularUserBlocked);
-  // console.log('Inside BlockStatusChecker - currentPath:', currentPath);
-  // console.log('Inside BlockStatusChecker - isAdmin:', isAdmin);
-  // console.log('Inside BlockStatusChecker - isAdminPage:', isAdminPage);
-  // console.log('Inside BlockStatusChecker - isPublicRoute:', isPublicRoute);
+
 
   useEffect(() => {
     // Get this user's ID for precise blocking
@@ -234,6 +228,7 @@ const App = () => {
                   <Route path="/AppointMent" element={<AppointMent />} />
                   <Route path="/userprofile" element={<UserProfile />} />
                   <Route path="/success" element={<AppoinmentSuccess />} />
+                  <Route path="/userWallet" element={<UserWallet />} />
 
                   
                   {/* Admin routes */}
@@ -249,6 +244,8 @@ const App = () => {
                   <Route path="/DoctorDashboard" element={<DoctorDash />}/>
                   <Route path="/AppointmentScheduler" element={<SetUpSlotes />}/>
                   <Route path="/AppointListing" element={<AppointMentMangemant />}/>
+                  <Route path="/ListPaymentDoctor" element={<ListPayment/>}/>
+                  
                 </Routes>
               </TooltipProvider>
             </BrowserRouter>

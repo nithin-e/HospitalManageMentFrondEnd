@@ -69,7 +69,8 @@ export default function AppointmentBooking() {
     time: '',
     notes: '',
     doctor: '',
-    specialty: ''
+    specialty: '',
+    doctorId: '' 
   });
 
   const [submitted, setSubmitted] = useState(false);
@@ -139,7 +140,7 @@ export default function AppointmentBooking() {
         response.doctors.forEach(doctor => {
           if(doctor.status === 'completed') {
             console.log('....doctor......', doctor.status);
-            
+            const doctorId=doctor.id
             const email = doctor.email;
             const specialty = doctor.specialty;
             const doctorName = `Dr. ${doctor.firstName} ${doctor.lastName}`;
@@ -151,8 +152,11 @@ export default function AppointmentBooking() {
             // Store both name and email for each doctor
             groupedDoctors[specialty].push({
               name: doctorName,
-              email: email
+              email: email,
+              doctorId: doctorId 
             });
+
+            
           }
         });
       } else {
@@ -202,6 +206,7 @@ export default function AppointmentBooking() {
   const user = useSelector((state: RootState) => state.user)
   const userData = user?.checkUserEmailAndPhone?.user || user?.user?.user || user?.user || null;
   const userEmail = userData?.email || '';
+  const userId= userData?.id
 
  
 
@@ -210,10 +215,13 @@ export default function AppointmentBooking() {
     e.preventDefault(); // Add this to prevent form submission
 
     const appointmentData = {
-        ...formData,
-        userEmail: userEmail 
+      ...formData,
+      userEmail: userEmail,
+      userId: userId,
+      doctorId: formData.doctorId // This is correct
     };
 
+    console.log('Appointment data being sent:', appointmentData);
     try {
         // Send appointment data with the request
         const response = await axiosInstance.post("/api/auth/user/create-checkout-session", {
@@ -408,7 +416,8 @@ export default function AppointmentBooking() {
                                   onClick={() => setFormData({
                                     ...formData, 
                                     doctor: doctor.name,
-                                    email: doctor.email // Store the doctor's email in the form data
+                                    email: doctor.email,
+                                    doctorId: doctor.doctorId
                                   })}
                                   className={`p-2 border rounded-lg flex items-center cursor-pointer hover:bg-white
                                     ${formData.doctor === doctor.name 
@@ -446,9 +455,10 @@ export default function AppointmentBooking() {
                       </div>
                     )}
                     
-                    {/* Step 2: Select Date and Time */}
-                
-{step === 2 && (
+                   
+
+
+                    {/* {step === 2 && (
   <div className="space-y-6">
     <div className="bg-white p-5 rounded-xl border border-blue-200 shadow-sm hover:shadow-md transition-all duration-300">
       <label className="block text-gray-700 mb-3 font-medium flex items-center">
@@ -475,23 +485,213 @@ export default function AppointmentBooking() {
           // Find the slots for the selected date
           const dateSlots = timeSlots.find(slot => slot.date === formData.date);
           
+          // Function to convert 24-hour time to 12-hour format
+          const convertTo12HourFormat = (time24) => {
+            const [hours, minutes] = time24.split(':');
+            const period = hours >= 12 ? 'PM' : 'AM';
+            const hours12 = hours % 12 || 12; // Convert 0 to 12 for 12 AM
+            return `${hours12}:${minutes} ${period}`;
+          };
+          
+          // Helper function to check if a time slot has passed
+          const isTimeSlotPassed = (slotTime24) => {
+            const today = new Date().toISOString().split('T')[0];
+            const selectedDate = formData.date;
+            
+            // If the selected date is not today, don't check time
+            if (selectedDate !== today) {
+              return false;
+            }
+            
+            // Parse the slot time and current time
+            const now = new Date();
+            const currentHour = now.getHours();
+            const currentMinute = now.getMinutes();
+            
+            // Parse slot time (24-hour format)
+            const [slotHour24, slotMinute] = slotTime24.split(':').map(Number);
+            
+            // Check if slot time has passed
+            if (slotHour24 < currentHour) {
+              return true;
+            } else if (slotHour24 === currentHour && slotMinute <= currentMinute) {
+              return true;
+            }
+            
+            return false;
+          };
+          
           if (dateSlots && dateSlots.slots && dateSlots.slots.length > 0) {
+            // Filter out passed time slots and booked slots
+            const availableSlots = dateSlots.slots.filter(slot => {
+              const isSlotPassed = isTimeSlotPassed(slot.time);
+              return !slot.is_booked && !isSlotPassed;
+            });
+
+            if (availableSlots.length === 0) {
+              return (
+                <div className="text-center py-4 text-gray-500">
+                  No available time slots for this date. Please select another date.
+                </div>
+              );
+            }
+
             return (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {dateSlots.slots.map((slot) => (
+                {availableSlots.map((slot) => {
+                  const time12Hour = convertTo12HourFormat(slot.time);
+                  return (
+                    <div
+                      key={slot.id}
+                      onClick={() => setFormData({...formData, time: time12Hour})}
+                      className={`p-3 text-center border rounded-lg cursor-pointer transition-all transform hover:scale-105 duration-200
+                        ${formData.time === time12Hour 
+                          ? 'border-blue-500 bg-blue-50 shadow-md text-blue-600 font-medium' 
+                          : 'border-gray-200 hover:border-blue-200 hover:bg-gray-50'}`}
+                    >
+                      {time12Hour}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          } else {
+            return (
+              <div className="text-center py-4 text-gray-500">
+                No available time slots for this date. Please select another date.
+              </div>
+            );
+          }
+        })()}
+      </div>
+    )}
+    
+    <div className="pt-6 flex justify-between">
+      <button
+        type="button"
+        onClick={prevStep}
+        className="flex items-center border border-gray-300 px-5 py-3 rounded-xl hover:bg-gray-50 transition-all duration-300 shadow-sm hover:shadow-md"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+          <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+        </svg>
+        Back
+      </button>
+      <button
+        type="button"
+        onClick={() => nextStep(formData.email)}
+        disabled={!isDateSelected || !formData.time}
+        className={`flex items-center px-6 py-3 rounded-xl transition-all font-medium shadow-md
+          ${isDateSelected && formData.time 
+            ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 hover:shadow-lg' 
+            : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
+      >
+        Continue
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
+          <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+        </svg>
+      </button>
+    </div>
+  </div>
+)} */}
+
+
+{/* Step 2: Select Date and Time */} 
+
+ {step === 2 && (
+  <div className="space-y-6">
+    <div className="bg-white p-5 rounded-xl border border-blue-200 shadow-sm hover:shadow-md transition-all duration-300">
+      <label className="block text-gray-700 mb-3 font-medium flex items-center">
+        <Calendar size={18} className="mr-2 text-blue-600" />
+        Select Date
+      </label>
+      <input
+        type="date"
+        name="date"
+        value={formData.date}
+        onChange={handleChange}
+        min={new Date().toISOString().split('T')[0]} // Only allow future dates
+        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+      />
+    </div>
+    
+    {isDateSelected && (
+      <div className="bg-white p-5 rounded-xl border border-blue-200 shadow-sm hover:shadow-md transition-all duration-300">
+        <label className="block text-gray-700 mb-3 font-medium flex items-center">
+          <Clock size={18} className="mr-2 text-blue-600" />
+          Available Time Slots
+        </label>
+        {(() => {
+          // Find the slots for the selected date
+          const dateSlots = timeSlots.find(slot => slot.date === formData.date);
+          
+          // Helper function to check if a time slot has passed
+          const isTimeSlotPassed = (slotTime) => {
+            const today = new Date().toISOString().split('T')[0];
+            const selectedDate = formData.date;
+            
+            // If the selected date is not today, don't check time
+            if (selectedDate !== today) {
+              return false;
+            }
+            
+            // Parse the slot time and current time
+            const now = new Date();
+            const currentHour = now.getHours();
+            const currentMinute = now.getMinutes();
+            
+            // Parse slot time (assuming format like "09:30 AM" or "2:30 PM")
+            const timeMatch = slotTime.match(/(\d+):(\d+)\s*(AM|PM)/i);
+            if (!timeMatch) return false;
+            
+            let slotHour = parseInt(timeMatch[1]);
+            const slotMinute = parseInt(timeMatch[2]);
+            const period = timeMatch[3].toUpperCase();
+            
+            // Convert to 24-hour format
+            if (period === 'PM' && slotHour !== 12) {
+              slotHour += 12;
+            } else if (period === 'AM' && slotHour === 12) {
+              slotHour = 0;
+            }
+            
+            // Check if slot time has passed
+            if (slotHour < currentHour) {
+              return true;
+            } else if (slotHour === currentHour && slotMinute <= currentMinute) {
+              return true;
+            }
+            
+            return false;
+          };
+          
+          if (dateSlots && dateSlots.slots && dateSlots.slots.length > 0) {
+            // Filter out passed time slots and booked slots
+            const availableSlots = dateSlots.slots.filter(slot => {
+              const isSlotPassed = isTimeSlotPassed(slot.time);
+              return !slot.is_booked && !isSlotPassed;
+            });
+
+            if (availableSlots.length === 0) {
+              return (
+                <div className="text-center py-4 text-gray-500">
+                  No available time slots for this date. Please select another date.
+                </div>
+              );
+            }
+
+            return (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {availableSlots.map((slot) => (
                   <div
                     key={slot.id}
-                    onClick={() => !slot.is_booked && setFormData({...formData, time: slot.time})}
+                    onClick={() => setFormData({...formData, time: slot.time})}
                     className={`p-3 text-center border rounded-lg cursor-pointer transition-all transform hover:scale-105 duration-200
                       ${formData.time === slot.time 
                         ? 'border-blue-500 bg-blue-50 shadow-md text-blue-600 font-medium' 
-                        : slot.is_booked 
-                          ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
-                          : 'border-gray-200 hover:border-blue-200 hover:bg-gray-50'}`}
-                    title={slot.is_booked ? 'This slot is already booked' : ''}
+                        : 'border-gray-200 hover:border-blue-200 hover:bg-gray-50'}`}
                   >
                     {slot.time}
-                    {slot.is_booked && <span className="block text-xs text-red-500">Booked</span>}
                   </div>
                 ))}
               </div>

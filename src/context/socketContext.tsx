@@ -1,4 +1,6 @@
+import { RootState } from '@/store/redux/store';
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 import { io } from 'socket.io-client';
 
 // Create context
@@ -19,6 +21,21 @@ export const SocketProvider = ({ children }) => {
   const [connected, setConnected] = useState(false);
   const [userBlockStatus, setUserBlockStatus] = useState({});
 
+
+    // const doctor = useSelector((state: RootState) => state);
+    // console.log('................check up datas............',doctor.doctor.data.doctor)
+  
+
+  const selectUserAndDoctor = (state: RootState) => ({
+    user: state.user?.user,
+    doctor: state.doctor.data.doctor
+  });
+  
+  const { user, doctor } = useSelector(selectUserAndDoctor);
+
+  console.log(' please check for here are u getting the user data',user)
+  console.log(' please check for here are u getting the user data',doctor)
+
   useEffect(() => {
     console.log('SocketProvider initializing...');
 
@@ -38,12 +55,35 @@ export const SocketProvider = ({ children }) => {
     });
 
     // Set up event listeners with detailed logging
+    // newSocket.on('connect', () => {
+    //   console.log('Socket connected successfully with ID:', newSocket.id);
+    //   console.log('Socket transport used:', newSocket.io.engine.transport.name);
+    //   setConnected(true);
+    // });
+
+
     newSocket.on('connect', () => {
       console.log('Socket connected successfully with ID:', newSocket.id);
-      console.log('Socket transport used:', newSocket.io.engine.transport.name);
+      
+      console.log('hey hey hey check for here,,,,,,', user);
+      console.log('hey hey hey check for here,,,,,,', doctor);
+      
+      const userId = user?.id || doctor?.id || user || doctor;
+      const email = user?.email || doctor?.email;
+      const role = user ? 'user' : doctor ? 'doctor' : 'admin';
+      
+      console.log('Emitting register with:', { userId, role, email }); 
+      
+      if (userId) {
+        newSocket.emit('register', { userId, role, email });
+      } else {
+        console.error('No valid userId found for registration');
+      }
+      
       setConnected(true);
     });
 
+    
     newSocket.on('connect_error', (error) => {
       console.error('Socket connection error details:', error);
       console.log('Connection options:', newSocket.io.opts);

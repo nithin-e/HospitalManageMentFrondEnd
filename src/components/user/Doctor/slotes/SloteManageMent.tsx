@@ -47,8 +47,11 @@ const [dateValidationError, setDateValidationError] = useState<string | null>(nu
   
   
   const dispatch = useDispatch<AppDispatch>();
-  const doctorData = useSelector((state: RootState) => state.doctor?.data?.doctor);
+  const doctorData = useSelector((state: RootState) => state.doctor.data.doctor);
   const savedAppointmentData = useSelector((state: RootState) => state.doctor?.appointmentSlots);
+
+
+  
   
   const doctorEmail = doctorData?.email || '';
   const doctorName = doctorData?.firstName || 'Doctor';
@@ -161,24 +164,24 @@ const [dateValidationError, setDateValidationError] = useState<string | null>(nu
  const generateTimeSlots = (start, end, appointmentDuration) => {
   const slots = [];
   
-  // Parse start and end times correctly
+
   const [startHour, startMinute] = start.split(':').map(Number);
   const [endHour, endMinute] = end.split(':').map(Number);
   
-  // Create date objects for the same day
+  
   const currentTime = new Date();
   currentTime.setHours(startHour, startMinute, 0, 0);
   
   const endTime = new Date();
   endTime.setHours(endHour, endMinute, 0, 0);
   
-  // Handle case where end time is next day (e.g., start: 23:00, end: 02:00)
+  
   if (endTime <= currentTime) {
     endTime.setDate(endTime.getDate() + 1);
   }
   
   while (currentTime < endTime) {
-    // Format time to 12-hour format with correct AM/PM
+    
     const timeString = currentTime.toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
@@ -186,15 +189,15 @@ const [dateValidationError, setDateValidationError] = useState<string | null>(nu
     });
     
     slots.push({
-      time: currentTime.toTimeString().slice(0, 5), // Store in 24-hour format (HH:MM)
-      displayTime: timeString, // Store formatted display time
+      time: currentTime.toTimeString().slice(0, 5),
+      displayTime: timeString, 
       type: 'appointment'
     });
     
-    // Move to next appointment slot
+ 
     currentTime.setMinutes(currentTime.getMinutes() + appointmentDuration);
     
-    // Add rest period if enabled
+   
     if (includeRestPeriods && currentTime < endTime) {
       const restTimeString = currentTime.toLocaleTimeString('en-US', {
         hour: 'numeric',
@@ -203,12 +206,12 @@ const [dateValidationError, setDateValidationError] = useState<string | null>(nu
       });
       
       slots.push({
-        time: currentTime.toTimeString().slice(0, 5), // Store in 24-hour format
-        displayTime: restTimeString, // Store formatted display time
+        time: currentTime.toTimeString().slice(0, 5), 
+        displayTime: restTimeString, 
         type: 'rest'
       });
       
-      // Move past rest period (assuming 15 minutes)
+      
       currentTime.setMinutes(currentTime.getMinutes() + 15);
     }
   }
@@ -252,17 +255,17 @@ const [dateValidationError, setDateValidationError] = useState<string | null>(nu
     setTimeSlots(updatedSlots);
   };
 
+
+
   const nextStep = () => setCurrentStep(currentStep + 1);
   const prevStep = () => setCurrentStep(currentStep - 1);
 
 
  const formatTimeForDisplay = (timeString) => {
-  // If timeString is already in display format (contains AM/PM), return as is
   if (timeString.includes('AM') || timeString.includes('PM')) {
     return timeString;
   }
   
-  // Otherwise, convert from 24-hour format (HH:MM) to 12-hour format
   const [hours, minutes] = timeString.split(':').map(Number);
   const date = new Date();
   date.setHours(hours, minutes, 0, 0);
@@ -909,7 +912,7 @@ const handleConfirmReshedule = (data) => {
           const restTime = new Date(current.getTime() + slotDuration * 60000);
           const restTimeString = restTime.toTimeString().slice(0, 5);
           
-          // Only add rest period if it doesn't conflict and is before end time
+         
           if (restTime < end && !existingTimes.includes(restTimeString)) {
             slots.push({
               time: restTimeString,
@@ -919,7 +922,7 @@ const handleConfirmReshedule = (data) => {
         }
       }
 
-      // Move to next slot (including rest period if enabled)
+
       const increment = includeRestPeriods ? slotDuration + 15 : slotDuration;
       current = new Date(current.getTime() + increment * 60000);
     }
