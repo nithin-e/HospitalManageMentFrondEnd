@@ -73,6 +73,9 @@ export default function AppointmentBooking() {
     doctorId: '' 
   });
 
+
+
+  const [doctorIdd, SetdoctorId] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [symbols, setSymbols] = useState([]);
   const [circles, setCircles] = useState([]);
@@ -130,7 +133,6 @@ export default function AppointmentBooking() {
     try {
       setLoading(true);
       const response = await UserfetchingDoctors();
-      console.log('<<<<<<<>>>>>>>>>>>>>>check the responce its comming from backent<<<<<<<<<<<<<>>>>>>>>>', response);
   
       // Group doctors by specialty
       const groupedDoctors = {};
@@ -139,7 +141,7 @@ export default function AppointmentBooking() {
       if (response && response.doctors) {
         response.doctors.forEach(doctor => {
           if(doctor.status === 'completed') {
-            console.log('....doctor......', doctor.status);
+         
             const doctorId=doctor.id
             const email = doctor.email;
             const specialty = doctor.specialty;
@@ -159,15 +161,7 @@ export default function AppointmentBooking() {
             
           }
         });
-      } else {
-        // Fallback data if API fails or returns unexpected format
-        specialties.forEach(spec => {
-          groupedDoctors[spec.name] = [
-            { name: `Dr. ${spec.name.substring(0, 3)} Smith`, email: `smith@example.com` }, 
-            { name: `Dr. ${spec.name.substring(0, 3)} Johnson`, email: `johnson@example.com` }
-          ];
-        });
-      }
+      } 
       
       console.log('Doctors grouped by specialty:', groupedDoctors);
       setDoctorsBySpecialty(groupedDoctors);
@@ -206,13 +200,25 @@ export default function AppointmentBooking() {
   const user = useSelector((state: RootState) => state.user)
   const userData = user?.checkUserEmailAndPhone?.user || user?.user?.user || user?.user || null;
   const userEmail = userData?.email || '';
-  const userId= userData?.id
+  const userId= userData?._id
 
  
 
 
+  const handleDoctorSelect = (doctor) => {
+    setFormData((prev) => ({
+      ...prev,
+      doctor: doctor.name,
+      email: doctor.email,
+      doctorId: doctor.doctorId,
+    }));
+  
+    console.log('Selected doctor are getting any thing :', doctor); 
+  };
+  
+
   const handleSubmit = async(e) => {
-    e.preventDefault(); // Add this to prevent form submission
+    e.preventDefault();
 
     const appointmentData = {
       ...formData,
@@ -221,7 +227,7 @@ export default function AppointmentBooking() {
       doctorId: formData.doctorId // This is correct
     };
 
-    console.log('Appointment data being sent:', appointmentData);
+
     try {
         // Send appointment data with the request
         const response = await axiosInstance.post("/api/auth/user/create-checkout-session", {
@@ -411,14 +417,17 @@ export default function AppointmentBooking() {
                             </label>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                               {doctorsBySpecialty[formData.specialty].map(doctor => (
+
+                                
                                 <div
                                   key={doctor.email}
-                                  onClick={() => setFormData({
-                                    ...formData, 
-                                    doctor: doctor.name,
-                                    email: doctor.email,
-                                    doctorId: doctor.doctorId
-                                  })}
+                                  // onClick={() => setFormData({
+                                  //   ...formData, 
+                                  //   doctor: doctor.name,
+                                  //   email: doctor.email,
+                                  //   doctorId: doctor.doctorId
+                                  // })}
+                                  onClick={() => handleDoctorSelect(doctor)}
                                   className={`p-2 border rounded-lg flex items-center cursor-pointer hover:bg-white
                                     ${formData.doctor === doctor.name 
                                       ? 'border-blue-500 bg-white shadow-sm' 
@@ -426,7 +435,8 @@ export default function AppointmentBooking() {
                                 >
                                   <User size={16} className="text-blue-600 mr-2" />
                                   <div>
-                                    <div className="text-sm font-medium">{doctor.name}</div>
+                                    <div className="text-sm font-medium">{doctor.name}</div> 
+                                    
                                     <div className="text-xs text-gray-500">{formData.specialty}</div>
                                   </div>
                                 </div>
@@ -439,6 +449,7 @@ export default function AppointmentBooking() {
                         <div className="pt-6 flex justify-end">
                           <button
                             type="button"
+                            
                             onClick={() => nextStep(formData.email)}
                             disabled={!formData.specialty || !formData.doctor}
                             className={`flex items-center px-6 py-3 rounded-xl transition-all font-medium shadow-md
@@ -458,145 +469,7 @@ export default function AppointmentBooking() {
                    
 
 
-                    {/* {step === 2 && (
-  <div className="space-y-6">
-    <div className="bg-white p-5 rounded-xl border border-blue-200 shadow-sm hover:shadow-md transition-all duration-300">
-      <label className="block text-gray-700 mb-3 font-medium flex items-center">
-        <Calendar size={18} className="mr-2 text-blue-600" />
-        Select Date
-      </label>
-      <input
-        type="date"
-        name="date"
-        value={formData.date}
-        onChange={handleChange}
-        min={new Date().toISOString().split('T')[0]} // Only allow future dates
-        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-      />
-    </div>
-    
-    {isDateSelected && (
-      <div className="bg-white p-5 rounded-xl border border-blue-200 shadow-sm hover:shadow-md transition-all duration-300">
-        <label className="block text-gray-700 mb-3 font-medium flex items-center">
-          <Clock size={18} className="mr-2 text-blue-600" />
-          Available Time Slots
-        </label>
-        {(() => {
-          // Find the slots for the selected date
-          const dateSlots = timeSlots.find(slot => slot.date === formData.date);
-          
-          // Function to convert 24-hour time to 12-hour format
-          const convertTo12HourFormat = (time24) => {
-            const [hours, minutes] = time24.split(':');
-            const period = hours >= 12 ? 'PM' : 'AM';
-            const hours12 = hours % 12 || 12; // Convert 0 to 12 for 12 AM
-            return `${hours12}:${minutes} ${period}`;
-          };
-          
-          // Helper function to check if a time slot has passed
-          const isTimeSlotPassed = (slotTime24) => {
-            const today = new Date().toISOString().split('T')[0];
-            const selectedDate = formData.date;
-            
-            // If the selected date is not today, don't check time
-            if (selectedDate !== today) {
-              return false;
-            }
-            
-            // Parse the slot time and current time
-            const now = new Date();
-            const currentHour = now.getHours();
-            const currentMinute = now.getMinutes();
-            
-            // Parse slot time (24-hour format)
-            const [slotHour24, slotMinute] = slotTime24.split(':').map(Number);
-            
-            // Check if slot time has passed
-            if (slotHour24 < currentHour) {
-              return true;
-            } else if (slotHour24 === currentHour && slotMinute <= currentMinute) {
-              return true;
-            }
-            
-            return false;
-          };
-          
-          if (dateSlots && dateSlots.slots && dateSlots.slots.length > 0) {
-            // Filter out passed time slots and booked slots
-            const availableSlots = dateSlots.slots.filter(slot => {
-              const isSlotPassed = isTimeSlotPassed(slot.time);
-              return !slot.is_booked && !isSlotPassed;
-            });
 
-            if (availableSlots.length === 0) {
-              return (
-                <div className="text-center py-4 text-gray-500">
-                  No available time slots for this date. Please select another date.
-                </div>
-              );
-            }
-
-            return (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {availableSlots.map((slot) => {
-                  const time12Hour = convertTo12HourFormat(slot.time);
-                  return (
-                    <div
-                      key={slot.id}
-                      onClick={() => setFormData({...formData, time: time12Hour})}
-                      className={`p-3 text-center border rounded-lg cursor-pointer transition-all transform hover:scale-105 duration-200
-                        ${formData.time === time12Hour 
-                          ? 'border-blue-500 bg-blue-50 shadow-md text-blue-600 font-medium' 
-                          : 'border-gray-200 hover:border-blue-200 hover:bg-gray-50'}`}
-                    >
-                      {time12Hour}
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          } else {
-            return (
-              <div className="text-center py-4 text-gray-500">
-                No available time slots for this date. Please select another date.
-              </div>
-            );
-          }
-        })()}
-      </div>
-    )}
-    
-    <div className="pt-6 flex justify-between">
-      <button
-        type="button"
-        onClick={prevStep}
-        className="flex items-center border border-gray-300 px-5 py-3 rounded-xl hover:bg-gray-50 transition-all duration-300 shadow-sm hover:shadow-md"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-          <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-        </svg>
-        Back
-      </button>
-      <button
-        type="button"
-        onClick={() => nextStep(formData.email)}
-        disabled={!isDateSelected || !formData.time}
-        className={`flex items-center px-6 py-3 rounded-xl transition-all font-medium shadow-md
-          ${isDateSelected && formData.time 
-            ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 hover:shadow-lg' 
-            : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
-      >
-        Continue
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
-          <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-        </svg>
-      </button>
-    </div>
-  </div>
-)} */}
-
-
-{/* Step 2: Select Date and Time */} 
 
  {step === 2 && (
   <div className="space-y-6">

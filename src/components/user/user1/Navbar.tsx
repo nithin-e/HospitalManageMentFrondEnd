@@ -305,7 +305,7 @@ const Navbar: React.FC = () => {
   const user = useSelector((state: RootState) => state.user)
   
 
-  const userData = user?.checkUserEmailAndPhone?.user || user?.user?.user || user?.user || null;
+  const userData = user.user || user?.user|| user?.user || null;
   const userName = userData?.name || '';
   const userEmail = userData?.email || '';
   const userInitial = userName.charAt(0)?.toUpperCase() || '';

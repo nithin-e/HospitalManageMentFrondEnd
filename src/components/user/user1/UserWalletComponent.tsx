@@ -5,7 +5,6 @@ import {
   ArrowDownLeft, 
   ArrowUpRight, 
   Wallet,
-  Shield,
   Loader2
 } from 'lucide-react';
 import { UserfetchingAppointMents } from '@/store/userSideApi/UserfetchingAppointMents';
@@ -56,7 +55,8 @@ const UserWalletComponent: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const user = useSelector((state: RootState) => state.user);
-  const userData = user?.checkUserEmailAndPhone?.user || user?.user?.user || user?.user || null;
+  // const userData = user?.checkUserEmailAndPhone?.user || user?.user?.user || user?.user || null;
+  const userData = user?.user || user?.user || null;
   const userEmail = userData?.email || '';
 
   // Helper function to format date

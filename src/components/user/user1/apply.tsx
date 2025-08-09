@@ -13,6 +13,7 @@ import { RootState } from '@/store/redux/store';
 import { PlusCircle, Upload, UserCircle, Check, AlertCircle, FileText, Phone, Mail, ClipboardCheck, Stethoscope } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/user/ui/alert';
 import { Progress } from '@/components/user/ui/progress';
+import { Inputt } from './reusable/Input';
 
 const specialties = [
   "Cardiology",
@@ -54,7 +55,9 @@ const Apply: React.FC = () => {
   const navigate = useNavigate();
 
   // Retrieve userId from Redux store
-  const userId = useSelector((state: RootState) => state.user?.user?.id);
+  const userId = useSelector((state: RootState) => state.user?.user._id||'');
+
+  console.log('this is component Apply.tsx so check the user id getting or not inside the redux',userId)
 
   useEffect(() => {
     // Calculate form completion progress
@@ -267,8 +270,7 @@ const Apply: React.FC = () => {
     }
 
     try {
-      const userAccessToken = localStorage.getItem("userAccessToken") || "your-access-token"; 
-      const userRefreshToken = localStorage.getItem("userRefreshToken") || "your-refresh-token";
+      
       
       const response = await registerDoctorApi(apiData);
       
@@ -508,7 +510,7 @@ const Apply: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
                     <FileText className="w-4 h-4 mr-1" /> Medical License Number
                   </label>
-                  <Input
+                  <Inputt
                     name="medicalLicenseNumber"
                     value={formData.medicalLicenseNumber}
                     onChange={handleChange}

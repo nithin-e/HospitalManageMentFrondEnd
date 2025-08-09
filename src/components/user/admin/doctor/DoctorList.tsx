@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Search, Filter, ChevronDown, ArrowUpDown, Shield, User, Briefcase, Clock, X } from "lucide-react";
+import { Search, Filter, ChevronDown, ArrowUpDown, Shield, User, Briefcase, Clock, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/user/ui/docui/avatar";
 import { Input } from "@/components/user/ui/docui/input";
 import { Button } from "@/components/user/ui/docui/button";
@@ -12,11 +12,15 @@ export const DoctorsList = () => {
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [sortField, setSortField] = useState("name");
-  const [sortDirection, setSortDirection] = useState("asc");
+  const [sortField, setSortField] = useState("createdAt");
+  const [sortDirection, setSortDirection] = useState("desc");
   const [activeFilters, setActiveFilters] = useState([]);
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [doctorsPerPage] = useState(6);
 
   useEffect(() => {
     fetchDoctorData();
@@ -27,8 +31,6 @@ export const DoctorsList = () => {
     if (location.state?.rejectedDoctor && location.state?.rejectedDoctorEmail) {
       const email = location.state?.rejectedDoctorEmail;
       console.log('Found rejected doctor with email:', email);
-      
-      // Remove doctor immediately
       removeRejectedDoctor(email);
     }
   }, [location.state]);
@@ -36,23 +38,16 @@ export const DoctorsList = () => {
   const removeRejectedDoctor = async (email) => {
     try {
       console.log('Removing doctor with email:', email);
-      
-      // Remove doctor from the UI immediately
       setDoctors(prevDoctors => prevDoctors.filter(doctor => doctor.email !== email));
-      
       console.log('Making API call to delete doctor with email:', email);
       const response = await deleteDoctor(email);
       console.log('API response:', response);
-      
       console.log(`Doctor with email ${email} successfully removed`);
     } catch (error) {
       console.error("Error removing rejected doctor:", error);
-      // If the API call fails, refresh the data
       fetchDoctorData();
     }
   };
-
-  
 
   const fetchDoctorData = async () => {
     try {
@@ -88,7 +83,9 @@ export const DoctorsList = () => {
         profileImageUrl: doctor.profileImageUrl,
         status: doctor.status || "Pending",
         agreeTerms: doctor.agreeTerms,
-        createdAt: new Date(doctor.createdAt).toLocaleDateString(),
+        createdAt: doctor.createdAt, // Keep as Date string for sorting
+        formattedDate: new Date(doctor.createdAt).toLocaleDateString(),
+        isActive:doctor.isActive
       }));
 
       setDoctors(doctorData);
@@ -98,16 +95,16 @@ export const DoctorsList = () => {
       setDoctors([]);
     } finally {
       setLoading(false);
+      setCurrentPage(1); // Reset to first page on new data load
     }
   };
-
 
   const toggleSort = (field) => {
     if (sortField === field) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      setSortDirection("asc");
+      setSortDirection("desc"); // Default to descending for new fields
     }
   };
 
@@ -124,6 +121,10 @@ export const DoctorsList = () => {
     setSearchQuery("");
   };
 
+  // Calculate pagination
+  const indexOfLastDoctor = currentPage * doctorsPerPage;
+  const indexOfFirstDoctor = indexOfLastDoctor - doctorsPerPage;
+
   const sortedAndFilteredDoctors = () => {
     if (!Array.isArray(doctors)) return [];
     
@@ -134,7 +135,6 @@ export const DoctorsList = () => {
         (doctor.specialty && doctor.specialty.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (doctor.email && doctor.email.toLowerCase().includes(searchQuery.toLowerCase()));
       
-      // Status filters
       const matchesStatusFilters = activeFilters.length === 0 || 
         activeFilters.includes(doctor.status);
       
@@ -150,11 +150,28 @@ export const DoctorsList = () => {
       } else if (sortField === "specialty") {
         comparison = (a.specialty || "").localeCompare(b.specialty || "");
       } else if (sortField === "createdAt") {
-        // comparison = new Date(a.createdAt) - new Date(b.createdAt);
+        comparison = new Date(a.createdAt) - new Date(b.createdAt);
       }
       
       return sortDirection === "asc" ? comparison : -comparison;
     });
+  };
+
+  const filteredDoctors = sortedAndFilteredDoctors();
+  const currentDoctors = filteredDoctors.slice(indexOfFirstDoctor, indexOfLastDoctor);
+  const totalPages = Math.ceil(filteredDoctors.length / doctorsPerPage);
+
+  // Pagination functions
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+  const nextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+  const prevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
   };
 
   const getStatusIconAndColor = (status) => {
@@ -193,8 +210,6 @@ export const DoctorsList = () => {
   const handleDoctorClick = (doctor) => {
     navigate(`/adminDetails/${doctor.id}`, { state: { doctor } });
   };
-
-  const filteredDoctors = sortedAndFilteredDoctors();
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4 py-8">
@@ -298,6 +313,11 @@ export const DoctorsList = () => {
             >
               Doctor
               <ArrowUpDown className="h-4 w-4" />
+              {sortField === "name" && (
+                <span className="text-xs text-gray-500 ml-1">
+                  {sortDirection === "asc" ? "A-Z" : "Z-A"}
+                </span>
+              )}
             </div>
             <div 
               className="col-span-3 flex items-center gap-1 cursor-pointer hover:text-blue-600 transition-colors"
@@ -305,6 +325,11 @@ export const DoctorsList = () => {
             >
               Specialty
               <ArrowUpDown className="h-4 w-4" />
+              {sortField === "specialty" && (
+                <span className="text-xs text-gray-500 ml-1">
+                  {sortDirection === "asc" ? "A-Z" : "Z-A"}
+                </span>
+              )}
             </div>
             <div className="col-span-2 text-center">Status</div>
             <div 
@@ -313,12 +338,17 @@ export const DoctorsList = () => {
             >
               Registered
               <ArrowUpDown className="h-4 w-4" />
+              {sortField === "createdAt" && (
+                <span className="text-xs text-gray-500 ml-1">
+                  {sortDirection === "asc" ? "Oldest" : "Newest"}
+                </span>
+              )}
             </div>
           </div>
 
           {/* Doctor rows */}
           <div className="divide-y divide-gray-100">
-            {filteredDoctors.map((doctor) => {
+            {currentDoctors.map((doctor) => {
               const { color, bgColor, borderColor, icon } = getStatusIconAndColor(doctor.status);
               
               return (
@@ -364,24 +394,50 @@ export const DoctorsList = () => {
                   </div>
                   
                   <div className="col-span-2 text-sm text-gray-500">
-                    {doctor.createdAt}
+                    {doctor.formattedDate}
                   </div>
                 </div>
               );
             })}
           </div>
           
-          {/* Pagination placeholder */}
-          <div className="p-4 border-t border-gray-100 flex justify-between items-center">
+          {/* Pagination */}
+          <div className="p-4 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="text-sm text-gray-500">
-              Showing {filteredDoctors.length} of {doctors.length} doctors
+              Showing {indexOfFirstDoctor + 1} to {Math.min(indexOfLastDoctor, filteredDoctors.length)} of {filteredDoctors.length} doctors
             </div>
             <div className="flex gap-2">
-              <Button className="border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 px-4 py-2 rounded">
+              <Button 
+                variant="outline" 
+                onClick={prevPage}
+                disabled={currentPage === 1}
+                className="flex items-center gap-1"
+              >
+                <ChevronLeft className="h-4 w-4" />
                 Previous
               </Button>
-              <Button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+              
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(number => (
+                  <Button
+                    key={number}
+                    variant={currentPage === number ? "default" : "outline"}
+                    onClick={() => paginate(number)}
+                    className="w-10 h-10 p-0"
+                  >
+                    {number}
+                  </Button>
+                ))}
+              </div>
+              
+              <Button 
+                variant="outline" 
+                onClick={nextPage}
+                disabled={currentPage === totalPages}
+                className="flex items-center gap-1"
+              >
                 Next
+                <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
           </div>

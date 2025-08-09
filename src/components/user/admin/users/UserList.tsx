@@ -3,7 +3,7 @@ import { Input } from "@/components/user/admin/ui/input";
 import { Button } from "@/components/user/admin/ui/button";
 import { Switch } from "@/components/user/admin/ui/switch";
 import UserAvatar from "../ui/UserAvatar";
-import { Search, Loader2, Filter, UserCheck, UserX, RefreshCw, ChevronDown, ChevronUp, Calendar, Mail } from "lucide-react";
+import { Search, Loader2, Filter, UserCheck, UserX, RefreshCw, ChevronDown, ChevronUp, Calendar, Mail, ChevronLeft, ChevronRight } from "lucide-react";
 import { fetchUsers } from "@/store/AdminSideApi/fecthUsers";
 import { useSocket } from "@/context/socketContext";
 import { toast } from "@/components/user/admin/ui/use-toast";
@@ -26,7 +26,6 @@ const useDebounce = (value, delay) => {
 
   return debouncedValue;
 };
-
 
 const searchUsers = async (searchParams) => {
   try {
@@ -64,7 +63,6 @@ const searchUsers = async (searchParams) => {
 
     console.log('check this data its an response in from backent in debouncing',response);
     
-
     return response.data;
   } catch (error) {
     console.error('Search API error:', error);
@@ -89,26 +87,23 @@ const UserList = () => {
   const [isSearchMode, setIsSearchMode] = useState(false);
   const { socket, connected } = useSocket();
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [usersPerPage] = useState(6);
+  const [totalPages, setTotalPages] = useState(1);
+
   // Debounce search term with 500ms delay
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
+
+  // Calculate pagination
+  const indexOfLastUser = currentPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+  const currentUsers = users.slice(indexOfFirstUser, indexOfLastUser);
 
   // Initial load effect - fetch all users
   useEffect(() => {
     fetchUserData();
   }, []);
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   useEffect(() => {
     if (debouncedSearchTerm !== searchTerm) {
@@ -122,25 +117,17 @@ const UserList = () => {
         setIsSearchMode(true);
         handleSearch();
       } else {
-        
         setIsSearchMode(false);
         fetchUserData();
       }
     }
   }, [debouncedSearchTerm]);
 
-
-
-
-
-
-
   useEffect(() => {
     if (!loading && !debouncedSearchTerm.trim()) {
       fetchUserData();
     }
   }, [statusFilter, sortDirection]);
-
 
   useEffect(() => {
     if (searchTerm !== debouncedSearchTerm) {
@@ -150,6 +137,10 @@ const UserList = () => {
     }
   }, [searchTerm, debouncedSearchTerm]);
 
+  // Update total pages when users change
+  useEffect(() => {
+    setTotalPages(Math.ceil(users.length / usersPerPage));
+  }, [users, usersPerPage]);
   
   const fetchUserData = async (showLoadingSpinner = false) => {
     try {
@@ -159,17 +150,16 @@ const UserList = () => {
       
       setError(null);
 
-     
       const searchParams = {
         status: statusFilter !== "all" ? statusFilter : undefined,
         sortBy: "createdAt",
         sortDirection: sortDirection,
-        role: "user", // Only fetch users with role 'user'
+        role: "user", 
         page: 1,
-        limit: 50 // Adjust as needed
+        limit: 50 
       };
 
-      // Remove undefined values
+      
       const cleanParams = Object.fromEntries(
         Object.entries(searchParams).filter(([_, value]) => value !== undefined)
       );
@@ -191,10 +181,11 @@ const UserList = () => {
     } finally {
       setLoading(false);
       setSearchLoading(false);
+      setCurrentPage(1); 
     }
   };
 
-  // New search function using separate search API
+
   const handleSearch = async () => {
     try {
       setSearchLoading(true);
@@ -232,6 +223,7 @@ const UserList = () => {
       setBlockedUsers(0);
     } finally {
       setSearchLoading(false);
+      setCurrentPage(1); // Reset to first page on new search
     }
   };
 
@@ -365,9 +357,9 @@ const UserList = () => {
   const handleStatusFilterChange = (newStatus) => {
     setStatusFilter(newStatus);
     
-    // If we're in search mode, trigger a new search with the filter
+    
     if (isSearchMode && debouncedSearchTerm.trim()) {
-      // The useEffect will handle the search automatically
+      
     }
   };
 
@@ -387,6 +379,19 @@ const UserList = () => {
     } else {
       // Refresh all users
       fetchUserData(true);
+    }
+  };
+
+  // Pagination functions
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+  const nextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+  const prevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
     }
   };
 
@@ -615,153 +620,239 @@ const UserList = () => {
         
         {/* User Grid View */}
         {!loading && !error && users.length > 0 && view === "grid" && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-            {users.map((user) => (
-              <div
-                key={user.id}
-                className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-shadow duration-200"
-              >
-                <div className="border-b border-slate-100 p-6 bg-gradient-to-r from-blue-50 to-slate-50">
-                  <div className="flex justify-between mb-4">
-                    <UserAvatar
-                      src={user.profilePicture}
-                      name={user.name}
-                      className="h-16 w-16 ring-4 ring-white shadow-sm"
-                    />
-                    <div>
-                      <span className={cn(
-                        "inline-block px-3 py-1 rounded-full text-xs font-medium",
-                        user.isActive 
-                          ? "bg-green-100 text-green-700" 
-                          : "bg-red-100 text-red-700"
-                      )}>
-                        {user.isActive ? "Active" : "Blocked"}
-                      </span>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+              {currentUsers.map((user) => (
+                <div
+                  key={user.id}
+                  className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-shadow duration-200"
+                >
+                  <div className="border-b border-slate-100 p-6 bg-gradient-to-r from-blue-50 to-slate-50">
+                    <div className="flex justify-between mb-4">
+                      <UserAvatar
+                        src={user.profilePicture}
+                        name={user.name}
+                        className="h-16 w-16 ring-4 ring-white shadow-sm"
+                      />
+                      <div>
+                        <span className={cn(
+                          "inline-block px-3 py-1 rounded-full text-xs font-medium",
+                          user.isActive 
+                            ? "bg-green-100 text-green-700" 
+                            : "bg-red-100 text-red-700"
+                        )}>
+                          {user.isActive ? "Active" : "Blocked"}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <h3 className="font-medium text-xl text-slate-800">{user.name}</h3>
-                </div>
-                
-                <div className="p-6">
-                  <div className="flex flex-col space-y-3">
-                    <div className="flex items-center text-slate-600">
-                      <Mail className="h-4 w-4 mr-2 flex-shrink-0" />
-                      <span className="text-sm truncate">{user.email}</span>
-                    </div>
-                    <div className="flex items-center text-slate-600">
-                      <Calendar className="h-4 w-4 mr-2 flex-shrink-0" />
-                      <span className="text-sm">
-                        Joined: {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "Unknown"}
-                      </span>
-                    </div>
+                    <h3 className="font-medium text-xl text-slate-800">{user.name}</h3>
                   </div>
                   
-                  <div className="mt-6 flex items-center justify-between">
-                    <span className="text-sm text-slate-500">
-                      {user.isActive ? "Block this user?" : "Unblock this user?"}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={user.isActive}
-                        onCheckedChange={() => handleToggleBlock(user.id, user.isActive)}
-                        className={cn(
-                          "data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-red-500",
-                          "transition-colors duration-200"
+                  <div className="p-6">
+                    <div className="flex flex-col space-y-3">
+                      <div className="flex items-center text-slate-600">
+                        <Mail className="h-4 w-4 mr-2 flex-shrink-0" />
+                        <span className="text-sm truncate">{user.email}</span>
+                      </div>
+                      <div className="flex items-center text-slate-600">
+                        <Calendar className="h-4 w-4 mr-2 flex-shrink-0" />
+                        <span className="text-sm">
+                          Joined: {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "Unknown"}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-6 flex items-center justify-between">
+                      <span className="text-sm text-slate-500">
+                        {user.isActive ? "Block this user?" : "Unblock this user?"}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={user.isActive}
+                          onCheckedChange={() => handleToggleBlock(user.id, user.isActive)}
+                          className={cn(
+                            "data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-red-500",
+                            "transition-colors duration-200"
+                          )}
+                          disabled={processingUserId === user.id}
+                        />
+                        {processingUserId === user.id && (
+                          <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
                         )}
-                        disabled={processingUserId === user.id}
-                      />
-                      {processingUserId === user.id && (
-                        <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
-                      )}
+                      </div>
                     </div>
                   </div>
                 </div>
+              ))}
+            </div>
+            
+            {/* Pagination */}
+            <div className="flex items-center justify-between mt-4">
+              <div className="text-sm text-slate-600">
+                Showing <span className="font-medium">{indexOfFirstUser + 1}</span> to{" "}
+                <span className="font-medium">
+                  {Math.min(indexOfLastUser, users.length)}
+                </span>{" "}
+                of <span className="font-medium">{users.length}</span> results
               </div>
-            ))}
-          </div>
+              
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={prevPage}
+                  disabled={currentPage === 1}
+                  className="flex items-center gap-1"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
+                    <Button
+                      key={number}
+                      variant={currentPage === number ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => paginate(number)}
+                      className="w-10 h-10 p-0 flex items-center justify-center"
+                    >
+                      {number}
+                    </Button>
+                  ))}
+                </div>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={nextPage}
+                  disabled={currentPage === totalPages}
+                  className="flex items-center gap-1"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </>
         )}
         
         {/* User List View */}
         {!loading && !error && users.length > 0 && view === "list" && (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mb-8">
-            <div className="grid grid-cols-12 p-4 bg-slate-50 font-medium text-slate-600 border-b border-slate-200 text-sm">
-              <div className="col-span-5">User</div>
-              <div className="col-span-3">Email</div>
-              <div className="col-span-2 text-center">Status</div>
-              <div className="col-span-2 text-center">Actions</div>
-            </div>
-            
-            {users.map((user) => (
-              <div
-                key={user.id}
-                className="grid grid-cols-12 p-4 items-center border-b border-slate-100 hover:bg-slate-50 transition-colors"
-              >
-                <div className="col-span-5 flex items-center space-x-3">
-                  <UserAvatar
-                    src={user.profilePicture}
-                    name={user.name}
-                    className="h-10 w-10 ring-2 ring-slate-100"
-                  />
-                  <div>
-                    <p className="font-medium text-slate-800">{user.name}</p>
-                    <p className="text-xs text-slate-500">
-                      Joined: {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "Unknown"}
-                    </p>
+          <>
+            <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mb-8">
+              <div className="grid grid-cols-12 p-4 bg-slate-50 font-medium text-slate-600 border-b border-slate-200 text-sm">
+                <div className="col-span-5">User</div>
+                <div className="col-span-3">Email</div>
+                <div className="col-span-2 text-center">Status</div>
+                <div className="col-span-2 text-center">Actions</div>
+              </div>
+              
+              {currentUsers.map((user) => (
+                <div
+                  key={user.id}
+                  className="grid grid-cols-12 p-4 items-center border-b border-slate-100 hover:bg-slate-50 transition-colors"
+                >
+                  <div className="col-span-5 flex items-center space-x-3">
+                    <UserAvatar
+                      src={user.profilePicture}
+                      name={user.name}
+                      className="h-10 w-10 ring-2 ring-slate-100"
+                    />
+                    <div>
+                      <p className="font-medium text-slate-800">{user.name}</p>
+                      <p className="text-xs text-slate-500">
+                        Joined: {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "Unknown"}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="col-span-3 text-sm text-slate-600 truncate">
+                    {user.email}
+                  </div>
+                  
+                  <div className="col-span-2 flex justify-center">
+                    <span className={cn(
+                      "px-3 py-1 rounded-full text-xs font-medium",
+                      user.isActive 
+                        ? "bg-green-100 text-green-700" 
+                        : "bg-red-100 text-red-700"
+                    )}>
+                      {user.isActive ? "Active" : "Blocked"}
+                    </span>
+                  </div>
+                  
+                  <div className="col-span-2 flex items-center justify-center space-x-2">
+                    <Switch
+                      checked={user.isActive}
+                      onCheckedChange={() => handleToggleBlock(user.id, user.isActive)}
+                      className={cn(
+                        "data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-red-500",
+                        "transition-colors duration-200"
+                      )}
+                      disabled={processingUserId === user.id}
+                    />
+                    <span className="text-xs text-slate-600">
+                      {processingUserId === user.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        user.isActive ? "Block" : "Unblock"
+                      )}
+                    </span>
                   </div>
                 </div>
-                
-                <div className="col-span-3 text-sm text-slate-600 truncate">
-                  {user.email}
-                </div>
-                
-                <div className="col-span-2 flex justify-center">
-                  <span className={cn(
-                    "px-3 py-1 rounded-full text-xs font-medium",
-                    user.isActive 
-                      ? "bg-green-100 text-green-700" 
-                      : "bg-red-100 text-red-700"
-                  )}>
-                    {user.isActive ? "Active" : "Blocked"}
-                  </span>
-                </div>
-                
-                <div className="col-span-2 flex items-center justify-center space-x-2">
-                  <Switch
-                    checked={user.isActive}
-                    onCheckedChange={() => handleToggleBlock(user.id, user.isActive)}
-                    className={cn(
-                      "data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-red-500",
-                      "transition-colors duration-200"
-                    )}
-                    disabled={processingUserId === user.id}
-                  />
-                  <span className="text-xs text-slate-600">
-                    {processingUserId === user.id ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      user.isActive ? "Block" : "Unblock"
-                    )}
-                  </span>
-                </div>
+              ))}
+            </div>
+            
+            {/* Pagination */}
+            <div className="flex items-center justify-between mt-4">
+              <div className="text-sm text-slate-600">
+                Showing <span className="font-medium">{indexOfFirstUser + 1}</span> to{" "}
+                <span className="font-medium">
+                  {Math.min(indexOfLastUser, users.length)}
+                </span>{" "}
+                of <span className="font-medium">{users.length}</span> results
               </div>
-            ))}
-          </div>
-        )}
-        
-        {/* Pagination - You can implement this based on backend response */}
-        {!loading && !error && users.length > 0 && (
-          <div className="mt-6 flex justify-center">
-            <Button
-              variant="outline"
-              className="text-slate-600 border-slate-200 hover:bg-slate-100 px-6 py-2 rounded-lg shadow-sm"
-              onClick={() => {
-                // Implement pagination logic here
-                console.log("Load more users");
-              }}
-            >
-              Load more users
-            </Button>
-          </div>
+              
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={prevPage}
+                  disabled={currentPage === 1}
+                  className="flex items-center gap-1"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
+                    <Button
+                      key={number}
+                      variant={currentPage === number ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => paginate(number)}
+                      className="w-10 h-10 p-0 flex items-center justify-center"
+                    >
+                      {number}
+                    </Button>
+                  ))}
+                </div>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={nextPage}
+                  disabled={currentPage === totalPages}
+                  className="flex items-center gap-1"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </>
         )}
       </div>
     </div>

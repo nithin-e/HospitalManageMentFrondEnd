@@ -2,52 +2,53 @@ import React from 'react';
 import Navbar from '@/components/user/user1/Navbar';
 import Footer from '@/components/user/user1/Footer';
 import ServiceCard from '@/components/user/user1/ServiceCard';
-import NewsletterForm from '@/components/user/user1/NewsletterForm';
-import { Button } from '@/components/user/ui/docui/button';
+
 import { Calendar, Users, Award, ChevronRight, Stethoscope, Heart } from 'lucide-react';
+import { Button } from './reusable/Button';
+
 
 const servicesData = [
   {
     title: "Cardiology",
     description: "Expert care for your heart health including diagnosis and treatment of coronary artery disease, heart rhythm problems, and heart failure.",
-    imageUrl: "/placeholder.svg",
+    imageUrl: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80",
     featured: true
   },
   {
     title: "Dentistry",
     description: "Comprehensive dental care including preventive, restorative, and cosmetic services to keep your smile healthy and beautiful.",
-    imageUrl: "/placeholder.svg",
+    imageUrl: "https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80",
   },
   {
     title: "Neurology",
     description: "Specialized care for disorders of the nervous system, including the brain, spinal cord, nerves, and muscles.",
-    imageUrl: "/placeholder.svg",
+    imageUrl: "https://images.unsplash.com/photo-1579684453423-f84349ef60b0?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1472&q=80",
     featured: true
   },
   {
     title: "Orthopedics",
     description: "Treatment for musculoskeletal issues including injuries, joint pain, spine disorders, and sports medicine.",
-    imageUrl: "/placeholder.svg",
+    imageUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80",
   },
   {
     title: "Pediatrics",
     description: "Complete healthcare for infants, children and adolescents focusing on physical, emotional, and social health development.",
-    imageUrl: "/placeholder.svg",
+    imageUrl: "https://images.unsplash.com/photo-1584824486509-112e4181ff6b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80",
   },
   {
     title: "Diabetes Care",
     description: "Comprehensive care for diabetes management including prevention, education, treatment, and long-term health maintenance.",
-    imageUrl: "/placeholder.svg",
+    imageUrl: "https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1632&q=80",
   },
   {
     title: "Urology",
     description: "Specialized care for urinary tract and male reproductive system including kidney stones, bladder issues, and prostate health.",
-    imageUrl: "/placeholder.svg",
+    imageUrl: "https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80",
   },
   {
     title: "Ophthalmology",
     description: "Expert care for eye health including vision tests, glasses, contact lenses, and treatment of eye diseases and conditions.",
-    imageUrl: "/placeholder.svg",
+    imageUrl: "https://images.unsplash.com/photo-1504439468489-c8920d796a29?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1471&q=80",
   },
 ];
 
@@ -136,7 +137,7 @@ const Services2: React.FC = () => {
               <p className="text-gray-600 mb-8 text-lg">
                 Join thousands of satisfied patients and experience our professional healthcare services tailored to your needs.
               </p>
-              <Button 
+              <Button
                 size="lg"
                 className="bg-brand-blue text-white py-6 px-10 text-lg transition-colors duration-300 group shadow-lg"
                 asChild
@@ -146,6 +147,12 @@ const Services2: React.FC = () => {
                   <ChevronRight size={20} className="ml-2 group-hover:translate-x-1 transition-transform duration-300" />
                 </a>
               </Button>
+
+
+
+             
+             
+              
             </div>
           </div>
         </div>

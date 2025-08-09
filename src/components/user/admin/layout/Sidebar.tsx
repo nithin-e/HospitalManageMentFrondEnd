@@ -119,18 +119,8 @@ const Sidebar = () => {
           href="/doctors"
           active={pathname === "/doctors"}
         />
-        <SidebarItem
-          icon={Stethoscope}
-          label="Services"
-          href="/servics"
-          active={pathname === "/servics"}
-        />
-        <SidebarItem
-          icon={Bell}
-          label="Notifications"
-          href="/notifications"
-          active={pathname === "/notifications"}
-        />
+        
+        
         <SidebarItem
           icon={MessageSquare}
           label="Payments"

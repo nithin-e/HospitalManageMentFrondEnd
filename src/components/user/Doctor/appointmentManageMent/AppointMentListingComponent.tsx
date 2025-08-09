@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { 
   Search, Calendar, Clock, User, Phone, Mail, FileText, 
-  Eye, Check, X, AlertCircle, UserCircle, MessageSquare,
-  ArrowLeft, Smile, Mic, Paperclip, Camera, Send
+  MessageCircle, Check, X, AlertCircle, UserCircle, MessageSquare,
+  ArrowLeft, Smile, Mic, Paperclip, Camera, Send, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store/redux/store';
 import Sidebar from "../../Doctor/layout/Sidebar";
 import { fectingAllUserAppointMents } from '@/store/DoctorSideApi/fectingFullUserAppointMents';
 import { useSocket } from "@/context/socketContext";
+import { fetchUserConversations } from '@/store/userSideApi/fetchUserConversations';
 
 interface Appointment {
   id: string;
@@ -22,15 +23,25 @@ interface Appointment {
   specialty: string;
   status: string;
   doctorName: string;
+  userId: string;
+  doctorId?: string;
 }
 
 interface ChatMessage {
   id: string;
   text: string;
-  sender: 'doctor' | 'patient';
+  sender: 'patient' | 'doctor';
+  senderId: string;
+  receiverId: string;
+  appointmentId: string;
   timestamp: string;
-  patientName?: string;
-  doctorName?: string;
+  patientName: string;
+  type: 'text' | 'file' | 'image';
+  fileUrl?: string;
+  fileName?: string;
+  mimeType?: string;
+  fileContent?: string;
+  isImage?: boolean;
 }
 
 const AppointMentListingComponent = () => {
@@ -40,20 +51,27 @@ const AppointMentListingComponent = () => {
   const [filteredAppointments, setFilteredAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  // Chat related states
   const [showChatModal, setShowChatModal] = useState(false);
   const [chatAppointment, setChatAppointment] = useState<Appointment | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const { socket, connected } = useSocket();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [appointmentsPerPage] = useState(4);
 
   const dispatch: AppDispatch = useDispatch();
   const doctor = useSelector((state: RootState) => state.doctor.data.doctor);
 
   useEffect(() => {
+    if (!doctor) {
+      console.log('Doctor not authenticated');
+      setError('Please log in to view appointments');
+      setLoading(false);
+      return;
+    }
+    
     fetchUserFullAppointments();
-  }, []);
+  }, [doctor]);
 
   useEffect(() => {
     if (appointments.length > 0 && doctor) {
@@ -64,40 +82,52 @@ const AppointMentListingComponent = () => {
     }
   }, [appointments, doctor]);
 
-  // Socket effect for receiving messages
   useEffect(() => {
-    
-
+    if (!socket) {
+      console.log('Socket not connected yet');
+      return;
+    }
+  
     const handleReceiveMessage = (data: any) => {
 
-     
       
       if (data.type === "msgReceive") {
-
-       
         const newMessageData = data.data;
         
-       
-
-        
-
+        if (chatAppointment && newMessageData.appointmentId === chatAppointment.id) {
+          const isImageFile = (mimeType: string) => {
+            return mimeType && mimeType.startsWith('image/');
+          };
+                console.log('Receiving message data:', newMessageData);
+    
           const newMsg: ChatMessage = {
             id: newMessageData.messageId || Date.now().toString(),
-            text: newMessageData.text || newMessageData.message,
-            sender: 'patient',
+            text: newMessageData.text || newMessageData.message || '',
+            sender: newMessageData.sender === 'user' ? 'patient' : 'doctor',
+            senderId: newMessageData.senderId,
+            receiverId: newMessageData.receiverId,
+            appointmentId: newMessageData.appointmentId,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            patientName: chatAppointment.patientName
+            patientName: chatAppointment.patientName,
+            type: newMessageData.type || 'text',
+            fileUrl: newMessageData.fileUrl,
+            fileName: newMessageData.fileName,
+            mimeType: newMessageData.mimeType,
+            fileContent: newMessageData.fileContent,
+            isImage: isImageFile(newMessageData.mimeType)
           };
           
           setChatMessages(prev => [...prev, newMsg]);
-      
+        }
       }
     };
-
+  
     socket.on("receive", handleReceiveMessage);
-
+  
     return () => {
-      socket.off("receive", handleReceiveMessage);
+      if (socket) {
+        socket.off("receive", handleReceiveMessage);
+      }
     };
   }, [socket, chatAppointment]);
 
@@ -105,6 +135,11 @@ const AppointMentListingComponent = () => {
     try {
       setLoading(true);
       setError(null);
+      
+      if (!doctor) {
+        throw new Error('Doctor not authenticated');
+      }
+      
       const response = await fectingAllUserAppointMents();
       
       if (response && response.result && response.result.appointments) {
@@ -113,9 +148,19 @@ const AppointMentListingComponent = () => {
         setError('No appointments data received');
         setAppointments([]);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching appointments:', error);
-      setError('Failed to fetch appointments');
+      
+      if (error.response?.status === 401) {
+        setError('Session expired. Please log in again.');
+      } else if (error.response?.status === 403) {
+        setError('You do not have permission to view appointments.');
+      } else if (error.response?.status === 500) {
+        setError('Server error. Please try again later.');
+      } else {
+        setError(error.message || 'Failed to fetch appointments');
+      }
+      
       setAppointments([]);
     } finally {
       setLoading(false);
@@ -178,57 +223,140 @@ const AppointMentListingComponent = () => {
     }
   };
 
-  const handleChatClick = (appointment: Appointment) => {
-    setChatAppointment(appointment);
+  const fetchUserConversation = async (userId: string, doctorId: string) => {
+    try {
+      const res = await fetchUserConversations(userId, doctorId);  
+      console.log('Previous conversations:', res);
   
-
-    const initialMessages: ChatMessage[] = [
-      {
-        id: '1',
-        text: `Hello Dr. ${doctor?.firstName || 'Doctor'}, I have an appointment scheduled for ${formatDate(appointment.appointmentDate)} at ${formatTime(appointment.appointmentTime)}.`,
-        sender: 'patient',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        patientName: appointment.patientName
+      if (res.result.success ) {
+        const messages = res.result.conversations[0].messages.map(msg => {
+          const isImage = msg.messageType === 'file' && 
+                          msg.mimeType?.startsWith('image/');
+          
+          return {
+            id: msg.messageId,
+            text: msg.content,
+            sender: msg.senderType === 'doctor' ? 'doctor' : 'patient',
+            senderId: msg.senderId,
+            receiverId: msg.receiverId,
+            appointmentId: msg.appointmentId,
+            timestamp: msg.timestamp || new Date(msg.createdAt).toLocaleTimeString([], { 
+              hour: '2-digit', 
+              minute: '2-digit' 
+            }),
+            type: isImage ? 'image' : msg.messageType,
+            fileUrl: msg.fileUrl,
+            fileName: msg.fileName,
+            mimeType: msg.mimeType,
+            fileContent: msg.fileUrl,
+            isImage: isImage
+          };
+        });
+  
+        setChatMessages(messages);
+        return true;
       }
-    ];
-    setChatMessages(initialMessages);
-    setShowChatModal(true);
+      
+      return false;
+    } catch (error) {
+      console.log(error);
+      return false;
+    } 
   };
 
-  const sendMessage = () => {
-    if (newMessage.trim() && chatAppointment) {
-      const newMsg: ChatMessage = {
-        id: Date.now().toString(),
-        text: newMessage,
-        sender: 'doctor',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        doctorName: doctor ? `${doctor.firstName || ''} ${doctor.lastName || ''}`.trim() : 'Doctor'
-      };
-      
-      setChatMessages(prev => [...prev, newMsg]);
-      setNewMessage('');
-      
-      // Here you would typically send the message to your backend
-      console.log('Sending message to backend:', {
-        appointmentId: chatAppointment.id,
-        patientName: chatAppointment.patientName,
-        doctorName: newMsg.doctorName,
-        message: newMsg.text,
-        timestamp: newMsg.timestamp
-      });
-
-      // Emit the message via socket if needed
-     
-        socket.emit('sendMessage', {
-          conversationId: chatAppointment.id,
-          message: newMsg.text,
-          sender: 'doctor',
-          doctorId: doctor?.id,
-          patientId: chatAppointment.id,
-          timestamp: new Date().toISOString()
-        });
-      
+  const handleChatClick = async (appointment: Appointment) => {
+    setChatAppointment(appointment);
+    setShowChatModal(true);
+    
+    const hasPreviousMessages = await fetchUserConversation(appointment.userId, doctor?.id || '');
+    
+    if (!hasPreviousMessages) {
+      setChatMessages([
+        {
+          id: '1',
+          text: `Hello Dr. ${doctor?.firstName || 'Doctor'}, I have an appointment scheduled for ${formatDate(appointment.appointmentDate)} at ${formatTime(appointment.appointmentTime)}.`,
+          sender: 'patient',
+          senderId: appointment.userId,
+          receiverId: doctor?.id || '',
+          appointmentId: appointment.id,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          patientName: appointment.patientName,
+          type: 'text'
+        }
+      ]);
     }
+  };
+
+  const sendMessageToBackend = async (message: any) => {
+    try {
+      if (!socket || !connected || !chatAppointment || !doctor) {
+        console.error('Socket not connected or missing data');
+        return;
+      }
+
+      const messageData = {
+        type: message.type || 'text',
+        text: message.text || '',
+        sender: 'doctor',
+        senderId: doctor.id,
+        timestamp: message.timestamp,
+        appointmentId: chatAppointment.id,
+        receiverId: chatAppointment.userId,
+        fileContent: message.content,
+        fileName: message.fileName,
+        fileSize: message.fileSize,
+        mimeType: message.mimeType
+      };
+  
+      console.log('Message data to emit:', messageData);
+      socket.emit('sendMessage', messageData);
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
+  };
+
+  const sendMessage = (messageType = 'text', content: File | null = null) => {
+    if (messageType === 'text' && !newMessage.trim()) return;
+  
+    const message = {
+      id: Date.now().toString(),
+      type: messageType, 
+      text: messageType === 'text' ? newMessage : '', 
+      content: content, 
+      fileName: content?.name || null,
+      fileSize: content?.size || null,
+      mimeType: content?.type || null,
+      sender: 'doctor',
+      senderId: doctor?.id || '',
+      receiverId: chatAppointment?.userId || '',
+      appointmentId: chatAppointment?.id || '',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      doctorName: doctorName
+    };
+  
+    const chatMessage: ChatMessage = {
+      id: message.id,
+      text: message.text,
+      sender: 'doctor',
+      senderId: message.senderId,
+      receiverId: message.receiverId,
+      appointmentId: message.appointmentId,
+      timestamp: message.timestamp,
+      patientName: chatAppointment?.patientName || '',
+      type: messageType as 'text' | 'file',
+      fileUrl: content ? URL.createObjectURL(content) : undefined,
+      fileName: content?.name,
+      mimeType: content?.type,
+      isImage: content?.type.startsWith('image/')
+    };
+  
+    setChatMessages(prev => [...prev, chatMessage]);
+    
+    if (messageType === 'text') {
+      setNewMessage('');
+    }
+    
+    sendMessageToBackend(message);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -237,11 +365,33 @@ const AppointMentListingComponent = () => {
     }
   };
 
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      const file = event.target.files[0];
+      const fileType = file.type.startsWith('image/') ? 'image' : 'file';
+      sendMessage(fileType, file);
+    }
+    event.target.value = '';
+  };
+
   const searchFilteredRequests = filteredAppointments.filter(appointment =>
     appointment.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     appointment.specialty.toLowerCase().includes(searchTerm.toLowerCase()) ||
     appointment.notes.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Pagination logic
+  const indexOfLastAppointment = currentPage * appointmentsPerPage;
+  const indexOfFirstAppointment = indexOfLastAppointment - appointmentsPerPage;
+  const currentAppointments = searchFilteredRequests.slice(
+    indexOfFirstAppointment,
+    indexOfLastAppointment
+  );
+  const totalPages = Math.ceil(searchFilteredRequests.length / appointmentsPerPage);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   const getProfileImageUrl = (name: string) => {
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=3B82F6&color=FFFFFF&size=64&bold=true`;
@@ -249,6 +399,48 @@ const AppointMentListingComponent = () => {
 
   const doctorName = doctor ? `${doctor.firstName || ''} ${doctor.lastName || ''}`.trim() : 'Doctor';
   const firstName = doctor?.firstName || 'Doctor';
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen bg-gray-50">
+        <div className="fixed left-0 top-0 h-full w-64 z-30 bg-white shadow-lg">
+          <Sidebar doctorName={doctorName} />
+        </div>
+        
+        <div className="flex-1 ml-64">
+          <div className="p-6 lg:p-8">
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading appointments...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !doctor) {
+    return (
+      <div className="flex min-h-screen bg-gray-50">
+        <div className="fixed left-0 top-0 h-full w-64 z-30 bg-white shadow-lg">
+          <Sidebar doctorName={doctorName} />
+        </div>
+        
+        <div className="flex-1 ml-64">
+          <div className="p-6 lg:p-8">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <div className="flex items-center">
+                <AlertCircle className="w-5 h-5 text-red-600 mr-2" />
+                <p className="text-red-800">{error}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -272,15 +464,6 @@ const AppointMentListingComponent = () => {
             )}
           </div>
 
-          {loading && (
-            <div className="flex items-center justify-center h-64">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p className="text-gray-600">Loading appointments...</p>
-              </div>
-            </div>
-          )}
-
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
               <div className="flex items-center">
@@ -296,197 +479,222 @@ const AppointMentListingComponent = () => {
             </div>
           )}
 
-          {!loading && !error && !doctor && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-              <div className="flex items-center">
-                <AlertCircle className="w-5 h-5 text-yellow-600 mr-2" />
-                <p className="text-yellow-800">Doctor information not available. Please log in again.</p>
-              </div>
-            </div>
-          )}
-
-          {!loading && !error && doctor && (
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8 min-h-[calc(100vh-200px)]">
-              <div className="xl:col-span-2">
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-full flex flex-col">
-                  <div className="p-4 lg:p-6 border-b border-gray-200 flex-shrink-0">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                      <input
-                        type="text"
-                        placeholder="Search patients, specialty, or notes..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 bg-gray-50 border-0 rounded-lg text-gray-900 placeholder-gray-500 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex-1 overflow-hidden">
-                    <div className="h-full overflow-y-auto">
-                      {searchFilteredRequests.length > 0 ? (
-                        <div className="divide-y divide-gray-100">
-                          {searchFilteredRequests.map((appointment) => (
-                            <div
-                              key={appointment.id}
-                              className={`p-4 lg:p-6 hover:bg-gray-50 cursor-pointer transition-all duration-200 ${
-                                selectedRequest?.id === appointment.id 
-                                  ? 'bg-blue-50 border-r-4 border-r-blue-500' 
-                                  : ''
-                              }`}
-                              onClick={() => setSelectedRequest(appointment)}
-                            >
-                              <div className="flex items-center justify-between mb-3">
-                                <div className="flex items-center space-x-3 lg:space-x-4 flex-1 min-w-0">
-                                  <div className="relative flex-shrink-0">
-                                    <img
-                                      src={getProfileImageUrl(appointment.patientName)}
-                                      alt={appointment.patientName}
-                                      className="w-10 h-10 lg:w-12 lg:h-12 rounded-full object-cover"
-                                    />
-                                  </div>
-                                  
-                                  <div className="min-w-0 flex-1">
-                                    <h3 className="text-base lg:text-lg font-semibold text-gray-900 truncate">
-                                      {appointment.patientName}
-                                    </h3>
-                                    <div className="flex items-center space-x-2 text-sm text-gray-600 mt-1">
-                                      <Calendar className="w-4 h-4 flex-shrink-0" />
-                                      <span className="truncate">{formatDate(appointment.appointmentDate)}</span>
-                                      <Clock className="w-4 h-4 flex-shrink-0 ml-2" />
-                                      <span className="truncate">{formatTime(appointment.appointmentTime)}</span>
-                                    </div>
-                                  </div>
-                                </div>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleChatClick(appointment);
-                                  }}
-                                  className="ml-4 p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-full transition-colors"
-                                  title="Start chat"
-                                >
-                                  <MessageSquare className="w-5 h-5" />
-                                </button>
-                              </div>
-                              
-                              <div className="flex items-center justify-between">
-                                <span className={`px-2 py-1 lg:px-3 lg:py-1 rounded-full text-xs font-medium border ${getUrgencyColor(appointment.status)}`}>
-                                  {getStatusText(appointment.status)}
-                                </span>
-                                <span className="text-xs text-gray-500 font-medium">
-                                  {appointment.specialty}
-                                </span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center h-full p-8">
-                          <div className="text-center">
-                            <Search className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                            <h3 className="text-lg font-medium text-gray-900 mb-1">
-                              {filteredAppointments.length === 0 ? 'No appointments found' : 'No matching appointments'}
-                            </h3>
-                            <p className="text-gray-500">
-                              {filteredAppointments.length === 0 
-                                ? `No appointments found for Dr. ${doctorName}` 
-                                : 'Try adjusting your search terms'
-                              }
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8 min-h-[calc(100vh-200px)]">
+            <div className="xl:col-span-2">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-full flex flex-col">
+                <div className="p-4 lg:p-6 border-b border-gray-200 flex-shrink-0">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <input
+                      type="text"
+                      placeholder="Search patients, specialty, or notes..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 bg-gray-50 border-0 rounded-lg text-gray-900 placeholder-gray-500 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
+                    />
                   </div>
                 </div>
-              </div>
 
-              <div className="xl:col-span-1">
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 sticky top-6 h-fit">
-                  <div className="p-4 lg:p-6">
-                    {selectedRequest ? (
-                      <div>
-                        <div className="flex items-center space-x-4 mb-6 pb-4 border-b border-gray-100">
-                          <div className="relative flex-shrink-0">
-                            <img
-                              src={getProfileImageUrl(selectedRequest.patientName)}
-                              alt={selectedRequest.patientName}
-                              className="w-14 h-14 lg:w-16 lg:h-16 rounded-full object-cover"
-                            />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <h2 className="text-xl font-bold text-gray-900 truncate">
-                              {selectedRequest.patientName}
-                            </h2>
-                            <p className="text-gray-600">Patient</p>
-                          </div>
-                          <button
-                            onClick={() => handleChatClick(selectedRequest)}
-                            className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-full transition-colors"
-                            title="Start chat"
+                <div className="flex-1 overflow-hidden">
+                  <div className="h-full overflow-y-auto">
+                    {currentAppointments.length > 0 ? (
+                      <div className="divide-y divide-gray-100">
+                        {currentAppointments.map((appointment) => (
+                          <div
+                            key={appointment.id}
+                            className={`p-4 lg:p-6 hover:bg-gray-50 cursor-pointer transition-all duration-200 ${
+                              selectedRequest?.id === appointment.id 
+                                ? 'bg-blue-50 border-r-4 border-r-blue-500' 
+                                : ''
+                            }`}
+                            onClick={() => setSelectedRequest(appointment)}
                           >
-                            <MessageSquare className="w-5 h-5" />
-                          </button>
-                        </div>
-
-                        <div className="space-y-4 mb-6">
-                          <div className="flex items-center space-x-3">
-                            <Calendar className="text-gray-400 w-5 h-5 flex-shrink-0" />
-                            <span className="text-gray-700">
-                              {formatDate(selectedRequest.appointmentDate)}, {formatTime(selectedRequest.appointmentTime)}
-                            </span>
-                          </div>
-                          <div className="flex items-center space-x-3">
-                            <FileText className="text-gray-400 w-5 h-5 flex-shrink-0" />
-                            <span className="text-gray-700">{selectedRequest.specialty}</span>
-                          </div>
-                          <div className="flex items-center space-x-3">
-                            <AlertCircle className="text-gray-400 w-5 h-5 flex-shrink-0" />
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getUrgencyColor(selectedRequest.status)}`}>
-                              {getStatusText(selectedRequest.status)}
-                            </span>
-                          </div>
-                          <div className="flex items-center space-x-3">
-                            <Phone className="text-gray-400 w-5 h-5 flex-shrink-0" />
-                            <span className="text-gray-700">{selectedRequest.patientPhone}</span>
-                          </div>
-                          {selectedRequest.patientEmail && (
-                            <div className="flex items-center space-x-3">
-                              <Mail className="text-gray-400 w-5 h-5 flex-shrink-0" />
-                              <span className="text-gray-700 truncate" title={selectedRequest.patientEmail}>
-                                {selectedRequest.patientEmail}
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center space-x-3 lg:space-x-4 flex-1 min-w-0">
+                                <div className="relative flex-shrink-0">
+                                  <img
+                                    src={getProfileImageUrl(appointment.patientName)}
+                                    alt={appointment.patientName}
+                                    className="w-10 h-10 lg:w-12 lg:h-12 rounded-full object-cover"
+                                  />
+                                </div>
+                                
+                                <div className="min-w-0 flex-1">
+                                  <h3 className="text-base lg:text-lg font-semibold text-gray-900 truncate">
+                                    {appointment.patientName}
+                                  </h3>
+                                  <div className="flex items-center space-x-2 text-sm text-gray-600 mt-1">
+                                    <Calendar className="w-4 h-4 flex-shrink-0" />
+                                    <span className="truncate">{formatDate(appointment.appointmentDate)}</span>
+                                    <Clock className="w-4 h-4 flex-shrink-0 ml-2" />
+                                    <span className="truncate">{formatTime(appointment.appointmentTime)}</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleChatClick(appointment);
+                                }}
+                                className="ml-4 p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-full transition-colors"
+                                title="Start chat"
+                              >
+                                <MessageSquare className="w-5 h-5" />
+                              </button>
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <span className={`px-2 py-1 lg:px-3 lg:py-1 rounded-full text-xs font-medium border ${getUrgencyColor(appointment.status)}`}>
+                                {getStatusText(appointment.status)}
+                              </span>
+                              <span className="text-xs text-gray-500 font-medium">
+                                {appointment.specialty}
                               </span>
                             </div>
-                          )}
-                        </div>
-
-                        <div className="mb-6 pb-4 border-b border-gray-100">
-                          <h3 className="font-semibold text-gray-900 mb-2">Notes</h3>
-                          <p className="text-gray-600 text-sm leading-relaxed">
-                            {selectedRequest.notes || "No notes provided"}
-                          </p>
-                        </div>
-
-                        <div className="mb-6 pb-4 border-b border-gray-100">
-                          <h3 className="font-semibold text-gray-900 mb-2">Assigned Doctor</h3>
-                          <p className="text-gray-600 text-sm leading-relaxed">
-                            {selectedRequest.doctorName}
-                          </p>
-                        </div>
+                          </div>
+                        ))}
                       </div>
                     ) : (
-                      <div className="text-center py-12">
-                        <UserCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">Select an appointment</h3>
-                        <p className="text-gray-500">Choose an appointment from the list to view details</p>
+                      <div className="flex items-center justify-center h-full p-8">
+                        <div className="text-center">
+                          <Search className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                          <h3 className="text-lg font-medium text-gray-900 mb-1">
+                            {filteredAppointments.length === 0 ? 'No appointments found' : 'No matching appointments'}
+                          </h3>
+                          <p className="text-gray-500">
+                            {filteredAppointments.length === 0 
+                              ? `No appointments found for Dr. ${doctorName}` 
+                              : 'Try adjusting your search terms'
+                            }
+                          </p>
+                        </div>
                       </div>
                     )}
                   </div>
+
+                  {/* Pagination Controls */}
+                  {searchFilteredRequests.length > appointmentsPerPage && (
+                    <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-white">
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                        className={`px-3 py-1 rounded-md flex items-center ${currentPage === 1 ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-50'}`}
+                      >
+                        <ChevronLeft className="w-4 h-4 mr-1" />
+                        Previous
+                      </button>
+                      
+                      <div className="flex items-center space-x-1">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                          <button
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${currentPage === page ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+                          >
+                            {page}
+                          </button>
+                        ))}
+                      </div>
+                      
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                        className={`px-3 py-1 rounded-md flex items-center ${currentPage === totalPages ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-50'}`}
+                      >
+                        Next
+                        <ChevronRight className="w-4 h-4 ml-1" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
-          )}
+
+            {/* Right sidebar with appointment details */}
+            <div className="xl:col-span-1">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 sticky top-6 h-fit">
+                <div className="p-4 lg:p-6">
+                  {selectedRequest ? (
+                    <div>
+                      <div className="flex items-center space-x-4 mb-6 pb-4 border-b border-gray-100">
+                        <div className="relative flex-shrink-0">
+                          <img
+                            src={getProfileImageUrl(selectedRequest.patientName)}
+                            alt={selectedRequest.patientName}
+                            className="w-14 h-14 lg:w-16 lg:h-16 rounded-full object-cover"
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h2 className="text-xl font-bold text-gray-900 truncate">
+                            {selectedRequest.patientName}
+                          </h2>
+                          <p className="text-gray-600">Patient</p>
+                        </div>
+                        <button
+                          onClick={() => handleChatClick(selectedRequest)}
+                          className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-full transition-colors"
+                          title="Start chat"
+                        >
+                          <MessageSquare className="w-5 h-5" />
+                        </button>
+                      </div>
+
+                      <div className="space-y-4 mb-6">
+                        <div className="flex items-center space-x-3">
+                          <Calendar className="text-gray-400 w-5 h-5 flex-shrink-0" />
+                          <span className="text-gray-700">
+                            {formatDate(selectedRequest.appointmentDate)}, {formatTime(selectedRequest.appointmentTime)}
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <FileText className="text-gray-400 w-5 h-5 flex-shrink-0" />
+                          <span className="text-gray-700">{selectedRequest.specialty}</span>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <AlertCircle className="text-gray-400 w-5 h-5 flex-shrink-0" />
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getUrgencyColor(selectedRequest.status)}`}>
+                            {getStatusText(selectedRequest.status)}
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <Phone className="text-gray-400 w-5 h-5 flex-shrink-0" />
+                          <span className="text-gray-700">{selectedRequest.patientPhone}</span>
+                        </div>
+                        {selectedRequest.patientEmail && (
+                          <div className="flex items-center space-x-3">
+                            <Mail className="text-gray-400 w-5 h-5 flex-shrink-0" />
+                            <span className="text-gray-700 truncate" title={selectedRequest.patientEmail}>
+                              {selectedRequest.patientEmail}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="mb-6 pb-4 border-b border-gray-100">
+                        <h3 className="font-semibold text-gray-900 mb-2">Notes</h3>
+                        <p className="text-gray-600 text-sm leading-relaxed">
+                          {selectedRequest.notes || "No notes provided"}
+                        </p>
+                      </div>
+
+                      <div className="mb-6 pb-4 border-b border-gray-100">
+                        <h3 className="font-semibold text-gray-900 mb-2">Assigned Doctor</h3>
+                        <p className="text-gray-600 text-sm leading-relaxed">
+                          {selectedRequest.doctorName}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <UserCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">Select an appointment</h3>
+                      <p className="text-gray-500">Choose an appointment from the list to view details</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* Chat Modal */}
           {showChatModal && chatAppointment && (
@@ -533,48 +741,129 @@ const AppointMentListingComponent = () => {
 
                   {/* Chat Messages */}
                   <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
-                    {chatMessages.map((message) => (
-                      <div key={message.id} className="flex flex-col">
-                        {message.sender === 'patient' ? (
-                          <div className="flex items-start">
-                            <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center mr-2 flex-shrink-0">
-                              <img
-                                src={getProfileImageUrl(chatAppointment.patientName)}
-                                alt={chatAppointment.patientName}
-                                className="w-8 h-8 rounded-full object-cover"
-                              />
-                            </div>
-                            <div className="flex-1">
-                              <div className="bg-white rounded-lg p-3 max-w-xs shadow-sm">
-                                <p className="text-gray-800 text-sm">{message.text}</p>
+                    {chatMessages.length > 0 ? (
+                      chatMessages.map((message) => (
+                        <div key={message.id} className="flex flex-col">
+                          {message.sender === 'patient' ? (
+                            <div className="flex items-start">
+                              <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center mr-2 flex-shrink-0">
+                                <img
+                                  src={getProfileImageUrl(chatAppointment.patientName)}
+                                  alt={chatAppointment.patientName}
+                                  className="w-8 h-8 rounded-full object-cover"
+                                />
                               </div>
-                              <p className="text-gray-400 text-xs mt-1 ml-2">
-                                {message.timestamp}
-                              </p>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex justify-end">
-                            <div className="flex flex-col items-end max-w-xs">
-                              <div className="bg-blue-600 rounded-lg p-3 shadow-sm">
-                                <p className="text-white text-sm">{message.text}</p>
+                              <div className="flex-1">
+                                {message.isImage ? (
+                                  <div className="bg-white rounded-lg p-3 max-w-xs shadow-sm">
+                                    <img 
+                                      src={message.fileUrl} 
+                                      alt={message.fileName || "Received image"}
+                                      className="max-w-full h-auto rounded max-h-48 object-contain"
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.onerror = null;
+                                        target.src = 'https://via.placeholder.com/150?text=Image+Not+Available';
+                                      }}
+                                    />
+                                    {message.text && (
+                                      <p className="text-gray-800 text-sm mt-2">{message.text}</p>
+                                    )}
+                                  </div>
+                                ) : message.type === 'file' ? (
+                                  <div className="bg-white rounded-lg p-3 max-w-xs shadow-sm">
+                                    <div className="flex items-center space-x-2">
+                                      <Paperclip className="w-4 h-4 text-gray-500" />
+                                      <span className="text-sm text-gray-700">{message.fileName}</span>
+                                    </div>
+                                    {message.text && (
+                                      <p className="text-gray-800 text-sm mt-2">{message.text}</p>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div className="bg-white rounded-lg p-3 max-w-xs shadow-sm">
+                                    <p className="text-gray-800 text-sm">{message.text}</p>
+                                  </div>
+                                )}
+                                <p className="text-gray-400 text-xs mt-1 ml-2">
+                                  {message.timestamp}
+                                </p>
                               </div>
-                              <p className="text-gray-400 text-xs mt-1 mr-2">
-                                {message.timestamp}
-                              </p>
                             </div>
-                          </div>
-                        )}
+                          ) : (
+                            <div className="flex justify-end">
+                              <div className="flex flex-col items-end max-w-xs">
+                                {message.isImage ? (
+                                  <div className="bg-blue-600 rounded-lg p-3 shadow-sm">
+                                    <img 
+                                      src={message.fileUrl} 
+                                      alt={message.fileName || "Sent image"}
+                                      className="max-w-full h-auto rounded max-h-48 object-contain"
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.onerror = null;
+                                        target.src = 'https://via.placeholder.com/150?text=Image+Not+Available';
+                                      }}
+                                    />
+                                    {message.text && (
+                                      <p className="text-white text-sm mt-2">{message.text}</p>
+                                    )}
+                                  </div>
+                                ) : message.type === 'file' ? (
+                                  <div className="bg-blue-600 rounded-lg p-3 shadow-sm">
+                                    <div className="flex items-center space-x-2">
+                                      <Paperclip className="w-4 h-4 text-white" />
+                                      <span className="text-sm text-white">{message.fileName}</span>
+                                    </div>
+                                    {message.text && (
+                                      <p className="text-white text-sm mt-2">{message.text}</p>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div className="bg-blue-600 rounded-lg p-3 shadow-sm">
+                                    <p className="text-white text-sm">{message.text}</p>
+                                  </div>
+                                )}
+                                <p className="text-gray-400 text-xs mt-1 mr-2">
+                                  {message.timestamp}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                        <MessageCircle className="w-12 h-12 mb-2" />
+                        <p>No messages yet</p>
+                        <p className="text-sm">Start the conversation with your patient</p>
                       </div>
-                    ))}
+                    )}
                   </div>
 
                   {/* Message Input */}
                   <div className="bg-white p-4 border-t border-gray-200 flex-shrink-0">
                     <div className="flex items-center space-x-2">
-                      <button className="text-gray-400 hover:text-gray-600">
+                      <label className="text-gray-400 hover:text-gray-600 cursor-pointer">
                         <Paperclip className="w-5 h-5" />
-                      </button>
+                        <input
+                          type="file"
+                          hidden
+                          onChange={handleFileUpload}
+                          accept="*/*"
+                        />
+                      </label>
+                      
+                      <label className="text-gray-400 hover:text-gray-600 cursor-pointer">
+                        <Camera className="w-5 h-5" />
+                        <input
+                          type="file"
+                          hidden
+                          onChange={handleFileUpload}
+                          accept="image/*"
+                        />
+                      </label>
+
                       <div className="flex-1 relative">
                         <input
                           type="text"
@@ -585,9 +874,10 @@ const AppointMentListingComponent = () => {
                           className="w-full bg-gray-100 text-gray-800 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
                         />
                       </div>
+                      
                       {newMessage.trim() ? (
                         <button
-                          onClick={sendMessage}
+                          onClick={() => sendMessage('text')}
                           className="text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-full p-2 transition-colors"
                         >
                           <Send className="w-5 h-5" />

@@ -1,14 +1,18 @@
 import axiosInstance from "@/cors/axiousInstance";
 
-export const deleteDoctor = async (email) => {
+
+interface doctorBlockData{
+  
+  email:string;
+}
+
+
+export const blockingDoctor = async (reason:string, email:string) => {
   try {
     
-    
-    
-    
     const response = await axiosInstance.post(
-      "api/admin/deleteDoctorAfterReject", 
-      { email }, 
+      "api/admin/blockingDoctor", 
+      { reason,email }, 
       
     );
 

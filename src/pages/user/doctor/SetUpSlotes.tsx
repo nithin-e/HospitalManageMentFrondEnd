@@ -5,8 +5,7 @@ import SloteManageMent   from "../../../components/user/Doctor/slotes/SloteManag
 const SetUpSlotes = () => {
   return (
     <div>
-    
-     
+  
       <SloteManageMent/>
      
     </div>

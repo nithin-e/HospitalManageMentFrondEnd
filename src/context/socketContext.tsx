@@ -22,8 +22,6 @@ export const SocketProvider = ({ children }) => {
   const [userBlockStatus, setUserBlockStatus] = useState({});
 
 
-    // const doctor = useSelector((state: RootState) => state);
-    // console.log('................check up datas............',doctor.doctor.data.doctor)
   
 
   const selectUserAndDoctor = (state: RootState) => ({
@@ -33,9 +31,7 @@ export const SocketProvider = ({ children }) => {
   
   const { user, doctor } = useSelector(selectUserAndDoctor);
 
-  console.log(' please check for here are u getting the user data',user)
-  console.log(' please check for here are u getting the user data',doctor)
-
+  
   useEffect(() => {
     console.log('SocketProvider initializing...');
 
@@ -54,21 +50,15 @@ export const SocketProvider = ({ children }) => {
       withCredentials: true, 
     });
 
-    // Set up event listeners with detailed logging
-    // newSocket.on('connect', () => {
-    //   console.log('Socket connected successfully with ID:', newSocket.id);
-    //   console.log('Socket transport used:', newSocket.io.engine.transport.name);
-    //   setConnected(true);
-    // });
+    
 
 
     newSocket.on('connect', () => {
       console.log('Socket connected successfully with ID:', newSocket.id);
       
-      console.log('hey hey hey check for here,,,,,,', user);
-      console.log('hey hey hey check for here,,,,,,', doctor);
       
-      const userId = user?.id || doctor?.id || user || doctor;
+      
+      const userId = user?._id || doctor?.id || user || doctor;
       const email = user?.email || doctor?.email;
       const role = user ? 'user' : doctor ? 'doctor' : 'admin';
       
@@ -147,12 +137,12 @@ export const SocketProvider = ({ children }) => {
     console.log('User block status updated:', userBlockStatus);
   }, [userBlockStatus]);
 
-  // Value passed to consumers
+ 
   const value = {
     socket,
     connected,
-    userBlockStatus, // Expose user block status
-    isUserBlocked: (userId) => userBlockStatus[userId] ?? false, // Helper function to check if a user is blocked
+    userBlockStatus,
+    isUserBlocked: (userId) => userBlockStatus[userId] ?? false,
   };
 
   return (

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Wallet, Calendar, DollarSign, Filter, Search, Loader2, Plus, Stethoscope } from 'lucide-react';
+import { Wallet, Calendar, DollarSign, Filter, Search, Loader2, Plus, Stethoscope, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { fectingAllUserAppointMents } from '@/store/DoctorSideApi/fectingFullUserAppointMents';
 import Sidebar from "../../Doctor/layout/Sidebar";
 import { useSelector } from 'react-redux';
@@ -9,7 +9,7 @@ import { RootState } from '@/store/redux/store';
 interface Payment {
   id: string;
   amount: number;
-  doctorAmount: number; // Added doctor amount field
+  doctorAmount: number;
   currency: string;
   description: string;
   date: string;
@@ -26,7 +26,7 @@ interface Payment {
 interface Appointment {
   id: string;
   amount: string;
-  doctorAmount: string; // Added doctor amount from backend
+  doctorAmount: string;
   appointmentDate: string;
   appointmentTime: string;
   doctorEmail: string;
@@ -48,13 +48,14 @@ const DoctorPaymentList: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   useEffect(() => {
     fetchUserFullAppointments();
   }, []);
 
   const transformAppointmentToPayment = (appointment: Appointment): Payment => {
-    // Map payment status from API to our status type
     const getPaymentStatus = (status: string): Payment['status'] => {
       const normalizedStatus = status.toLowerCase();
       if (normalizedStatus === 'success' || normalizedStatus === 'suceess') return 'completed';
@@ -62,7 +63,6 @@ const DoctorPaymentList: React.FC = () => {
       return 'failed';
     };
 
-    // Map payment method
     const getPaymentMethod = (method: string): Payment['method'] => {
       const normalizedMethod = method.toLowerCase();
       if (normalizedMethod === 'online') return 'online' as Payment['method'];
@@ -70,14 +70,14 @@ const DoctorPaymentList: React.FC = () => {
       if (normalizedMethod === 'bank') return 'bank';
       if (normalizedMethod === 'paypal') return 'paypal';
       if (normalizedMethod === 'crypto') return 'crypto';
-      return 'card'; // default
+      return 'card';
     };
 
     return {
       id: appointment.id,
       amount: parseFloat(appointment.amount),
-      doctorAmount: parseFloat(appointment.doctorAmount), // Use doctor amount
-      currency: 'USD', // Default currency, adjust as needed
+      doctorAmount: parseFloat(appointment.doctorAmount),
+      currency: 'USD',
       description: `Medical Appointment - ${appointment.specialty}`,
       date: appointment.appointmentDate,
       status: getPaymentStatus(appointment.paymentStatus),
@@ -95,15 +95,14 @@ const DoctorPaymentList: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
+      setCurrentPage(1);
       
       const response = await fectingAllUserAppointMents();
-      console.log('API Response:', response);
       
       if (response?.result?.appointments && Array.isArray(response.result.appointments)) {
         const transformedPayments = response.result.appointments.map(transformAppointmentToPayment);
         setPayments(transformedPayments);
       } else {
-        // If no appointments, set empty array
         setPayments([]);
       }
     } catch (error) {
@@ -124,7 +123,18 @@ const DoctorPaymentList: React.FC = () => {
     return matchesSearch && matchesStatus;
   });
 
-  // Calculate total doctor wallet amount (using doctorAmount instead of full amount)
+  const totalItems = filteredPayments.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentPayments = filteredPayments.slice(indexOfFirstItem, indexOfLastItem);
+
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+  const goToFirstPage = () => paginate(1);
+  const goToLastPage = () => paginate(totalPages);
+  const goToNextPage = () => currentPage < totalPages && paginate(currentPage + 1);
+  const goToPrevPage = () => currentPage > 1 && paginate(currentPage - 1);
+
   const totalDoctorWalletAmount = payments
     .filter(payment => payment.status === 'completed')
     .reduce((sum, payment) => sum + payment.doctorAmount, 0);
@@ -173,11 +183,8 @@ const DoctorPaymentList: React.FC = () => {
   };
   
   const doctor = useSelector((state: RootState) => state.doctor?.data?.doctor);
-  console.log('Doctor data:', doctor);
+  const doctorName = `${doctor?.firstName || ''} ${  'doctor'}`.trim();
 
-  const doctorName = `${doctor?.firstName || ''} ${doctor?.lastName || ''}`.trim();
-
-  // Group payments by doctor
   const paymentsByDoctor = filteredPayments.reduce((acc, payment) => {
     const doctorName = payment.doctorName || 'Unknown Doctor';
     if (!acc[doctorName]) {
@@ -187,11 +194,9 @@ const DoctorPaymentList: React.FC = () => {
     return acc;
   }, {} as Record<string, Payment[]>);
 
-  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        {/* Sidebar - Fixed positioning */}
         <div className="fixed left-0 top-0 h-full w-64 z-10 bg-white shadow-lg">
           <Sidebar doctorName={doctorName} />
         </div>
@@ -207,11 +212,9 @@ const DoctorPaymentList: React.FC = () => {
     );
   }
 
-  // Error state
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50">
-        {/* Sidebar - Fixed positioning */}
         <div className="fixed left-0 top-0 h-full w-64 z-10 bg-white shadow-lg">
           <Sidebar doctorName={doctorName} />
         </div>
@@ -238,15 +241,12 @@ const DoctorPaymentList: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Sidebar - Fixed positioning */}
       <div className="fixed left-0 top-0 h-full w-64 z-10 bg-white shadow-lg">
         <Sidebar doctorName={doctorName} />
       </div>
       
-      {/* Main Content */}
       <div className="ml-64 p-6">
         <div className="max-w-6xl mx-auto">
-          {/* Header */}
           <div className="mb-8">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
@@ -272,7 +272,6 @@ const DoctorPaymentList: React.FC = () => {
             </div>
           </div>
 
-          {/* Total Doctor Payments Card */}
           <div className="bg-white rounded-xl shadow-lg p-8 mb-6 text-center">
             <h2 className="text-lg font-semibold text-gray-600 mb-2">Total Doctor Earnings</h2>
             <p className="text-4xl font-bold text-blue-600">
@@ -283,7 +282,6 @@ const DoctorPaymentList: React.FC = () => {
             </p>
           </div>
 
-          {/* Search and Filter Controls */}
           <div className="mb-6 flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -292,7 +290,10 @@ const DoctorPaymentList: React.FC = () => {
                 placeholder="Search by patient, doctor, or specialty..."
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
               />
             </div>
             <div className="relative">
@@ -300,7 +301,10 @@ const DoctorPaymentList: React.FC = () => {
               <select
                 className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
               >
                 <option value="all">All Status</option>
                 <option value="completed">Completed</option>
@@ -310,7 +314,6 @@ const DoctorPaymentList: React.FC = () => {
             </div>
           </div>
 
-          {/* Doctor Summary Cards */}
           {Object.keys(paymentsByDoctor).length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
               {Object.entries(paymentsByDoctor).map(([doctorName, doctorPayments]) => {
@@ -338,8 +341,7 @@ const DoctorPaymentList: React.FC = () => {
             </div>
           )}
 
-          {/* Payments Table */}
-          <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+          <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden mb-4">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
@@ -365,7 +367,7 @@ const DoctorPaymentList: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredPayments.map((payment) => (
+                  {currentPayments.map((payment) => (
                     <tr key={payment.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4">
                         <div>
@@ -443,7 +445,102 @@ const DoctorPaymentList: React.FC = () => {
             )}
           </div>
 
-          {/* Summary Stats */}
+          {/* Pagination Controls */}
+          {filteredPayments.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-lg border border-gray-200">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <span>Items per page:</span>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="border border-gray-300 rounded px-2 py-1"
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
+              
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <span>
+                  Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, totalItems)} of {totalItems} items
+                </span>
+              </div>
+              
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={goToFirstPage}
+                  disabled={currentPage === 1}
+                  className="p-1 rounded border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronsLeft className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={goToPrevPage}
+                  disabled={currentPage === 1}
+                  className="p-1 rounded border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => paginate(pageNum)}
+                      className={`w-8 h-8 rounded text-sm ${currentPage === pageNum ? 'bg-blue-500 text-white' : 'border border-gray-300'}`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+                
+                {totalPages > 5 && currentPage < totalPages - 2 && (
+                  <span className="px-1">...</span>
+                )}
+                
+                {totalPages > 5 && currentPage < totalPages - 2 && (
+                  <button
+                    onClick={() => paginate(totalPages)}
+                    className={`w-8 h-8 rounded text-sm ${currentPage === totalPages ? 'bg-blue-500 text-white' : 'border border-gray-300'}`}
+                  >
+                    {totalPages}
+                  </button>
+                )}
+                
+                <button
+                  onClick={goToNextPage}
+                  disabled={currentPage === totalPages}
+                  className="p-1 rounded border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={goToLastPage}
+                  disabled={currentPage === totalPages}
+                  className="p-1 rounded border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronsRight className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          )}
+
           {payments.length > 0 && (
             <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="bg-blue-50 p-4 rounded-lg">

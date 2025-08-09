@@ -53,17 +53,7 @@ const Login = () => {
     }
   }, [showBlockedMessage]);
 
-  // interface LoginPayload {
-  //   user: {
-  //     id?: string;
-  //     googleId?: string;
-  //     email: string;
-  //     name: string;
-  //     role?: string;
-  //   };
-  //   accessToken: string;
-  //   refreshToken: string;
-  // }
+ 
 
   const validationSchema = Yup.object({
     email: Yup.string()
@@ -85,7 +75,6 @@ const Login = () => {
     onSubmit: async (values) => {
       setIsLoading(true);
       try {
-        // const token = localStorage.getItem("accessToken"); 
         const response = await axiosInstance.post(
           "/api/auth/user/loginUser",
           {
@@ -103,11 +92,11 @@ const Login = () => {
           return;
         }
 
-        
+        console.log('Login response:',response)
 
         const loginPayload = {
           user: {
-            id: response.data.id || response.data.user?.id,
+            _id: response.data._id || response.data.user?._id,
             name: response.data.name || response.data.user?.name,
             email: response.data.email || response.data.user?.email,
             role: response.data.role || response.data.user?.role,
@@ -115,6 +104,8 @@ const Login = () => {
           accessToken: response.data.accessToken || response.data.token,
           refreshToken: response.data.refreshToken,
         };
+
+        console.log('Login payload:',response)
 
         const result = await dispatch(login(loginPayload));
         if ((result.payload as any).user.role === 'admin') {

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Wallet, Calendar, DollarSign, Filter, Search, Loader2, Plus, AlertCircle, RefreshCw } from 'lucide-react';
+import { Wallet, Calendar, DollarSign, Filter, Search, Loader2, Plus, AlertCircle, RefreshCw, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { FetchingAllUserAppointsMentsAdmin } from '@/store/AdminSideApi/FetchingAllUserAppointsMentsAdmin';
 
 interface Payment {
@@ -51,6 +51,10 @@ const PaymentList: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [appointmentStatusFilter, setAppointmentStatusFilter] = useState<string>('all');
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   useEffect(() => {
     fetchUserFullAppointments();
@@ -150,6 +154,30 @@ const PaymentList: React.FC = () => {
     const matchesAppointmentStatus = appointmentStatusFilter === 'all' || payment.appointmentStatus === appointmentStatusFilter;
     return matchesSearch && matchesStatus && matchesAppointmentStatus;
   });
+
+  // Pagination calculations
+  const totalItems = filteredPayments.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  
+  // Get current items
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredPayments.slice(indexOfFirstItem, indexOfLastItem);
+
+  // Change page
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+  const goToFirstPage = () => paginate(1);
+  const goToLastPage = () => paginate(totalPages);
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      paginate(currentPage + 1);
+    }
+  };
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      paginate(currentPage - 1);
+    }
+  };
 
   // Calculate total admin wallet amount (excluding cancelled appointments for active calculations)
   const totalAdminWalletAmount = payments
@@ -283,17 +311,6 @@ const PaymentList: React.FC = () => {
             </p>
           </div>
 
-          {/* Refunded Amount Card */}
-          {/* <div className="bg-white rounded-xl shadow-lg p-6 text-center">
-            <h2 className="text-lg font-semibold text-gray-600 mb-2">Refunded Amount</h2>
-            <p className="text-3xl font-bold text-red-600">
-              {formatCurrency(totalRefundedAmount)}
-            </p>
-            <p className="text-gray-500 mt-2 text-sm">
-              From {cancelledAppointmentsCount} cancelled appointments
-            </p>
-          </div> */}
-
           {/* Total Transactions Card */}
           <div className="bg-white rounded-xl shadow-lg p-6 text-center">
             <h2 className="text-lg font-semibold text-gray-600 mb-2">Total Transactions</h2>
@@ -303,6 +320,24 @@ const PaymentList: React.FC = () => {
             <p className="text-gray-500 mt-2 text-sm">
               All appointment transactions
             </p>
+          </div>
+          
+          {/* Items Per Page Selector */}
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <h2 className="text-lg font-semibold text-gray-600 mb-2">Items Per Page</h2>
+            <select
+              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1); // Reset to first page when changing items per page
+              }}
+            >
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+            </select>
           </div>
         </div>
 
@@ -315,7 +350,10 @@ const PaymentList: React.FC = () => {
               placeholder="Search by patient, doctor, or specialty..."
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1); // Reset to first page when searching
+              }}
             />
           </div>
           <div className="relative">
@@ -323,7 +361,10 @@ const PaymentList: React.FC = () => {
             <select
               className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1); // Reset to first page when filtering
+              }}
             >
               <option value="all">All Payment Status</option>
               <option value="completed">Completed</option>
@@ -336,7 +377,10 @@ const PaymentList: React.FC = () => {
             <select
               className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
               value={appointmentStatusFilter}
-              onChange={(e) => setAppointmentStatusFilter(e.target.value)}
+              onChange={(e) => {
+                setAppointmentStatusFilter(e.target.value);
+                setCurrentPage(1); // Reset to first page when filtering
+              }}
             >
               <option value="all">All Appointment Status</option>
               <option value="scheduled">Scheduled</option>
@@ -377,7 +421,7 @@ const PaymentList: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredPayments.map((payment) => (
+                {currentItems.map((payment) => (
                   <tr key={payment.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-3 py-3">
                       <div>
@@ -471,6 +515,99 @@ const PaymentList: React.FC = () => {
             </div>
           )}
         </div>
+
+        {/* Pagination Controls */}
+        {totalItems > 0 && (
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-sm text-gray-500">
+              Showing <span className="font-medium">{indexOfFirstItem + 1}</span> to{' '}
+              <span className="font-medium">
+                {Math.min(indexOfLastItem, totalItems)}
+              </span>{' '}
+              of <span className="font-medium">{totalItems}</span> results
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <button
+                onClick={goToFirstPage}
+                disabled={currentPage === 1}
+                className={`p-2 rounded-md ${currentPage === 1 ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'}`}
+              >
+                <ChevronsLeft className="w-5 h-5" />
+              </button>
+              <button
+                onClick={goToPreviousPage}
+                disabled={currentPage === 1}
+                className={`p-2 rounded-md ${currentPage === 1 ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'}`}
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              
+              {/* Page numbers */}
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  // Show pages around current page
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => paginate(pageNum)}
+                      className={`w-10 h-10 rounded-md flex items-center justify-center ${
+                        currentPage === pageNum
+                          ? 'bg-blue-500 text-white'
+                          : 'text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+                
+                {totalPages > 5 && currentPage < totalPages - 2 && (
+                  <span className="px-2">...</span>
+                )}
+                
+                {totalPages > 5 && currentPage < totalPages - 2 && (
+                  <button
+                    onClick={() => paginate(totalPages)}
+                    className={`w-10 h-10 rounded-md flex items-center justify-center ${
+                      currentPage === totalPages
+                        ? 'bg-blue-500 text-white'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    {totalPages}
+                  </button>
+                )}
+              </div>
+              
+              <button
+                onClick={goToNextPage}
+                disabled={currentPage === totalPages}
+                className={`p-2 rounded-md ${currentPage === totalPages ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'}`}
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+              <button
+                onClick={goToLastPage}
+                disabled={currentPage === totalPages}
+                className={`p-2 rounded-md ${currentPage === totalPages ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'}`}
+              >
+                <ChevronsRight className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

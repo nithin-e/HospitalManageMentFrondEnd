@@ -7,8 +7,8 @@ import Services from '@/components/user/user1/Services';
 import Stats from '@/components/user/user1/Stats';
 import Doctors from '@/components/user/user1/Doctors';
 import CTA from '@/components/user/user1/CTA';
-import Newsletter from '@/components/user/user1/Newsletter';
-import Footer from '@/components/user/user1/Footer';
+
+ import Footer from '@/components/user/user1/Footer';
 import { motion, useScroll, useSpring, useTransform } from 'framer-motion';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -53,7 +53,7 @@ const Index = () => {
         <Stats />
         <Doctors />
         <CTA image="https://images.unsplash.com/photo-1579684385127-1ef15d508118?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=880&q=80" />
-        <Newsletter />
+      
       </main>
       
       <Footer />

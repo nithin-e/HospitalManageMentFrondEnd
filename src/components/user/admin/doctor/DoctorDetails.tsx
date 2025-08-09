@@ -21,6 +21,7 @@ import { Checkbox } from "@/components/user/ui/checkbox";
 import { toast } from "sonner";
 import { storeNotificationData } from "@/store/AdminSideApi/NotificationApi";
 import { handlingAdminCancel } from "@/store/AdminSideApi/handlingAdminCancel";
+import { blockingDoctor } from "@/store/AdminSideApi/BlockUser";
 
 export const DoctorDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -33,7 +34,11 @@ export const DoctorDetails = () => {
   const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
   const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
   const [isRejectionSuccessDialogOpen, setIsRejectionSuccessDialogOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedReason, setSelectedReason] = useState('');
 
+
+  console.log('plzz check this doctor details',doctor)
 
   if (!doctor) {
     return (
@@ -62,9 +67,7 @@ export const DoctorDetails = () => {
     },
   ];
 
-  const handleRequestInfo = () => {
-    toast.success("Request for more information sent successfully");
-  };
+ 
 
   
   const handleApprove = async () => {
@@ -99,6 +102,20 @@ export const DoctorDetails = () => {
     { id: "unable_to_verify", label: "Unable to verify credentials" }
   ];
 
+
+
+  const blockReasons = [
+    { id: "misconduct", label: "Unprofessional behavior" },
+    { id: "fake_info", label: "Fake or incorrect information" },
+    { id: "complaints", label: "Too many patient complaints" },
+    { id: "no_response", label: "Not responding to patients" },
+    { id: "privacy_issue", label: "Shared private patient data" },
+    { id: "rules_broken", label: "Broke platform rules" },
+    { id: "spam", label: "Sending spam or ads" },
+    { id: "legal_issue", label: "Legal or police issue" }
+  ];
+  
+
   const handleReasonToggle = (reasonId: string) => {
     setSelectedReasons(current => {
       if (current.includes(reasonId)) {
@@ -126,11 +143,11 @@ export const DoctorDetails = () => {
       // Show loading state for exactly 2 seconds
       await new Promise((resolve) => setTimeout(resolve, 2000));
       const result = await handlingAdminCancel(doctor.email, rejectionReasonTexts);
-      console.log('...result......', result);
+      
       
       if (result) {
         setIsRejectDialogOpen(false);
-        setIsRejectionSuccessDialogOpen(true); // Open the rejection success dialog
+        setIsRejectionSuccessDialogOpen(true);
       } else {
         throw new Error("Failed to process rejection.");
       }
@@ -143,9 +160,34 @@ export const DoctorDetails = () => {
   };
 
 
+  const handleDenyClick = () => {
+    setIsModalOpen(true);
+  };
+
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedReason('');
+  };
+
+  const handleSubmitDeny = async () => {
+    if (selectedReason) {
+    
+    
+      const reason=blockReasons.find(r => r.id === selectedReason)?.label
+          if(reason){
+           const  res=  await blockingDoctor(reason,doctor.email)
+           if(res.data.result.success){
+            console.log('check the responce first then make the conditions',res)
+           handleCloseModal();
+           }
+
+            }
+
+      
   
-
-
+    }
+  };
 
   const getStatusBadge = () => {
     if (!doctor.status) return null;
@@ -228,29 +270,163 @@ export const DoctorDetails = () => {
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 w-full mt-6">
-                    <Button variant="outline" className="w-full gap-1 text-sm py-1 px-2 h-8 border-indigo-200 text-indigo-600 hover:bg-indigo-50" onClick={handleRequestInfo}>
-                      Request Info
-                    </Button>
-                    {(doctor.status && doctor.status.toLowerCase() === "pending") ? (
-                      <Button
-                        className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-sm py-1 px-2 h-8 shadow-md"
-                        onClick={() => setIsApproveDialogOpen(true)}
-                      >
-                        Approve
-                      </Button>
-                    ) : (
-                      <Button
-                        className="w-full bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-sm py-1 px-2 h-8 shadow-md"
-                        onClick={() => setIsRejectDialogOpen(true)}
-                      >
-                        Deny
-                      </Button>
-                    )}
+
+                  {/* {doctor.isActive === 'true' && doctor.status !=='completed'? (
+  <Button
+    className="w-full bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-sm py-1 px-2 h-8 shadow-md"
+    onClick={handleDenyClick}
+  >
+    Deny
+  </Button>
+) : (
+  <div className="w-full text-center py-2 px-4 bg-red-100 border border-red-300 rounded-md">
+    <p className="text-red-700 font-medium text-sm">Doctor Blocked</p>
+  </div>
+)} */}
+
+
+
+{doctor.status && doctor.status.toLowerCase() === "completed" ? (
+  doctor.isActive === true ? (
+    <Button
+      className="w-full bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-sm py-1 px-2 h-8 shadow-md"
+      onClick={handleDenyClick}
+    >
+      Deny
+    </Button>
+  ) : (
+    <div className="w-full text-center py-2 px-4 bg-red-100 border border-red-300 rounded-md">
+      <p className="text-red-700 font-medium text-sm">Doctor Blocked</p>
+    </div>
+  )
+) : (
+  <div className="w-full text-center py-2 px-4 bg-red-100 border border-red-300 rounded-md">
+    <p className="text-red-700 font-medium text-sm">Complete the process</p>
+  </div>
+)}
+
+
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
+
+
+
+
+
+          {isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[70vh] flex flex-col transform transition-all duration-300 animate-pulse-once">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-t-2xl">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                  <AlertTriangle className="w-5 h-5 text-white" />
+                </div>
+                <h2 className="text-xl font-bold">Deny Application</h2>
+              </div>
+              <button
+                onClick={handleCloseModal}
+                className="text-white hover:bg-white hover:bg-opacity-20 p-2 rounded-full transition-all duration-200"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <p className="text-gray-700 mb-6 text-center font-medium">
+                Select a reason for denying this application:
+              </p>
+
+              {/* Reason Selection */}
+              <div className="grid gap-3 mb-6 pr-2">
+                {blockReasons.map((reason, index) => (
+                  <label
+                    key={reason.id}
+                    className={`group relative flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-lg ${
+                      selectedReason === reason.id
+                        ? 'border-red-500 bg-red-50 shadow-md'
+                        : 'border-gray-200 hover:border-red-300 hover:bg-red-50'
+                    }`}
+                    style={{
+                      animationDelay: `${index * 50}ms`
+                    }}
+                  >
+                    <div className="relative">
+                      <input
+                        type="radio"
+                        name="blockReason"
+                        value={reason.id}
+                        checked={selectedReason === reason.id}
+                        onChange={(e) => setSelectedReason(e.target.value)}
+                        className="sr-only"
+                      />
+                      <div className={`w-5 h-5 rounded-full border-2 transition-all duration-200 ${
+                        selectedReason === reason.id
+                          ? 'border-red-500 bg-red-500'
+                          : 'border-gray-300 group-hover:border-red-400'
+                      }`}>
+                        {selectedReason === reason.id && (
+                          <div className="w-2 h-2 bg-white rounded-full absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
+                        )}
+                      </div>
+                    </div>
+                    <span className={`ml-4 font-medium transition-colors duration-200 ${
+                      selectedReason === reason.id ? 'text-red-700' : 'text-gray-700 group-hover:text-red-600'
+                    }`}>
+                      {reason.label}
+                    </span>
+                    {selectedReason === reason.id && (
+                      <div className="ml-auto">
+                        <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                      </div>
+                    )}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex-shrink-0 flex gap-4 p-6 bg-gray-50 rounded-b-2xl border-t border-gray-200">
+              <button
+                onClick={handleCloseModal}
+                className="flex-1 px-6 py-3 text-sm font-semibold text-gray-600 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-100 hover:border-gray-400 hover:shadow-md transition-all duration-200 transform hover:scale-105"
+              >
+                ❌ Cancel
+              </button>
+              <button
+                onClick={handleSubmitDeny}
+                disabled={!selectedReason}
+                className={`flex-1 px-6 py-3 text-sm font-bold text-white rounded-xl transition-all duration-200 transform ${
+                  selectedReason
+                    ? 'bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 shadow-lg hover:scale-105 hover:shadow-xl'
+                    : 'bg-gray-300 cursor-not-allowed'
+                }`}
+              >
+                ✅ Submit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    
+ 
+
+
+
+
+
+
+
+
+
         </div>
 
         {/* Right column with sections */}
@@ -676,6 +852,7 @@ export const DoctorDetails = () => {
             </section>
           )}
         </div>
+        
       </div>
     </div>
   );

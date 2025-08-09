@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from "@/components/user/ui/button";
 import { motion } from 'framer-motion';
@@ -13,9 +12,9 @@ const CTA: React.FC<CTAProps> = ({ image }) => {
   const isMobile = useIsMobile();
   
   return (
-    <section className="py-12 sm:py-16 md:py-20 px-4 md:px-6 lg:px-8 bg-gradient-to-r from-brand-blue to-brand-lightBlue relative overflow-hidden">
+    <section className="py-12 sm:py-16 md:py-20 px-4 md:px-6 lg:px-8 bg-white relative overflow-hidden">
       <motion.div 
-        className="absolute top-0 right-0 w-64 sm:w-80 md:w-96 h-64 sm:h-80 md:h-96 bg-brand-accent/10 rounded-full blur-3xl"
+        className="absolute top-0 right-0 w-64 sm:w-80 md:w-96 h-64 sm:h-80 md:h-96 bg-gray-100/30 rounded-full blur-3xl"
         animate={{ 
           scale: [1, 1.2, 1],
           opacity: [0.3, 0.5, 0.3],
@@ -30,7 +29,7 @@ const CTA: React.FC<CTAProps> = ({ image }) => {
       />
       
       <motion.div 
-        className="absolute bottom-0 left-0 w-64 sm:w-80 md:w-96 h-64 sm:h-80 md:h-96 bg-blue-400/10 rounded-full blur-3xl"
+        className="absolute bottom-0 left-0 w-64 sm:w-80 md:w-96 h-64 sm:h-80 md:h-96 bg-gray-200/20 rounded-full blur-3xl"
         animate={{ 
           scale: [1, 1.3, 1],
           opacity: [0.2, 0.4, 0.2],
@@ -48,20 +47,20 @@ const CTA: React.FC<CTAProps> = ({ image }) => {
       <div className="container mx-auto relative z-10 max-w-7xl">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
           <motion.div 
-            className="text-white order-2 md:order-1"
+            className="text-gray-800 order-2 md:order-1"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
             transition={{ duration: 0.6 }}
           >
             <motion.div
-              className="w-12 h-12 sm:w-16 sm:h-16 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center mb-4 sm:mb-6"
+              className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 backdrop-blur-md rounded-full flex items-center justify-center mb-4 sm:mb-6"
               initial={{ scale: 0, rotate: -20 }}
               whileInView={{ scale: 1, rotate: 0 }}
               viewport={{ once: true }}
               transition={{ type: "spring", stiffness: 200 }}
             >
-              <Shield size={isMobile ? 20 : 28} className="text-white" />
+              <Shield size={isMobile ? 20 : 28} className="text-gray-600" />
             </motion.div>
             
             <motion.h2 
@@ -91,7 +90,7 @@ const CTA: React.FC<CTAProps> = ({ image }) => {
             </motion.h2>
             
             <motion.p 
-              className="opacity-90 mb-6 sm:mb-8 text-sm sm:text-base md:text-lg"
+              className="text-gray-600 mb-6 sm:mb-8 text-sm sm:text-base md:text-lg"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -113,7 +112,7 @@ const CTA: React.FC<CTAProps> = ({ image }) => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <Button className="bg-white text-brand-blue hover:bg-gray-100 button-transition px-4 sm:px-6 md:px-8 py-2 sm:py-3 md:py-6 h-auto text-sm sm:text-base md:text-lg w-full sm:w-auto">
+                <Button className="bg-gray-800 text-white hover:bg-gray-700 button-transition px-4 sm:px-6 md:px-8 py-2 sm:py-3 md:py-6 h-auto text-sm sm:text-base md:text-lg w-full sm:w-auto">
                   Learn More
                 </Button>
               </motion.div>
@@ -122,7 +121,7 @@ const CTA: React.FC<CTAProps> = ({ image }) => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <Button variant="outline" className="border-white text-white hover:bg-white/10 button-transition px-4 sm:px-6 md:px-8 py-2 sm:py-3 md:py-6 h-auto text-sm sm:text-base md:text-lg w-full sm:w-auto">
+                <Button variant="outline" className="border-gray-800 text-gray-800 hover:bg-gray-100 button-transition px-4 sm:px-6 md:px-8 py-2 sm:py-3 md:py-6 h-auto text-sm sm:text-base md:text-lg w-full sm:w-auto">
                   Contact Us <ArrowRight className="ml-2 h-3 w-3 sm:h-4 sm:w-4" />
                 </Button>
               </motion.div>
@@ -139,7 +138,7 @@ const CTA: React.FC<CTAProps> = ({ image }) => {
           >
             <motion.div className="relative">
               <motion.div 
-                className="absolute -top-2 sm:-top-4 -left-2 sm:-left-4 w-full h-full bg-white/20 rounded-lg"
+                className="absolute -top-2 sm:-top-4 -left-2 sm:-left-4 w-full h-full bg-gray-200/30 rounded-lg"
                 initial={{ opacity: 0, x: 20, y: 20 }}
                 whileInView={{ opacity: 1, x: 0, y: 0 }}
                 viewport={{ once: true }}

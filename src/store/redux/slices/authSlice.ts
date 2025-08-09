@@ -5,7 +5,7 @@ import { handleAsyncThunk } from "@/util/handleAsyncThunk";
 
 // User Interface
 interface User {
-  id: string;
+  _id: string;
   name: string;
   email: string;
   role: string;
@@ -89,20 +89,20 @@ const authSlice = createSlice({
         state.isAdminAuthenticated = true;
         
         // Store admin tokens
-        localStorage.setItem('adminAccessToken', accessToken);
-        localStorage.setItem('adminRefreshToken', refreshToken);
+        localStorage.setItem('AccessToken', accessToken);
+        localStorage.setItem('RefreshToken', refreshToken);
       } else if(user.role === 'user'){
         state.user = user;
         state.isUserAuthenticated = true;
         
         // Store user tokens
-        localStorage.setItem('userAccessToken', accessToken);
-        localStorage.setItem('userRefreshToken', refreshToken);
+        localStorage.setItem('AccessToken', accessToken);
+        localStorage.setItem('RefreshToken', refreshToken);
       }else if(user.role === 'doctor'){
-        localStorage.removeItem('userAccessToken');
-        localStorage.removeItem('userRefreshToken');
-        localStorage.setItem('doctorAccessToken', accessToken);
-        localStorage.setItem('doctorRefreshToken', refreshToken);
+        localStorage.removeItem('AccessToken');
+        localStorage.removeItem('RefreshToken');
+        localStorage.setItem('AccessToken', accessToken);
+        localStorage.setItem('RefreshToken', refreshToken);
       }
       
       state.loading = false;
@@ -114,15 +114,15 @@ const authSlice = createSlice({
       
       state.user = null;
       state.isUserAuthenticated = false;
-      localStorage.removeItem('userAccessToken');
-      localStorage.removeItem('userRefreshToken');
+      localStorage.removeItem('AccessToken');
+      localStorage.removeItem('RefreshToken');
     },
     
     logoutAdmin: (state) => {
       state.admin = null;
       state.isAdminAuthenticated = false;
-      localStorage.removeItem('adminAccessToken');
-      localStorage.removeItem('adminRefreshToken');
+      localStorage.removeItem('AccessToken');
+      localStorage.removeItem('RefreshToken');
     },
     
     // Keep a full logout for when you need to logout both
@@ -132,10 +132,10 @@ const authSlice = createSlice({
       state.isUserAuthenticated = false;
       state.isAdminAuthenticated = false;
       state.isDoctorMe = false;
-      localStorage.removeItem('userAccessToken');
-      localStorage.removeItem('userRefreshToken');
-      localStorage.removeItem('adminAccessToken');
-      localStorage.removeItem('adminRefreshToken');
+      localStorage.removeItem('AccessToken');
+      localStorage.removeItem('RefreshToken');
+      localStorage.removeItem('AccessToken');
+      localStorage.removeItem('RefreshToken');
       localStorage.removeItem('persist:root');
     },
   },
