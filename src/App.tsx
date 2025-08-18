@@ -1,7 +1,7 @@
 import React from 'react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
-import { Toaster } from '@/components/user/ui/toaster';
-import { TooltipProvider } from '@/components/user/ui/tooltip';
+import { Toaster } from '@/components/ui/toaster';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Provider } from 'react-redux';
@@ -9,32 +9,32 @@ import { store } from './store/redux/store';
 import { SocketProvider } from './context/socketContext';
 
 // Pages
-import Index from './pages/user/user1/Index';
-import NotFound from './pages/user/user1/NotFound';
-import Login from './pages/user/user1/Login';
-import Register from './pages/user/user1/Register';
-import AdminDashboard from './pages/user/admin/adminDashboard';
-import AdminUsers from './pages/user/admin/AdminUsers';
-import Services2 from './components/user/user1/Services2';
-import Apply from './components/user/user1/apply';
-import ResetPassword from './pages/user/user1/forgetPass';
-import SuccesForDoctorApply from './pages/user/user1/SuccesForDoctorApply';
-import DoctorListing from './pages/user/admin/DoctorListing';
-import DoctorDetailsPage from './pages/user/admin/DoctorDetailsPage';
-import NotificationList from './pages/user/user1/NotificationList';
-import NotificationDetails from './pages/user/user1/NotificationDetails';
-import DoctorPaymentSucces from './pages/user/user1/DoctorPaymentSucces';
-import DoctorDash from './pages/user/doctor/DoctorDash';
-import SetUpSlotes from './pages/user/doctor/SetUpSlotes';
-import AppointMent from './pages/user/user1/AppointMent';
-import UserProfile from './components/user/user1/userProfileComponent';
-import AppointMentMangemant from './pages/user/doctor/AppointMentMangemant';
-import AppoinmentSuccess from './pages/user/user1/AppoinmentSuccess';
-import AdminPaymentListing from './pages/user/admin/AdminPaymentListing';
-import ListPayment from './pages/user/doctor/ListPayment';
-import UserWallet from './pages/user/user1/UserWallet';
-import VideoCallPage from './pages/user/user1/VideoCallPage';
-import PrescriptionForm from './pages/user/doctor/PrescriptionForm';
+import Index from './pages/user/Index';
+import NotFound from './pages/user/NotFound';
+import Login from './pages/user/Login';
+import Register from './pages/user/Register';
+import AdminDashboard from './pages/admin/adminDashboard';
+import AdminUsers from './pages/admin/AdminUsers';
+import Services2 from './components/user/Services2';
+import Apply from './components/user/apply';
+import ResetPassword from './pages/user/forgetPass';
+import SuccesForDoctorApply from './pages/user/SuccesForDoctorApply';
+import DoctorListing from './pages/admin/DoctorListing';
+import DoctorDetailsPage from './pages/admin/DoctorDetailsPage';
+import NotificationList from './pages/user/NotificationList';
+import NotificationDetails from './pages/user/NotificationDetails';
+import DoctorPaymentSucces from './pages/user/DoctorPaymentSucces';
+import DoctorDash from './pages/doctor/DoctorDash';
+import SetUpSlotes from './pages/doctor/SetUpSlotes';
+import AppointMent from './pages/user/AppointMent';
+import UserProfile from './components/user/userProfileComponent';
+import AppointMentMangemant from './pages/doctor/AppointMentMangemant';
+import AppoinmentSuccess from './pages/user/AppoinmentSuccess';
+import AdminPaymentListing from './pages/admin/AdminPaymentListing';
+import ListPayment from './pages/doctor/ListPayment';
+import UserWallet from './pages/user/UserWallet';
+import VideoCallPage from './pages/user/VideoCallPage';
+import PrescriptionForm from './pages/doctor/PrescriptionForm';
 import DoctorProtectedRoute from './protecting/doctorProtectedRoute';
 import ProtectedRoute from './protecting/ProctedRoute';
 import { BlockStatusChecker } from './protecting/BlockStatusChecker';
@@ -73,10 +73,11 @@ const App = () => {
                   <Route path="/NotificationList" element={<NotificationList />} />
                   <Route path="/NotificationDetails/:id" element={<NotificationDetails />} />
                   <Route path="/payment-success" element={<DoctorPaymentSucces />} />
-                  
+                                  
                   <Route path="/userprofile" element={<UserProfile />} />
+                  {/* <Route path="/userprofile"  element={<ProtectedRoute><UserProfile /></ProtectedRoute>} /> */}
                   <Route path="/success" element={<UserProfile />} />
-                  <Route path="/userWallet" element={<UserWallet />} />
+                  <Route path="/userWallet" element={<UserWallet />}/>
                   <Route path="/video-call/:roomId" element={<ProtectedRoute><VideoCallPage /></ProtectedRoute>} />
                   
                   {/* Admin routes */}

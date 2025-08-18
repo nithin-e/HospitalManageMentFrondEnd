@@ -26,5 +26,5 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "src/components/user/admin/layout", "src/components/user/admin/dashbord"]
+  "include": ["src", "src/components/admin/layout", "src/components/admin/dashbord"]
 }

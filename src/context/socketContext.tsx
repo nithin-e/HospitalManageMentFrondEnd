@@ -62,7 +62,7 @@ export const SocketProvider = ({ children }) => {
       const email = user?.email || doctor?.email;
       const role = user ? 'user' : doctor ? 'doctor' : 'admin';
       
-      console.log('Emitting register with:', { userId, role, email }); 
+      console.log('Emitting register with??????__-------------------:', { userId, role, email }); 
       
       if (userId) {
         newSocket.emit('register', { userId, role, email });
@@ -90,9 +90,9 @@ export const SocketProvider = ({ children }) => {
       console.log(`Socket reconnected after ${attemptNumber} attempts`);
     });
 
-    newSocket.on('reconnect_attempt', (attemptNumber) => {
-      console.log(`Socket reconnection attempt #${attemptNumber}`);
-    });
+    // newSocket.on('reconnect_attempt', (attemptNumber) => {
+    //   console.log(`Socket reconnection attempt #${attemptNumber}`);
+    // });
 
     newSocket.on('reconnect_error', (error) => {
       console.error('Socket reconnection error:', error);

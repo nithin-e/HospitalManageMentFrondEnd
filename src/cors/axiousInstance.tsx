@@ -33,7 +33,7 @@ axiosInstance.interceptors.request.use(
 // Response interceptor
 axiosInstance.interceptors.response.use(
   (response) => {
-    console.log('Response((((((((((((((((())))))))))))))))) received:', {
+    console.log('Response received:', {
       status: response.status,
       url: response.config.url,
       data: response.data
