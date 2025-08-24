@@ -1,14 +1,14 @@
-import { useState, useEffect, useCallback } from "react";
+
+import { useState, useEffect } from "react";
 import { Input } from "@/components/admin/ui/input";
 import { Button } from "@/components/admin/ui/button";
 import { Switch } from "@/components/admin/ui/switch";
 import UserAvatar from "../ui/UserAvatar";
-import { Search, Loader2, Filter, UserCheck, UserX, RefreshCw, ChevronDown, ChevronUp, Calendar, Mail, ChevronLeft, ChevronRight } from "lucide-react";
-import { fetchUsers } from "@/store/AdminSideApi/fecthUsers";
-import { useSocket } from "@/context/socketContext";
+import { Search, Loader2, Filter, UserCheck, UserX, RefreshCw, ChevronDown, ChevronUp, Calendar, Mail } from "lucide-react";
 import { toast } from "@/components/admin/ui/use-toast";
 import { cn } from "@/lib/utils";
-import axiosInstance from "@/cors/axiousInstance";
+import { paginationApi } from "@/store/AdminSideApi/paginationApi";
+import { useSocket } from "@/context/socketContext";
 
 // Custom debounce hook
 const useDebounce = (value, delay) => {
@@ -29,7 +29,9 @@ const useDebounce = (value, delay) => {
 
 const searchUsers = async (searchParams) => {
   try {
-    // Build query parameters for search
+
+     console.log('whts happening here',searchParams)
+    
     const params = new URLSearchParams();
     
     if (searchParams.search) {
@@ -53,15 +55,15 @@ const searchUsers = async (searchParams) => {
     if (searchParams.limit) {
       params.append('limit', searchParams.limit);
     }
+     console.log('please check befoe the api call',params);
 
-    // Make the search API call
-    const response = await axiosInstance.get(`/api/admin/search?${params.toString()}`);
+    const response = await paginationApi(params);
+
+   
     
     if (!response.data.success) {
       throw new Error(`Search failed: ${response.data.message || 'Unknown error'}`);
     }
-
-    console.log('check this data its an response in from backent in debouncing',response);
     
     return response.data;
   } catch (error) {
@@ -86,63 +88,32 @@ const UserList = () => {
   const [blockedUsers, setBlockedUsers] = useState(0);
   const [isSearchMode, setIsSearchMode] = useState(false);
   const { socket, connected } = useSocket();
-
-  // Pagination state
+  const [usersPerPage] = useState(5); // Changed to 5 users per page as requested
   const [currentPage, setCurrentPage] = useState(1);
-  const [usersPerPage] = useState(6);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Debounce search term with 500ms delay
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  // Calculate pagination
-  const indexOfLastUser = currentPage * usersPerPage;
-  const indexOfFirstUser = indexOfLastUser - usersPerPage;
-  const currentUsers = users.slice(indexOfFirstUser, indexOfLastUser);
-
-  // Initial load effect - fetch all users
   useEffect(() => {
-    fetchUserData();
-  }, []);
+    fetchUserData(true, currentPage);
+  }, [statusFilter, sortDirection]);
 
   useEffect(() => {
     if (debouncedSearchTerm !== searchTerm) {
       setSearchLoading(true);
-    }
-    
-    // Only proceed if not initial load
-    if (!loading) {
+    } else {
       if (debouncedSearchTerm.trim()) {
-        // Switch to search mode and use search API
         setIsSearchMode(true);
-        handleSearch();
+        handleSearch(currentPage);
       } else {
         setIsSearchMode(false);
-        fetchUserData();
+        fetchUserData(true, currentPage);
       }
-    }
-  }, [debouncedSearchTerm]);
-
-  useEffect(() => {
-    if (!loading && !debouncedSearchTerm.trim()) {
-      fetchUserData();
-    }
-  }, [statusFilter, sortDirection]);
-
-  useEffect(() => {
-    if (searchTerm !== debouncedSearchTerm) {
-      setSearchLoading(true);
-    } else {
       setSearchLoading(false);
     }
-  }, [searchTerm, debouncedSearchTerm]);
+  }, [debouncedSearchTerm, currentPage]);
 
-  // Update total pages when users change
-  useEffect(() => {
-    setTotalPages(Math.ceil(users.length / usersPerPage));
-  }, [users, usersPerPage]);
-  
-  const fetchUserData = async (showLoadingSpinner = false) => {
+  const fetchUserData = async (showLoadingSpinner = false, page=1) => {
     try {
       if (showLoadingSpinner) {
         setLoading(true);
@@ -154,23 +125,26 @@ const UserList = () => {
         status: statusFilter !== "all" ? statusFilter : undefined,
         sortBy: "createdAt",
         sortDirection: sortDirection,
-        role: "user", 
-        page: 1,
-        limit: 50 
+        role: "user",
+        page: page,
+        limit: usersPerPage
       };
 
-      
       const cleanParams = Object.fromEntries(
         Object.entries(searchParams).filter(([_, value]) => value !== undefined)
       );
 
-      console.log("Fetching all users with params:", cleanParams);
+      console.log("Fetching users with params:", cleanParams);
       
-      const response = await fetchUsers();
+      const response = await searchUsers(cleanParams);
       console.log("API user data response:", response);
 
-      processUserResponse(response);
-
+      setUsers(response.users || []);
+      setTotalUsers(response.totalCount || 0);
+      setActiveUsers(response.activeCount || 0);
+      setBlockedUsers(response.blockedCount || 0);
+      setCurrentPage(page);
+      setTotalPages(response.totalPages ? response.totalPages : Math.ceil(response.totalCount / usersPerPage) || 1);
     } catch (error) {
       console.error("Error fetching users:", error);
       setError("Failed to load users. Please try again.");
@@ -178,31 +152,28 @@ const UserList = () => {
       setTotalUsers(0);
       setActiveUsers(0);
       setBlockedUsers(0);
+      setTotalPages(1);
     } finally {
       setLoading(false);
       setSearchLoading(false);
-      setCurrentPage(1); 
     }
   };
 
-
-  const handleSearch = async () => {
+  const handleSearch = async (page = 1) => {
     try {
       setSearchLoading(true);
       setError(null);
 
-      // Prepare search parameters
       const searchParams = {
         search: debouncedSearchTerm,
         status: statusFilter !== "all" ? statusFilter : undefined,
         sortBy: "createdAt",
         sortDirection: sortDirection,
         role: "user",
-        page: 1,
-        limit: 50
+        page: page,
+        limit: usersPerPage
       };
 
-      // Remove undefined values
       const cleanParams = Object.fromEntries(
         Object.entries(searchParams).filter(([_, value]) => value !== undefined)
       );
@@ -212,8 +183,12 @@ const UserList = () => {
       const response = await searchUsers(cleanParams);
       console.log("Search API response:", response);
 
-      processUserResponse(response);
-
+      setUsers(response.users || []);
+      setTotalUsers(response.totalCount || 0);
+      setActiveUsers(response.activeCount || 0);
+      setBlockedUsers(response.blockedCount || 0);
+      setCurrentPage(page);
+      setTotalPages(response.totalPages ? response.totalPages : Math.ceil(response.totalCount / usersPerPage) || 1);
     } catch (error) {
       console.error("Error searching users:", error);
       setError(`Failed to search users: ${error.message}`);
@@ -221,74 +196,13 @@ const UserList = () => {
       setTotalUsers(0);
       setActiveUsers(0);
       setBlockedUsers(0);
+      setTotalPages(1);
     } finally {
       setSearchLoading(false);
-      setCurrentPage(1); // Reset to first page on new search
-    }
-  };
-
-  // Helper function to process API response (used by both fetch and search)
-  const processUserResponse = (response) => {
-    let userData = [];
-    let stats = { total: 0, active: 0, blocked: 0 };
-
-    if (Array.isArray(response)) {
-      userData = response;
-    } else if (response && typeof response === "object") {
-      // Handle different response structures
-      if (response.users && Array.isArray(response.users)) {
-        userData = response.users;
-        stats = response.stats || stats;
-      } else if (response.data && Array.isArray(response.data)) {
-        userData = response.data;
-        stats = response.stats || response.meta || stats;
-      } else {
-        const possibleArrayKeys = ["items", "results"];
-        for (const key of possibleArrayKeys) {
-          if (Array.isArray(response[key])) {
-            userData = response[key];
-            break;
-          }
-        }
-        
-        if (userData.length === 0 && response.name) {
-          userData = [response];
-        }
-      }
-
-      // Extract stats from response if available
-      if (response.totalUsers || response.total) {
-        setTotalUsers(response.totalUsers || response.total || userData.length);
-      }
-      if (response.activeUsers || response.active) {
-        setActiveUsers(response.activeUsers || response.active || userData.filter(u => u.isActive).length);
-      }
-      if (response.blockedUsers || response.blocked) {
-        setBlockedUsers(response.blockedUsers || response.blocked || userData.filter(u => !u.isActive).length);
-      }
-    }
-
-    // Format data and ensure isActive property exists
-    userData = userData.map(user => ({
-      ...user,
-      isActive: user.isActive !== undefined ? user.isActive : true
-    }));
-
-    console.log("Processed user data:", userData);
-    setUsers(userData);
-
-    // Calculate stats if not provided by backend
-    if (!response.totalUsers && !response.total) {
-      const filteredForStats = userData.filter(user => user.role === "user" || !user.role);
-      setTotalUsers(filteredForStats.length);
-      setActiveUsers(filteredForStats.filter(user => user.isActive).length);
-      setBlockedUsers(filteredForStats.filter(user => !user.isActive).length);
     }
   };
 
   const handleToggleBlock = (id, isActive) => {
-    console.log("Toggling user:", id, "isActive:", isActive);
-
     if (!socket || !connected) {
       toast({
         variant: "destructive",
@@ -313,7 +227,6 @@ const UserList = () => {
           )
         );
         
-        // Update stats
         if (isActive) {
           setActiveUsers(prev => prev - 1);
           setBlockedUsers(prev => prev + 1);
@@ -338,61 +251,101 @@ const UserList = () => {
 
   const toggleSortDirection = () => {
     setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    setCurrentPage(1); // Reset to first page when sorting changes
   };
 
-  // Handle search input change with immediate visual feedback
   const handleSearchChange = (e) => {
-    const value = e.target.value;
-    setSearchTerm(value);
+    setSearchTerm(e.target.value);
+    setCurrentPage(1); // Reset to first page on search
   };
 
-  // Clear search function
   const clearSearch = () => {
     setSearchTerm("");
     setIsSearchMode(false);
     setSearchLoading(false);
+    setCurrentPage(1); // Reset to first page
   };
 
-  // Handle filter changes
   const handleStatusFilterChange = (newStatus) => {
     setStatusFilter(newStatus);
-    
-    
-    if (isSearchMode && debouncedSearchTerm.trim()) {
-      
-    }
+    setCurrentPage(1); // Reset to first page when filter changes
   };
 
-  // Clear all filters
   const clearAllFilters = () => {
     setSearchTerm("");
     setStatusFilter("all");
     setIsSearchMode(false);
     setSearchLoading(false);
+    setCurrentPage(1); // Reset to first page
   };
 
-  // Refresh data
   const handleRefresh = () => {
     if (isSearchMode && debouncedSearchTerm.trim()) {
-      // Refresh search results
-      handleSearch();
+      handleSearch(currentPage);
     } else {
-      // Refresh all users
-      fetchUserData(true);
+      fetchUserData(true, currentPage);
     }
   };
 
-  // Pagination functions
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
-  const nextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      if (isSearchMode) {
+        handleSearch(page);
+      } else {
+
+        console.log('check this ..................',page);
+        
+        fetchUserData(true, page);
+      }
     }
   };
-  const prevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
+
+  // Generate pagination buttons
+  const renderPagination = () => {
+    const pageNumbers = [];
+    const maxPagesToShow = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+
+    if (endPage - startPage + 1 < maxPagesToShow) {
+      startPage = Math.max(1, endPage - maxPagesToShow + 1);
     }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pageNumbers.push(i);
+    }
+
+    return (
+      <div className="flex justify-center items-center gap-2 mt-4">
+        <Button
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1 || loading || searchLoading}
+          className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
+        >
+          Previous
+        </Button>
+        {pageNumbers.map((page) => (
+          <Button
+            key={page}
+            onClick={() => handlePageChange(page)}
+            className={cn(
+              "bg-white border border-slate-200 text-slate-700 hover:bg-slate-100",
+              currentPage === page && "bg-blue-100 text-blue-700 border-blue-300"
+            )}
+            disabled={loading || searchLoading}
+          >
+            {page}
+          </Button>
+        ))}
+        <Button
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages || loading || searchLoading}
+          className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
+        >
+          Next
+        </Button>
+      </div>
+    );
   };
 
   return (
@@ -468,20 +421,18 @@ const UserList = () => {
           <div className="relative flex-grow">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
             <Input
-              placeholder="Search users by name... "
+              placeholder="Search users by name..."
               className="pl-10 pr-10 h-12 border-slate-200 bg-white focus:ring-2 focus:ring-blue-500 rounded-lg shadow-sm w-full"
               value={searchTerm}
               onChange={handleSearchChange}
             />
             
-            {/* Search loading indicator */}
             {searchLoading && (
               <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                 <Loader2 className="h-5 w-5 text-blue-500 animate-spin" />
               </div>
             )}
             
-            {/* Clear search button */}
             {searchTerm && !searchLoading && (
               <button
                 onClick={clearSearch}
@@ -512,7 +463,6 @@ const UserList = () => {
           </div>
         </div>
 
-        {/* Search Status Indicator */}
         {(searchTerm || debouncedSearchTerm) && (
           <div className="mb-4 text-sm text-slate-600 bg-white px-4 py-2 rounded-lg border border-slate-200">
             {searchLoading ? (
@@ -531,7 +481,6 @@ const UserList = () => {
           </div>
         )}
         
-        {/* Filter Options */}
         {showFilters && (
           <div className="bg-white p-4 rounded-lg shadow-sm mb-6 border border-slate-100">
             <div className="font-medium mb-2 text-slate-700">Filter by Status</div>
@@ -573,7 +522,6 @@ const UserList = () => {
           </div>
         )}
         
-        {/* Loading State */}
         {loading && (
           <div className="flex flex-col items-center justify-center p-16 bg-white rounded-xl shadow-sm border border-slate-100">
             <Loader2 className="h-12 w-12 animate-spin text-blue-500 mb-4" />
@@ -583,7 +531,6 @@ const UserList = () => {
           </div>
         )}
         
-        {/* Error State */}
         {error && !loading && (
           <div className="bg-red-50 p-8 rounded-xl border border-red-100 text-center shadow-sm">
             <div className="text-red-600 font-medium mb-2">{error}</div>
@@ -596,7 +543,6 @@ const UserList = () => {
           </div>
         )}
         
-        {/* No Results */}
         {!loading && !error && users.length === 0 && (
           <div className="bg-white p-12 rounded-xl shadow-sm border border-slate-100 text-center">
             <div className="mx-auto w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
@@ -618,242 +564,140 @@ const UserList = () => {
           </div>
         )}
         
-        {/* User Grid View */}
         {!loading && !error && users.length > 0 && view === "grid" && (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-              {currentUsers.map((user) => (
-                <div
-                  key={user.id}
-                  className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-shadow duration-200"
-                >
-                  <div className="border-b border-slate-100 p-6 bg-gradient-to-r from-blue-50 to-slate-50">
-                    <div className="flex justify-between mb-4">
-                      <UserAvatar
-                        src={user.profilePicture}
-                        name={user.name}
-                        className="h-16 w-16 ring-4 ring-white shadow-sm"
-                      />
-                      <div>
-                        <span className={cn(
-                          "inline-block px-3 py-1 rounded-full text-xs font-medium",
-                          user.isActive 
-                            ? "bg-green-100 text-green-700" 
-                            : "bg-red-100 text-red-700"
-                        )}>
-                          {user.isActive ? "Active" : "Blocked"}
-                        </span>
-                      </div>
-                    </div>
-                    <h3 className="font-medium text-xl text-slate-800">{user.name}</h3>
-                  </div>
-                  
-                  <div className="p-6">
-                    <div className="flex flex-col space-y-3">
-                      <div className="flex items-center text-slate-600">
-                        <Mail className="h-4 w-4 mr-2 flex-shrink-0" />
-                        <span className="text-sm truncate">{user.email}</span>
-                      </div>
-                      <div className="flex items-center text-slate-600">
-                        <Calendar className="h-4 w-4 mr-2 flex-shrink-0" />
-                        <span className="text-sm">
-                          Joined: {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "Unknown"}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="mt-6 flex items-center justify-between">
-                      <span className="text-sm text-slate-500">
-                        {user.isActive ? "Block this user?" : "Unblock this user?"}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          checked={user.isActive}
-                          onCheckedChange={() => handleToggleBlock(user.id, user.isActive)}
-                          className={cn(
-                            "data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-red-500",
-                            "transition-colors duration-200"
-                          )}
-                          disabled={processingUserId === user.id}
-                        />
-                        {processingUserId === user.id && (
-                          <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            
-            {/* Pagination */}
-            <div className="flex items-center justify-between mt-4">
-              <div className="text-sm text-slate-600">
-                Showing <span className="font-medium">{indexOfFirstUser + 1}</span> to{" "}
-                <span className="font-medium">
-                  {Math.min(indexOfLastUser, users.length)}
-                </span>{" "}
-                of <span className="font-medium">{users.length}</span> results
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={prevPage}
-                  disabled={currentPage === 1}
-                  className="flex items-center gap-1"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  Previous
-                </Button>
-                
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
-                    <Button
-                      key={number}
-                      variant={currentPage === number ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => paginate(number)}
-                      className="w-10 h-10 p-0 flex items-center justify-center"
-                    >
-                      {number}
-                    </Button>
-                  ))}
-                </div>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={nextPage}
-                  disabled={currentPage === totalPages}
-                  className="flex items-center gap-1"
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </>
-        )}
-        
-        {/* User List View */}
-        {!loading && !error && users.length > 0 && view === "list" && (
-          <>
-            <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mb-8">
-              <div className="grid grid-cols-12 p-4 bg-slate-50 font-medium text-slate-600 border-b border-slate-200 text-sm">
-                <div className="col-span-5">User</div>
-                <div className="col-span-3">Email</div>
-                <div className="col-span-2 text-center">Status</div>
-                <div className="col-span-2 text-center">Actions</div>
-              </div>
-              
-              {currentUsers.map((user) => (
-                <div
-                  key={user.id}
-                  className="grid grid-cols-12 p-4 items-center border-b border-slate-100 hover:bg-slate-50 transition-colors"
-                >
-                  <div className="col-span-5 flex items-center space-x-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+            {users.map((user) => (
+              <div
+                key={user.id}
+                className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-shadow duration-200"
+              >
+                <div className="border-b border-slate-100 p-6 bg-gradient-to-r from-blue-50 to-slate-50">
+                  <div className="flex justify-between mb-4">
                     <UserAvatar
                       src={user.profilePicture}
                       name={user.name}
-                      className="h-10 w-10 ring-2 ring-slate-100"
+                      className="h-16 w-16 ring-4 ring-white shadow-sm"
                     />
                     <div>
-                      <p className="font-medium text-slate-800">{user.name}</p>
-                      <p className="text-xs text-slate-500">
+                      <span className={cn(
+                        "inline-block px-3 py-1 rounded-full text-xs font-medium",
+                        user.isActive 
+                          ? "bg-green-100 text-green-700" 
+                          : "bg-red-100 text-red-700"
+                      )}>
+                        {user.isActive ? "Active" : "Blocked"}
+                      </span>
+                    </div>
+                  </div>
+                  <h3 className="font-medium text-xl text-slate-800">{user.name}</h3>
+                </div>
+                
+                <div className="p-6">
+                  <div className="flex flex-col space-y-3">
+                    <div className="flex items-center text-slate-600">
+                      <Mail className="h-4 w-4 mr-2 flex-shrink-0" />
+                      <span className="text-sm truncate">{user.email}</span>
+                    </div>
+                    <div className="flex items-center text-slate-600">
+                      <Calendar className="h-4 w-4 mr-2 flex-shrink-0" />
+                      <span className="text-sm">
                         Joined: {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "Unknown"}
-                      </p>
+                      </span>
                     </div>
                   </div>
                   
-                  <div className="col-span-3 text-sm text-slate-600 truncate">
-                    {user.email}
-                  </div>
-                  
-                  <div className="col-span-2 flex justify-center">
-                    <span className={cn(
-                      "px-3 py-1 rounded-full text-xs font-medium",
-                      user.isActive 
-                        ? "bg-green-100 text-green-700" 
-                        : "bg-red-100 text-red-700"
-                    )}>
-                      {user.isActive ? "Active" : "Blocked"}
+                  <div className="mt-6 flex items-center justify-between">
+                    <span className="text-sm text-slate-500">
+                      {user.isActive ? "Block this user?" : "Unblock this user?"}
                     </span>
-                  </div>
-                  
-                  <div className="col-span-2 flex items-center justify-center space-x-2">
-                    <Switch
-                      checked={user.isActive}
-                      onCheckedChange={() => handleToggleBlock(user.id, user.isActive)}
-                      className={cn(
-                        "data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-red-500",
-                        "transition-colors duration-200"
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={user.isActive}
+                        onCheckedChange={() => handleToggleBlock(user.id, user.isActive)}
+                        className={cn(
+                          "data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-red-500",
+                          "transition-colors duration-200"
+                        )}
+                        disabled={processingUserId === user.id}
+                      />
+                      {processingUserId === user.id && (
+                        <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
                       )}
-                      disabled={processingUserId === user.id}
-                    />
-                    <span className="text-xs text-slate-600">
-                      {processingUserId === user.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        user.isActive ? "Block" : "Unblock"
-                      )}
-                    </span>
+                    </div>
                   </div>
                 </div>
-              ))}
+              </div>
+            ))}
+          </div>
+        )}
+        
+        {!loading && !error && users.length > 0 && view === "list" && (
+          <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mb-8">
+            <div className="grid grid-cols-12 p-4 bg-slate-50 font-medium text-slate-600 border-b border-slate-200 text-sm">
+              <div className="col-span-5">User</div>
+              <div className="col-span-3">Email</div>
+              <div className="col-span-2 text-center">Status</div>
+              <div className="col-span-2 text-center">Actions</div>
             </div>
             
-            {/* Pagination */}
-            <div className="flex items-center justify-between mt-4">
-              <div className="text-sm text-slate-600">
-                Showing <span className="font-medium">{indexOfFirstUser + 1}</span> to{" "}
-                <span className="font-medium">
-                  {Math.min(indexOfLastUser, users.length)}
-                </span>{" "}
-                of <span className="font-medium">{users.length}</span> results
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={prevPage}
-                  disabled={currentPage === 1}
-                  className="flex items-center gap-1"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  Previous
-                </Button>
-                
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
-                    <Button
-                      key={number}
-                      variant={currentPage === number ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => paginate(number)}
-                      className="w-10 h-10 p-0 flex items-center justify-center"
-                    >
-                      {number}
-                    </Button>
-                  ))}
+            {users.map((user) => (
+              <div
+                key={user.id}
+                className="grid grid-cols-12 p-4 items-center border-b border-slate-100 hover:bg-slate-50 transition-colors"
+              >
+                <div className="col-span-5 flex items-center space-x-3">
+                  <UserAvatar
+                    src={user.profilePicture}
+                    name={user.name}
+                    className="h-10 w-10 ring-2 ring-slate-100"
+                  />
+                  <div>
+                    <p className="font-medium text-slate-800">{user.name}</p>
+                    <p className="text-xs text-slate-500">
+                      Joined: {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "Unknown"}
+                    </p>
+                  </div>
                 </div>
                 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={nextPage}
-                  disabled={currentPage === totalPages}
-                  className="flex items-center gap-1"
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
+                <div className="col-span-3 text-sm text-slate-600 truncate">
+                  {user.email}
+                </div>
+                
+                <div className="col-span-2 flex justify-center">
+                  <span className={cn(
+                    "px-3 py-1 rounded-full text-xs font-medium",
+                    user.isActive 
+                      ? "bg-green-100 text-green-700" 
+                      : "bg-red-100 text-red-700"
+                  )}>
+                    {user.isActive ? "Active" : "Blocked"}
+                  </span>
+                </div>
+                
+                <div className="col-span-2 flex items-center justify-center space-x-2">
+                  <Switch
+                    checked={user.isActive}
+                    onCheckedChange={() => handleToggleBlock(user.id, user.isActive)}
+                    className={cn(
+                      "data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-red-500",
+                      "transition-colors duration-200"
+                    )}
+                    disabled={processingUserId === user.id}
+                  />
+                  <span className="text-xs text-slate-600">
+                    {processingUserId === user.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      user.isActive ? "Block" : "Unblock"
+                    )}
+                  </span>
+                </div>
               </div>
-            </div>
-          </>
+            ))}
+          </div>
         )}
+
+        {!loading && !error && users.length > 0 && renderPagination()}
       </div>
     </div>
   );

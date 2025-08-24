@@ -1,30 +1,72 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Search, Filter, ChevronDown, ArrowUpDown, Shield, User, Briefcase, Clock, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Filter, ChevronDown, ArrowUpDown, Shield, User, Briefcase, Clock, X, ChevronLeft, ChevronRight, Loader2, RefreshCw, ChevronUp } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/docui/avatar";
 import { Input } from "@/components/ui/docui/input";
 import { Button } from "@/components/ui/docui/button";
-import { fetchDoctors } from "@/store/AdminSideApi/fechDoctors";
+import { doctorPaginationApi } from "@/store/AdminSideApi/doctorPaginationApi";
 import { deleteDoctor } from "@/store/AdminSideApi/deleteDoctorAfterRejection";
+import { cn } from "@/lib/utils";
+
+// Custom debounce hook
+const useDebounce = (value, delay) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};
 
 export const DoctorsList = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [error, setError] = useState(null);
   const [sortField, setSortField] = useState("createdAt");
   const [sortDirection, setSortDirection] = useState("desc");
-  const [activeFilters, setActiveFilters] = useState([]);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [showFilters, setShowFilters] = useState(false);
+  const [isSearchMode, setIsSearchMode] = useState(false);
+  const [totalDoctors, setTotalDoctors] = useState(0);
+  const [approvedDoctors, setApprovedDoctors] = useState(0);
+  const [pendingDoctors, setPendingDoctors] = useState(0);
+  const [declinedDoctors, setDeclinedDoctors] = useState(0);
+  const [doctorsPerPage] = useState(5);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [doctorsPerPage] = useState(6);
+  const debouncedSearchTerm = useDebounce(searchQuery, 500);
 
   useEffect(() => {
-    fetchDoctorData();
-  }, []);
+    fetchDoctorData(true, currentPage);
+  }, [statusFilter, sortField, sortDirection]);
+
+  useEffect(() => {
+    if (debouncedSearchTerm !== searchQuery) {
+      setSearchLoading(true);
+    } else {
+      if (debouncedSearchTerm.trim()) {
+        setIsSearchMode(true);
+        handleSearch(currentPage);
+      } else {
+        setIsSearchMode(false);
+        fetchDoctorData(true, currentPage);
+      }
+      setSearchLoading(false);
+    }
+  }, [debouncedSearchTerm, currentPage]);
 
   // Handle rejected doctor state from navigation
   useEffect(() => {
@@ -45,27 +87,172 @@ export const DoctorsList = () => {
       console.log(`Doctor with email ${email} successfully removed`);
     } catch (error) {
       console.error("Error removing rejected doctor:", error);
-      fetchDoctorData();
+      fetchDoctorData(true, currentPage);
     }
   };
 
-  const fetchDoctorData = async () => {
+  const fetchDoctorData = async (showLoadingSpinner = false, page = 1) => {
     try {
-      setLoading(true);
-      const response = await fetchDoctors();
-      console.log('doctor listing table', response);
+      if (showLoadingSpinner) {
+        setLoading(true);
+      }
+      
+      setError(null);
+
+      const params = new URLSearchParams();
+      
+      if (statusFilter !== "all") {
+        params.append('status', statusFilter);
+      }
+      
+      params.append('sortBy', sortField);
+      params.append('sortDirection', sortDirection);
+      params.append('page', page);
+      params.append('limit', doctorsPerPage);
+
+      console.log("Fetching doctors with params:", params.toString());
+      
+      const response = await doctorPaginationApi(params);
+      console.log('Doctor data response:', response.data);
+      
+      // Process response based on your API structure
+      const responseData = response.data;
       
       let doctorData = [];
-      if (Array.isArray(response)) {
-        doctorData = response;
-      } else if (response && typeof response === "object") {
-        const possibleArrayKeys = ["doctors", "data", "items", "results"];
-        for (const key of possibleArrayKeys) {
-          if (Array.isArray(response[key])) {
-            doctorData = response[key];
-            break;
+      let totalCount = 0;
+      let counts = { approved: 0, pending: 0, declined: 0 };
+      
+      if (responseData && responseData.success) {
+        if (responseData.doctors && Array.isArray(responseData.doctors)) {
+          doctorData = responseData.doctors;
+          totalCount = responseData.totalCount || responseData.doctors.length;
+          counts = {
+            approved: responseData.approvedCount || 0,
+            pending: responseData.pendingCount || 0,
+            declined: responseData.declinedCount || 0
+          };
+        } else {
+          // Handle non-paginated response
+          const possibleArrayKeys = ["doctors", "data", "items", "results"];
+          for (const key of possibleArrayKeys) {
+            if (Array.isArray(responseData[key])) {
+              doctorData = responseData[key];
+              totalCount = responseData[key].length;
+              break;
+            }
           }
         }
+      } else {
+        throw new Error(responseData?.message || "Failed to fetch doctors");
+      }
+
+      // Transform data
+      doctorData = doctorData.map(doctor => ({
+        id: doctor.id,
+        name: `${doctor.firstName} ${doctor.lastName}`,
+        firstName: doctor.firstName,
+        lastName: doctor.lastName,
+        email: doctor.email,
+        phoneNumber: doctor.phoneNumber,
+        specialty: doctor.specialty || "General Practice",
+        qualifications: doctor.qualifications,
+        licenseNumber: doctor.licenseNumber,
+        medicalLicenseNumber: doctor.medicalLicenseNumber,
+        medicalLicenseUrl: doctor.medicalLicenseUrl,
+        profileImageUrl: doctor.profileImageUrl,
+        status: doctor.status || "Pending",
+        agreeTerms: doctor.agreeTerms,
+        createdAt: doctor.createdAt,
+        formattedDate: new Date(doctor.createdAt).toLocaleDateString(),
+        isActive: doctor.isActive
+      }));
+
+      // Calculate counts if not provided by API
+      if (!responseData.totalCount) {
+        counts = {
+          approved: doctorData.filter(d => d.status === 'Approved').length,
+          pending: doctorData.filter(d => d.status === 'Pending').length,
+          declined: doctorData.filter(d => d.status === 'Declined').length
+        };
+        totalCount = doctorData.length;
+      }
+
+      setDoctors(doctorData);
+      setTotalDoctors(totalCount);
+      setApprovedDoctors(counts.approved);
+      setPendingDoctors(counts.pending);
+      setDeclinedDoctors(counts.declined);
+      setCurrentPage(page);
+      setTotalPages(responseData.totalPages ? responseData.totalPages : Math.ceil(totalCount / doctorsPerPage) || 1);
+
+    } catch (error) {
+      console.error("Error fetching doctors:", error);
+      setError("Failed to load doctors. Please try again.");
+      setDoctors([]);
+      setTotalDoctors(0);
+      setApprovedDoctors(0);
+      setPendingDoctors(0);
+      setDeclinedDoctors(0);
+      setTotalPages(1);
+    } finally {
+      setLoading(false);
+      setSearchLoading(false);
+    }
+  };
+
+  const handleSearch = async (page = 1) => {
+    try {
+      setSearchLoading(true);
+      setError(null);
+
+      const params = new URLSearchParams();
+      
+      if (debouncedSearchTerm.trim()) {
+        params.append('search', debouncedSearchTerm);
+      }
+      
+      if (statusFilter !== "all") {
+        params.append('status', statusFilter);
+      }
+      
+      params.append('sortBy', sortField);
+      params.append('sortDirection', sortDirection);
+      params.append('page', page);
+      params.append('limit', doctorsPerPage);
+
+      console.log("Searching doctors with params:", params.toString());
+      
+      const response = await doctorPaginationApi(params);
+      console.log("Search API response:", response.data);
+
+      // Process response
+      const responseData = response.data;
+      
+      let doctorData = [];
+      let totalCount = 0;
+      let counts = { approved: 0, pending: 0, declined: 0 };
+      
+      if (responseData && responseData.success) {
+        if (responseData.doctors && Array.isArray(responseData.doctors)) {
+          doctorData = responseData.doctors;
+          totalCount = responseData.totalCount || responseData.doctors.length;
+          counts = {
+            approved: responseData.approvedCount || 0,
+            pending: responseData.pendingCount || 0,
+            declined: responseData.declinedCount || 0
+          };
+        } else {
+          const possibleArrayKeys = ["doctors", "data", "items", "results"];
+          for (const key of possibleArrayKeys) {
+            if (Array.isArray(responseData[key])) {
+              doctorData = responseData[key];
+              totalCount = responseData[key].length;
+              break;
+            }
+          }
+        }
+      } else {
+        throw new Error(responseData?.message || "Search failed");
       }
 
       doctorData = doctorData.map(doctor => ({
@@ -83,19 +270,39 @@ export const DoctorsList = () => {
         profileImageUrl: doctor.profileImageUrl,
         status: doctor.status || "Pending",
         agreeTerms: doctor.agreeTerms,
-        createdAt: doctor.createdAt, // Keep as Date string for sorting
+        createdAt: doctor.createdAt,
         formattedDate: new Date(doctor.createdAt).toLocaleDateString(),
-        isActive:doctor.isActive
+        isActive: doctor.isActive
       }));
 
+      if (!responseData.totalCount) {
+        counts = {
+          approved: doctorData.filter(d => d.status === 'Approved').length,
+          pending: doctorData.filter(d => d.status === 'Pending').length,
+          declined: doctorData.filter(d => d.status === 'Declined').length
+        };
+        totalCount = doctorData.length;
+      }
+
       setDoctors(doctorData);
+      setTotalDoctors(totalCount);
+      setApprovedDoctors(counts.approved);
+      setPendingDoctors(counts.pending);
+      setDeclinedDoctors(counts.declined);
+      setCurrentPage(page);
+      setTotalPages(responseData.totalPages ? responseData.totalPages : Math.ceil(totalCount / doctorsPerPage) || 1);
+
     } catch (error) {
-      console.error("Error fetching doctors:", error);
-      setError("Failed to load doctors. Please try again.");
+      console.error("Error searching doctors:", error);
+      setError(`Failed to search doctors: ${error.message}`);
       setDoctors([]);
+      setTotalDoctors(0);
+      setApprovedDoctors(0);
+      setPendingDoctors(0);
+      setDeclinedDoctors(0);
+      setTotalPages(1);
     } finally {
-      setLoading(false);
-      setCurrentPage(1); // Reset to first page on new data load
+      setSearchLoading(false);
     }
   };
 
@@ -104,73 +311,51 @@ export const DoctorsList = () => {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      setSortDirection("desc"); // Default to descending for new fields
+      setSortDirection("desc");
     }
+    setCurrentPage(1);
   };
 
-  const toggleFilter = (filter) => {
-    if (activeFilters.includes(filter)) {
-      setActiveFilters(activeFilters.filter(f => f !== filter));
-    } else {
-      setActiveFilters([...activeFilters, filter]);
-    }
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+    setCurrentPage(1);
   };
 
-  const clearFilters = () => {
-    setActiveFilters([]);
+  const clearSearch = () => {
     setSearchQuery("");
+    setIsSearchMode(false);
+    setSearchLoading(false);
+    setCurrentPage(1);
   };
 
-  // Calculate pagination
-  const indexOfLastDoctor = currentPage * doctorsPerPage;
-  const indexOfFirstDoctor = indexOfLastDoctor - doctorsPerPage;
-
-  const sortedAndFilteredDoctors = () => {
-    if (!Array.isArray(doctors)) return [];
-    
-    // Filter
-    let filtered = doctors.filter(doctor => {
-      const matchesSearch = searchQuery === "" || 
-        doctor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (doctor.specialty && doctor.specialty.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (doctor.email && doctor.email.toLowerCase().includes(searchQuery.toLowerCase()));
-      
-      const matchesStatusFilters = activeFilters.length === 0 || 
-        activeFilters.includes(doctor.status);
-      
-      return matchesSearch && matchesStatusFilters;
-    });
-    
-    // Sort
-    return filtered.sort((a, b) => {
-      let comparison = 0;
-      
-      if (sortField === "name") {
-        comparison = a.name.localeCompare(b.name);
-      } else if (sortField === "specialty") {
-        comparison = (a.specialty || "").localeCompare(b.specialty || "");
-      } else if (sortField === "createdAt") {
-        comparison = new Date(a.createdAt) - new Date(b.createdAt);
-      }
-      
-      return sortDirection === "asc" ? comparison : -comparison;
-    });
+  const handleStatusFilterChange = (newStatus) => {
+    setStatusFilter(newStatus);
+    setCurrentPage(1);
   };
 
-  const filteredDoctors = sortedAndFilteredDoctors();
-  const currentDoctors = filteredDoctors.slice(indexOfFirstDoctor, indexOfLastDoctor);
-  const totalPages = Math.ceil(filteredDoctors.length / doctorsPerPage);
+  const clearAllFilters = () => {
+    setSearchQuery("");
+    setStatusFilter("all");
+    setIsSearchMode(false);
+    setSearchLoading(false);
+    setCurrentPage(1);
+  };
 
-  // Pagination functions
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
-  const nextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
+  const handleRefresh = () => {
+    if (isSearchMode && debouncedSearchTerm.trim()) {
+      handleSearch(currentPage);
+    } else {
+      fetchDoctorData(true, currentPage);
     }
   };
-  const prevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
+
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      if (isSearchMode) {
+        handleSearch(page);
+      } else {
+        fetchDoctorData(true, page);
+      }
     }
   };
 
@@ -211,11 +396,125 @@ export const DoctorsList = () => {
     navigate(`/adminDetails/${doctor.id}`, { state: { doctor } });
   };
 
+  // Generate pagination buttons
+  const renderPagination = () => {
+    const pageNumbers = [];
+    const maxPagesToShow = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+
+    if (endPage - startPage + 1 < maxPagesToShow) {
+      startPage = Math.max(1, endPage - maxPagesToShow + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pageNumbers.push(i);
+    }
+
+    return (
+      <div className="flex justify-center items-center gap-2 mt-6">
+        <Button
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1 || loading || searchLoading}
+          className="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg"
+        >
+          <ChevronLeft className="w-4 h-4 mr-1" />
+          Previous
+        </Button>
+        {pageNumbers.map((page) => (
+          <Button
+            key={page}
+            onClick={() => handlePageChange(page)}
+            className={cn(
+              "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg min-w-[40px]",
+              currentPage === page && "bg-blue-100 text-blue-700 border-blue-300"
+            )}
+            disabled={loading || searchLoading}
+          >
+            {page}
+          </Button>
+        ))}
+        <Button
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages || loading || searchLoading}
+          className="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg"
+        >
+          Next
+          <ChevronRight className="w-4 h-4 ml-1" />
+        </Button>
+      </div>
+    );
+  };
+
   return (
     <div className="w-full max-w-6xl mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Medical Professionals Directory</h1>
-        <p className="text-gray-500">Manage and review doctor registrations</p>
+      <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Medical Professionals Directory</h1>
+          <p className="text-gray-500">Manage and review doctor registrations</p>
+        </div>
+        
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleRefresh}
+            disabled={loading || searchLoading}
+            className="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+          >
+            <RefreshCw size={18} className={(loading || searchLoading) ? "animate-spin" : ""} />
+            <span className="hidden md:inline">Refresh</span>
+          </Button>
+        </div>
+      </div>
+
+      {/* Stats Row */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 text-sm font-medium">Total Doctors</p>
+              <p className="text-3xl font-bold mt-1 text-gray-800">{totalDoctors}</p>
+            </div>
+            <div className="bg-blue-100 p-3 rounded-lg">
+              <User className="h-6 w-6 text-blue-600" />
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 text-sm font-medium">Approved</p>
+              <p className="text-3xl font-bold mt-1 text-gray-800">{approvedDoctors}</p>
+            </div>
+            <div className="bg-green-100 p-3 rounded-lg">
+              <Shield className="h-6 w-6 text-green-600" />
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 text-sm font-medium">Pending</p>
+              <p className="text-3xl font-bold mt-1 text-gray-800">{pendingDoctors}</p>
+            </div>
+            <div className="bg-amber-100 p-3 rounded-lg">
+              <Clock className="h-6 w-6 text-amber-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 text-sm font-medium">Declined</p>
+              <p className="text-3xl font-bold mt-1 text-gray-800">{declinedDoctors}</p>
+            </div>
+            <div className="bg-rose-100 p-3 rounded-lg">
+              <X className="h-6 w-6 text-rose-600" />
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Search and filters */}
@@ -227,85 +526,154 @@ export const DoctorsList = () => {
           <Input
             type="text"
             placeholder="Search by name, specialty, or email"
-            className="pl-10 py-6 border-0 ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 rounded-xl shadow-sm w-full"
+            className="pl-10 pr-10 py-6 border-0 ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 rounded-xl shadow-sm w-full"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={handleSearchChange}
           />
+          
+          {searchLoading && (
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+              <Loader2 className="h-5 w-5 text-blue-500 animate-spin" />
+            </div>
+          )}
+          
+          {searchQuery && !searchLoading && (
+            <button
+              onClick={clearSearch}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors text-xl"
+            >
+              ×
+            </button>
+          )}
         </div>
         
-        <div className="flex gap-2 flex-wrap">
-          {["Approved", "Pending", "Declined"].map(status => {
-            const isActive = activeFilters.includes(status);
-            const { color, bgColor } = getStatusIconAndColor(status);
-            return (
-              <Button 
-                key={status}
-                onClick={() => toggleFilter(status)}
-                className={`font-medium transition-all duration-200 ${
-                  isActive 
-                    ? `${bgColor} ${color} ring-2 ring-offset-2 ring-blue-300` 
-                    : 'bg-white text-gray-600 hover:bg-gray-50'
-                } border border-gray-200 rounded-lg px-4 py-6`}
-              >
-                {status}
-                {isActive && <span className="ml-2">✓</span>}
-              </Button>
-            );
-          })}
+        <div className="flex items-center gap-2">
+          <Button 
+            onClick={() => setShowFilters(!showFilters)}
+            className="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 py-6 px-4 rounded-xl shadow-sm flex items-center gap-2"
+          >
+            <Filter size={18} />
+            <span>Filters</span>
+            {showFilters ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </Button>
           
-          {activeFilters.length > 0 && (
-            <Button 
-              onClick={clearFilters}
-              className="bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 rounded-lg px-4 py-6"
-            >
-              Clear Filters
-            </Button>
-          )}
+          <Button 
+            onClick={() => setSortDirection(sortDirection === "asc" ? "desc" : "asc")}
+            className="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 py-6 px-4 rounded-xl shadow-sm flex items-center gap-2"
+          >
+            {sortDirection === "desc" ? "Newest First" : "Oldest First"}
+            {sortDirection === "desc" ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+          </Button>
         </div>
       </div>
 
+      {/* Search feedback */}
+      {(searchQuery || debouncedSearchTerm) && (
+        <div className="mb-4 text-sm text-gray-600 bg-white px-4 py-2 rounded-lg border border-gray-200">
+          {searchLoading ? (
+            <span className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Searching for "{searchQuery}"...
+            </span>
+          ) : (
+            <span>
+              {doctors.length > 0 
+                ? `Found ${doctors.length} doctor(s) matching "${debouncedSearchTerm}"`
+                : `No doctors found for "${debouncedSearchTerm}"`
+              }
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Filters panel */}
+      {showFilters && (
+        <div className="bg-white p-4 rounded-xl shadow-sm mb-6 border border-gray-100">
+          <div className="font-medium mb-2 text-gray-700">Filter by Status</div>
+          <div className="flex flex-wrap gap-2">
+            {["all", "Approved", "Pending", "Declined"].map(status => {
+              const isActive = statusFilter === status;
+              const { color, bgColor } = status !== "all" ? getStatusIconAndColor(status) : { color: "text-gray-600", bgColor: "bg-gray-50" };
+              return (
+                <Button 
+                  key={status}
+                  onClick={() => handleStatusFilterChange(status)}
+                  className={cn(
+                    "rounded-full px-4 py-1 text-sm font-medium transition-all duration-200",
+                    isActive 
+                      ? `${bgColor} ${color} ring-2 ring-offset-2 ring-blue-300` 
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  )}
+                >
+                  {status === "all" ? "All Doctors" : status}
+                  {isActive && <span className="ml-2">✓</span>}
+                </Button>
+              );
+            })}
+            
+            {(statusFilter !== "all" || searchQuery) && (
+              <Button 
+                onClick={clearAllFilters}
+                className="bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 rounded-full px-4 py-1 text-sm"
+              >
+                Clear All Filters
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Loading state */}
       {loading && (
-        <div className="flex justify-center items-center p-16">
-          <div className="relative w-20 h-20">
+        <div className="flex flex-col justify-center items-center p-16 bg-white rounded-xl shadow-sm border border-gray-100">
+          <div className="relative w-20 h-20 mb-4">
             <div className="absolute top-0 w-full h-full border-4 border-blue-100 rounded-full"></div>
             <div className="absolute top-0 w-full h-full border-4 border-blue-500 rounded-full border-t-transparent animate-spin"></div>
           </div>
+          <p className="text-gray-600">
+            {isSearchMode ? "Searching doctors..." : "Loading doctor data..."}
+          </p>
         </div>
       )}
 
       {/* Error state */}
       {error && !loading && (
-        <div className="bg-white rounded-xl p-8 text-center shadow-md border border-gray-100">
-          <div className="text-rose-500 text-lg font-medium mb-3">{error}</div>
-          <p className="text-gray-500 mb-4">Unable to load doctor information at this time.</p>
-          <Button 
-            onClick={fetchDoctorData} 
-            className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg"
+        <div className="bg-red-50 p-8 rounded-xl border border-red-100 text-center shadow-sm">
+          <div className="text-red-600 font-medium mb-2">{error}</div>
+          <Button
+            onClick={handleRefresh}
+            className="bg-white text-red-600 border border-red-200 hover:bg-red-50 mt-2"
           >
-            Retry
+            Try Again
           </Button>
         </div>
       )}
 
       {/* No results */}
-      {!loading && !error && filteredDoctors.length === 0 && (
+      {!loading && !error && doctors.length === 0 && (
         <div className="bg-white rounded-xl p-12 text-center shadow-md border border-gray-100">
           <div className="mx-auto w-16 h-16 bg-gray-100 flex items-center justify-center rounded-full mb-4">
             <User className="h-8 w-8 text-gray-400" />
           </div>
           <h3 className="text-xl font-medium text-gray-800 mb-2">No doctors found</h3>
-          <p className="text-gray-500 mb-6">No doctors match your current search or filter criteria.</p>
-          <Button onClick={clearFilters} className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg">
+          <p className="text-gray-500 mb-6">
+            {searchQuery 
+              ? `No results for "${debouncedSearchTerm}"` 
+              : "No doctors match your current filter criteria"
+            }
+          </p>
+          <Button 
+            onClick={clearAllFilters} 
+            className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg"
+          >
             Clear All Filters
           </Button>
         </div>
       )}
 
       {/* Results */}
-      {!loading && !error && filteredDoctors.length > 0 && (
+      {!loading && !error && doctors.length > 0 && (
         <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
-          
           <div className="grid grid-cols-12 p-4 bg-gray-50 font-medium border-b border-gray-200">
             <div 
               className="col-span-5 flex items-center gap-1 cursor-pointer hover:text-blue-600 transition-colors"
@@ -348,7 +716,7 @@ export const DoctorsList = () => {
 
           {/* Doctor rows */}
           <div className="divide-y divide-gray-100">
-            {currentDoctors.map((doctor) => {
+            {doctors.map((doctor) => {
               const { color, bgColor, borderColor, icon } = getStatusIconAndColor(doctor.status);
               
               return (
@@ -400,47 +768,17 @@ export const DoctorsList = () => {
               );
             })}
           </div>
-          
-          {/* Pagination */}
-          <div className="p-4 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div className="text-sm text-gray-500">
-              Showing {indexOfFirstDoctor + 1} to {Math.min(indexOfLastDoctor, filteredDoctors.length)} of {filteredDoctors.length} doctors
-            </div>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                onClick={prevPage}
-                disabled={currentPage === 1}
-                className="flex items-center gap-1"
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Previous
-              </Button>
-              
-              <div className="flex items-center gap-1">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(number => (
-                  <Button
-                    key={number}
-                    variant={currentPage === number ? "default" : "outline"}
-                    onClick={() => paginate(number)}
-                    className="w-10 h-10 p-0"
-                  >
-                    {number}
-                  </Button>
-                ))}
-              </div>
-              
-              <Button 
-                variant="outline" 
-                onClick={nextPage}
-                disabled={currentPage === totalPages}
-                className="flex items-center gap-1"
-              >
-                Next
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {!loading && !error && doctors.length > 0 && totalPages > 1 && renderPagination()}
+      
+      {/* Results info */}
+      {!loading && !error && doctors.length > 0 && (
+        <div className="mt-4 text-center text-sm text-gray-500">
+          Showing {((currentPage - 1) * doctorsPerPage) + 1} to {Math.min(currentPage * doctorsPerPage, totalDoctors)} of {totalDoctors} doctors
+          {isSearchMode && ` (filtered results)`}
         </div>
       )}
     </div>

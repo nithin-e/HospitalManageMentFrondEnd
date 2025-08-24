@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Wallet, Calendar, IndianRupee, Filter, Search, Loader2, Plus, Stethoscope, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { fectingAllUserAppointMents } from '@/store/DoctorSideApi/fectingFullUserAppointMents';
-import Sidebar from "../layout/Sidebar";
+import Sidebar from "../../Doctor/layout/Sidebar";
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store/redux/store';
 

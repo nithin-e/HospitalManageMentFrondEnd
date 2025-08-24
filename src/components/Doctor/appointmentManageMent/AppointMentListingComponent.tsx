@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store/redux/store';
-import Sidebar from "../layout/Sidebar";
+import Sidebar from "../../Doctor/layout/Sidebar";
 import { fectingAllUserAppointMents } from '@/store/DoctorSideApi/fectingFullUserAppointMents';
 import { useSocket } from "@/context/socketContext";
 import { fetchUserConversations } from '@/store/userSideApi/fetchUserConversations';

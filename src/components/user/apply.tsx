@@ -14,20 +14,8 @@ import { PlusCircle, Upload, UserCircle, Check, AlertCircle, FileText, Phone, Ma
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { Inputt } from './reusable/Input';
+import { fetchServicesApi } from '@/store/AdminSideApi/fetchServices';
 
-const specialties = [
-  "Cardiology",
-  "Dermatology",
-  "Endocrinology",
-  "Gastroenterology",
-  "Neurology",
-  "Oncology",
-  "Pediatrics",
-  "Psychiatry",
-  "Radiology",
-  "Surgery",
-  "Urology",
-];
 
 const Apply: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -41,6 +29,8 @@ const Apply: React.FC = () => {
     medicalLicenseNumber: "",
     agreeTerms: false,
   });
+  const [specialties, setSpecialties] = useState<string[]>([]);
+  const [loadingSpecialties, setLoadingSpecialties] = useState(true);
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [profileImagePreview, setProfileImagePreview] = useState<string | null>(null);
   const [medicalLicense, setMedicalLicense] = useState<File | null>(null);
@@ -56,6 +46,59 @@ const Apply: React.FC = () => {
 
   // Retrieve userId from Redux store
   const userId = useSelector((state: RootState) => state.user?.user._id||'');
+
+  // Fetch specialties from API
+  useEffect(() => {
+    const fetchSpecialties = async () => {
+      try {
+        setLoadingSpecialties(true);
+        const response = await fetchServicesApi();
+        console.log('fetch services response', response);
+
+        if (response && response.result && response.result.services) {
+          // Extract specialties from the response
+          const specialtiesData = response.result.services.map((service: any) => service.name);
+          setSpecialties(specialtiesData);
+        } else {
+          console.error('No services found or invalid response format');
+          // Fallback to default specialties if API fails
+          setSpecialties([
+            "Cardiology",
+            "Dermatology",
+            "Endocrinology",
+            "Gastroenterology",
+            "Neurology",
+            "Oncology",
+            "Pediatrics",
+            "Psychiatry",
+            "Radiology",
+            "Surgery",
+            "Urology",
+          ]);
+        }
+      } catch (error) {
+        console.error('Fetch services failed', error);
+        // Fallback to default specialties if API fails
+        setSpecialties([
+          "Cardiology",
+          "Dermatology",
+          "Endocrinology",
+          "Gastroenterology",
+          "Neurology",
+          "Oncology",
+          "Pediatrics",
+          "Psychiatry",
+          "Radiology",
+          "Surgery",
+          "Urology",
+        ]);
+      } finally {
+        setLoadingSpecialties(false);
+      }
+    };
+
+    fetchSpecialties();
+  }, []);
 
   console.log('this is component Apply.tsx so check the user id getting or not inside the redux',userId)
 
@@ -477,10 +520,10 @@ const Apply: React.FC = () => {
                   <Select
                     onValueChange={(value) => handleChange({ name: "specialty", value })}
                     value={formData.specialty}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || loadingSpecialties}
                   >
                     <SelectTrigger className={`border ${errors.specialty ? 'border-red-300' : 'border-gray-300'} focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50`}>
-                      <SelectValue placeholder="Select your specialty" />
+                      <SelectValue placeholder={loadingSpecialties ? "Loading specialties..." : "Select your specialty"} />
                     </SelectTrigger>
                     <SelectContent>
                       {specialties.map((specialty) => (

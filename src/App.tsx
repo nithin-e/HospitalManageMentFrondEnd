@@ -29,7 +29,6 @@ import SetUpSlotes from './pages/doctor/SetUpSlotes';
 import AppointMent from './pages/user/AppointMent';
 import UserProfile from './components/user/userProfileComponent';
 import AppointMentMangemant from './pages/doctor/AppointMentMangemant';
-import AppoinmentSuccess from './pages/user/AppoinmentSuccess';
 import AdminPaymentListing from './pages/admin/AdminPaymentListing';
 import ListPayment from './pages/doctor/ListPayment';
 import UserWallet from './pages/user/UserWallet';
@@ -38,6 +37,7 @@ import PrescriptionForm from './pages/doctor/PrescriptionForm';
 import DoctorProtectedRoute from './protecting/doctorProtectedRoute';
 import ProtectedRoute from './protecting/ProctedRoute';
 import { BlockStatusChecker } from './protecting/BlockStatusChecker';
+import AdminAddService from './pages/admin/adminAddService';
 
 const queryClient = new QueryClient();
 
@@ -87,6 +87,7 @@ const App = () => {
                   <Route path="/Doctors" element={<DoctorListing/>} />
                   <Route path="/adminDetails/:id" element={<DoctorDetailsPage />} />
                   <Route path="/adminSidePayments" element={<AdminPaymentListing />} />
+                  <Route path="/addServices" element={<AdminAddService />} />
 
                   {/* Doctor routes */}
                   <Route path="/DoctorDashboard" element={<DoctorDash />} />

@@ -8,7 +8,8 @@ import {
   Bell, 
   MessageSquare, 
   LogOut,
-  Loader
+  Loader,
+  Wrench
 } from "lucide-react";
 import { useDispatch } from "react-redux";
 import { useState } from "react";
@@ -118,6 +119,13 @@ const Sidebar = () => {
           label="Doctors"
           href="/doctors"
           active={pathname === "/doctors"}
+        />
+
+        <SidebarItem
+          icon={Wrench}
+          label="Services"
+          href="/addServices"
+          active={pathname === "/addServices"}
         />
         
         
