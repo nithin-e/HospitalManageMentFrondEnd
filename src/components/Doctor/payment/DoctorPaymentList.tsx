@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Wallet, Calendar, IndianRupee, Filter, Search, Loader2, Plus, Stethoscope, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { Wallet, Calendar, IndianRupee, Filter, Loader2, Plus, Stethoscope, ChevronLeft, ChevronRight } from 'lucide-react';
 import { fectingAllUserAppointMents } from '@/store/DoctorSideApi/fectingFullUserAppointMents';
 import Sidebar from "../../Doctor/layout/Sidebar";
 import { useSelector } from 'react-redux';
@@ -43,61 +43,63 @@ interface Appointment {
   doctorId?: string; 
 }
 
+interface PaginationInfo {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
 const DoctorPaymentList: React.FC = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
-  const [filteredDoctorPayments, setFilteredDoctorPayments] = useState<Payment[]>([]);
+  const [allPayments, setAllPayments] = useState<Payment[]>([]); // Store all payments for total calculation
+  const [filteredPayments, setFilteredPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [balanceLoading, setBalanceLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    hasNext: false,
+    hasPrev: false
+  });
 
   const doctorId = useSelector((state: RootState) => state.doctor.data.doctor);
+  const email = useSelector((state: RootState) => state.doctor.data.doctor.email);
   const doctor = useSelector((state: RootState) => state.doctor?.data?.doctor);
-  const doctorName = `${doctor?.firstName || ''} Doctor`.trim();
-
-  console.log('Doctor ID:', doctorId?.id);
-  console.log('Doctor Name:', doctorName);
+  const doctorName = `${doctor?.firstName || ''} `.trim() || 'Doctor';
 
   useEffect(() => {
-    fetchUserFullAppointments();
-  }, []);
+    if (email) {
+      fetchAllAppointmentsForBalance();
+      fetchUserFullAppointments(1);
+    }
+  }, [email]);
 
   useEffect(() => {
-    if (doctorId?.id && payments.length > 0) {
-      console.log('All payments:', payments);
-      console.log('Filtering for doctor ID:', doctorId.id);
-      
+    if (payments.length > 0) {
       const doctorSpecificPayments = payments.filter(payment => {
-        const matchesDoctorId = payment.doctorId === doctorId.id;
-        const matchesRecipient = payment.recipient === doctorName;
-        const matchesDoctorName = payment.doctorName === doctorName;
+        const isDoctorPayment = 
+          payment.doctorId === doctorId?.id || 
+          payment.recipient === doctorName ||
+          payment.doctorName === doctorName;
         
-        console.log(`Payment ${payment.id}:`, {
-          paymentDoctorId: payment.doctorId,
-          currentDoctorId: doctorId.id,
-          matchesDoctorId,
-          matchesRecipient,
-          matchesDoctorName,
-          willInclude: matchesDoctorId || matchesRecipient || matchesDoctorName
-        });
-        
-        return matchesDoctorId || matchesRecipient || matchesDoctorName;
+        return isDoctorPayment;
       });
       
-      setFilteredDoctorPayments(doctorSpecificPayments);
-      console.log('Filtered doctor payments:', doctorSpecificPayments);
+      setFilteredPayments(doctorSpecificPayments);
     } else {
-      setFilteredDoctorPayments([]);
-      console.log('No doctor ID or payments available');
+      setFilteredPayments([]);
     }
   }, [payments, doctorId, doctorName]);
 
   const transformAppointmentToPayment = (appointment: Appointment): Payment => {
     const getPaymentStatus = (status: string): Payment['status'] => {
       const normalizedStatus = status.toLowerCase();
-      if (normalizedStatus === 'success' || normalizedStatus === 'suceess') return 'completed';
+      if (normalizedStatus === 'success' || normalizedStatus === 'suceess' || normalizedStatus === 'completed') return 'completed';
       if (normalizedStatus === 'pending') return 'pending';
       return 'failed';
     };
@@ -114,13 +116,13 @@ const DoctorPaymentList: React.FC = () => {
 
     return {
       id: appointment.id,
-      amount: parseFloat(appointment.amount),
-      doctorAmount: parseFloat(appointment.doctorAmount),
-      currency: 'INR', // Changed to INR
+      amount: parseFloat(appointment.amount || '0'),
+      doctorAmount: parseFloat(appointment.doctorAmount || '0'),
+      currency: 'INR',
       description: `Medical Appointment - ${appointment.specialty}`,
       date: appointment.appointmentDate,
-      status: getPaymentStatus(appointment.paymentStatus),
-      method: getPaymentMethod(appointment.payment_method),
+      status: getPaymentStatus(appointment.paymentStatus || appointment.status),
+      method: getPaymentMethod(appointment.payment_method || 'online'),
       recipient: appointment.doctorName,
       patientName: appointment.patientName,
       doctorName: appointment.doctorName,
@@ -131,23 +133,66 @@ const DoctorPaymentList: React.FC = () => {
     };
   };
 
-  const fetchUserFullAppointments = async () => {
+  // Fetch all appointments for balance calculation (without pagination)
+  const fetchAllAppointmentsForBalance = async () => {
+    if (!email) return;
+
+    try {
+      setBalanceLoading(true);
+      // Fetch with a large limit to get all appointments for balance calculation
+      const response = await fectingAllUserAppointMents(email, 1, 1000); // Large limit to get all
+      
+      if (response?.result?.appointments) {
+        const transformedPayments = response.result.appointments.map(transformAppointmentToPayment);
+        
+        // Filter for current doctor's payments
+        const doctorSpecificPayments = transformedPayments.filter(payment => {
+          const isDoctorPayment = 
+            payment.doctorId === doctorId?.id || 
+            payment.recipient === doctorName ||
+            payment.doctorName === doctorName;
+          
+          return isDoctorPayment;
+        });
+        
+        setAllPayments(doctorSpecificPayments);
+      } else {
+        setAllPayments([]);
+      }
+    } catch (error) {
+      console.error('Error fetching all appointments for balance:', error);
+      setAllPayments([]);
+    } finally {
+      setBalanceLoading(false);
+    }
+  };
+
+  const fetchUserFullAppointments = async (page: number = 1, limit: number = 3) => {
     try {
       setLoading(true);
       setError(null);
-      setCurrentPage(1);
       
-      console.log('Fetching appointments...');
-      const response = await fectingAllUserAppointMents();
-      console.log('API Response:', response);
+      const response = await fectingAllUserAppointMents(email, page, limit);
       
-      if (response?.result?.appointments && Array.isArray(response.result.appointments)) {
+      if (response?.result?.appointments) {
         const transformedPayments = response.result.appointments.map(transformAppointmentToPayment);
-        console.log('Transformed payments:', transformedPayments);
         setPayments(transformedPayments);
+        setPagination({
+          currentPage: response.result.currentPage || page,
+          totalPages: response.result.totalPages || 1,
+          totalItems: response.result.totalAppointments || 0,
+          hasNext: response.result.hasNextPage || false,
+          hasPrev: response.result.hasPrevPage || false
+        });
       } else {
-        console.log('No appointments found in response');
         setPayments([]);
+        setPagination({
+          currentPage: 1,
+          totalPages: 1,
+          totalItems: 0,
+          hasNext: false,
+          hasPrev: false
+        });
       }
     } catch (error) {
       console.error('Error fetching appointments:', error);
@@ -158,30 +203,22 @@ const DoctorPaymentList: React.FC = () => {
     }
   };
 
-  const searchFilteredPayments = filteredDoctorPayments.filter(payment => {
-    const matchesSearch = payment.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         payment.recipient.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (payment.patientName && payment.patientName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                         (payment.specialty && payment.specialty.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesStatus = statusFilter === 'all' || payment.status === statusFilter;
-    return matchesSearch && matchesStatus;
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      fetchUserFullAppointments(newPage);
+    }
+  };
+
+  const statusFilteredPayments = filteredPayments.filter(payment => {
+    return statusFilter === 'all' || payment.status === statusFilter;
   });
 
-  const totalItems = searchFilteredPayments.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentPayments = searchFilteredPayments.slice(indexOfFirstItem, indexOfLastItem);
-
-  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
-  const goToFirstPage = () => paginate(1);
-  const goToLastPage = () => paginate(totalPages);
-  const goToNextPage = () => currentPage < totalPages && paginate(currentPage + 1);
-  const goToPrevPage = () => currentPage > 1 && paginate(currentPage - 1);
-
-  const totalDoctorWalletAmount = filteredDoctorPayments
-    .filter(payment => payment.status === 'completed')
+  // Calculate total doctor wallet amount from ALL appointments (not just paginated)
+  const totalDoctorWalletAmount = allPayments
+    
     .reduce((sum, payment) => sum + payment.doctorAmount, 0);
+
+
 
   const getStatusColor = (status: Payment['status']) => {
     switch (status) {
@@ -203,7 +240,6 @@ const DoctorPaymentList: React.FC = () => {
     }
   };
 
-  // Updated currency formatter for INR
   const formatCurrency = (amount: number, currency: string = 'INR') => {
     if (currency === 'INR') {
       return new Intl.NumberFormat('en-IN', {
@@ -228,7 +264,7 @@ const DoctorPaymentList: React.FC = () => {
   };
 
   const formatTime = (timeString: string) => {
-    
+    if (!timeString) return '';
     if (timeString.includes('AM') || timeString.includes('PM')) {
       return timeString;
     }
@@ -239,7 +275,39 @@ const DoctorPaymentList: React.FC = () => {
     });
   };
 
-  if (loading) {
+  const generatePageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 3;
+    
+    if (pagination.totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= pagination.totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1);
+      
+      let start = Math.max(2, pagination.currentPage - 1);
+      let end = Math.min(pagination.totalPages - 1, pagination.currentPage + 1);
+      
+      if (start > 2) {
+        pages.push('...');
+      }
+      
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+      
+      if (end < pagination.totalPages - 1) {
+        pages.push('...');
+      }
+      
+      pages.push(pagination.totalPages);
+    }
+    
+    return pages;
+  };
+
+  if (loading && balanceLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="fixed left-0 top-0 h-full w-64 z-10 bg-white shadow-lg">
@@ -272,7 +340,10 @@ const DoctorPaymentList: React.FC = () => {
               <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Doctor Payments</h3>
               <p className="text-gray-500 mb-4">{error}</p>
               <button
-                onClick={fetchUserFullAppointments}
+                onClick={() => {
+                  fetchAllAppointmentsForBalance();
+                  fetchUserFullAppointments(1);
+                }}
                 className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
               >
                 Try Again
@@ -300,26 +371,21 @@ const DoctorPaymentList: React.FC = () => {
                   <h1 className="text-3xl font-bold text-gray-900">My Payments</h1>
                   <p className="text-gray-600">Track your appointment payment transactions</p>
                   <p className="text-sm text-blue-600">
-                    Doctor ID: {doctorId?.id} | Total Appointments: {filteredDoctorPayments.length}
+                    Doctor ID: {doctorId?.id} | Total Appointments: {pagination.totalItems}
                   </p>
-                  {filteredDoctorPayments.length === 0 && payments.length > 0 && (
-                    <p className="text-sm text-red-600">
-                      ⚠️ No payments found for this doctor ID. Check data matching logic.
-                    </p>
-                  )}
                 </div>
               </div>
               <div className="flex items-center space-x-3">
                 <button
-                  onClick={fetchUserFullAppointments}
+                  onClick={() => {
+                    fetchAllAppointmentsForBalance();
+                    fetchUserFullAppointments(pagination.currentPage);
+                  }}
                   className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2"
+                  disabled={loading || balanceLoading}
                 >
                   <IndianRupee className="w-4 h-4" />
-                  Refresh
-                </button>
-                <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2">
-                  <Plus className="w-4 h-4" />
-                  Process Payment
+                  {(loading || balanceLoading) ? 'Loading...' : 'Refresh'}
                 </button>
               </div>
             </div>
@@ -327,81 +393,25 @@ const DoctorPaymentList: React.FC = () => {
 
           <div className="bg-white rounded-xl shadow-lg p-8 mb-6 text-center">
             <h2 className="text-lg font-semibold text-gray-600 mb-2">My Total Earnings</h2>
-            <p className="text-4xl font-bold text-blue-600">
-              {formatCurrency(totalDoctorWalletAmount)}
-            </p>
+            {balanceLoading ? (
+              <div className="flex items-center justify-center gap-2">
+                <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+                <span className="text-xl text-gray-400">Calculating...</span>
+              </div>
+            ) : (
+              <p className="text-4xl font-bold text-blue-600">
+                {formatCurrency(totalDoctorWalletAmount)}
+              </p>
+            )}
             <p className="text-gray-500 mt-2">
-              Your share from {filteredDoctorPayments.filter(p => p.status === 'completed').length} completed appointments
+              Your share from {allPayments.filter(p => p.status === 'completed').length} completed appointments
+              {!balanceLoading && (
+                <span className="block text-xs mt-1">
+                  ({allPayments.length} total appointments processed)
+                </span>
+              )}
             </p>
           </div>
-
-          <div className="mb-6 flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Search by patient, specialty, or description..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setCurrentPage(1);
-                }}
-              />
-            </div>
-            <div className="relative">
-              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <select
-                className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
-                value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(e.target.value);
-                  setCurrentPage(1);
-                }}
-              >
-                <option value="all">All Status</option>
-                <option value="completed">Completed</option>
-                <option value="pending">Pending</option>
-                <option value="failed">Failed</option>
-              </select>
-            </div>
-          </div>
-
-
-          {filteredDoctorPayments.length > 0 && (
-            <div className="bg-white p-6 rounded-lg shadow border-l-4 border-blue-500 mb-6">
-              <div className="flex items-center gap-3 mb-4">
-                <Stethoscope className="w-6 h-6 text-blue-600" />
-                <h3 className="text-xl font-semibold text-gray-900">{doctorName}</h3>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">
-                    {formatCurrency(totalDoctorWalletAmount)}
-                  </div>
-                  <div className="text-sm text-gray-500">Total Earnings</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">
-                    {filteredDoctorPayments.filter(p => p.status === 'completed').length}
-                  </div>
-                  <div className="text-sm text-gray-500">Completed</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-yellow-600">
-                    {filteredDoctorPayments.filter(p => p.status === 'pending').length}
-                  </div>
-                  <div className="text-sm text-gray-500">Pending</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-red-600">
-                    {filteredDoctorPayments.filter(p => p.status === 'failed').length}
-                  </div>
-                  <div className="text-sm text-gray-500">Failed</div>
-                </div>
-              </div>
-            </div>
-          )}
 
           <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden mb-4">
             <div className="overflow-x-auto">
@@ -429,7 +439,7 @@ const DoctorPaymentList: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {currentPayments.map((payment) => (
+                  {statusFilteredPayments.map((payment) => (
                     <tr key={payment.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4">
                         <div>
@@ -451,12 +461,12 @@ const DoctorPaymentList: React.FC = () => {
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm font-semibold text-gray-600">
-                          {formatCurrency(payment.amount, payment.currency)}
+                          {payment.amount > 0 ? formatCurrency(payment.amount, payment.currency) : 'N/A'}
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm font-semibold text-blue-600">
-                          {formatCurrency(payment.doctorAmount, payment.currency)}
+                          {payment.doctorAmount > 0 ? formatCurrency(payment.doctorAmount, payment.currency) : 'N/A'}
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -491,123 +501,60 @@ const DoctorPaymentList: React.FC = () => {
               </table>
             </div>
             
-            {searchFilteredPayments.length === 0 && !loading && (
+            {statusFilteredPayments.length === 0 && !loading && (
               <div className="text-center py-8">
                 <Stethoscope className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No payments found</h3>
                 <p className="text-gray-500">
-                  {filteredDoctorPayments.length === 0 
+                  {filteredPayments.length === 0 
                     ? "No appointments found for your account yet." 
-                    : "Try adjusting your search or filter criteria."}
+                    : "Try adjusting your filter criteria."}
                 </p>
               </div>
             )}
           </div>
 
-          {/* Pagination Controls */}
-          {searchFilteredPayments.length > 0 && (
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-lg border border-gray-200">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <span>Items per page:</span>
-                <select
-                  value={itemsPerPage}
-                  onChange={(e) => {
-                    setItemsPerPage(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                  className="border border-gray-300 rounded px-2 py-1"
-                >
-                  <option value={5}>5</option>
-                  <option value={10}>10</option>
-                  <option value={20}>20</option>
-                  <option value={50}>50</option>
-                </select>
-              </div>
-              
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <span>
-                  Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, totalItems)} of {totalItems} items
-                </span>
-              </div>
-              
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={goToFirstPage}
-                  disabled={currentPage === 1}
-                  className="p-1 rounded border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <ChevronsLeft className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={goToPrevPage}
-                  disabled={currentPage === 1}
-                  className="p-1 rounded border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  let pageNum;
-                  if (totalPages <= 5) {
-                    pageNum = i + 1;
-                  } else if (currentPage <= 3) {
-                    pageNum = i + 1;
-                  } else if (currentPage >= totalPages - 2) {
-                    pageNum = totalPages - 4 + i;
-                  } else {
-                    pageNum = currentPage - 2 + i;
-                  }
-                  
-                  return (
-                    <button
-                      key={pageNum}
-                      onClick={() => paginate(pageNum)}
-                      className={`w-8 h-8 rounded text-sm ${currentPage === pageNum ? 'bg-blue-500 text-white' : 'border border-gray-300'}`}
-                    >
-                      {pageNum}
-                    </button>
-                  );
-                })}
-                
-                {totalPages > 5 && currentPage < totalPages - 2 && (
-                  <span className="px-1">...</span>
-                )}
-                
-                {totalPages > 5 && currentPage < totalPages - 2 && (
+          {pagination.totalPages > 1 && (
+            <div className="flex items-center justify-center mt-6 space-x-2">
+              <button
+                onClick={() => handlePageChange(pagination.currentPage - 1)}
+                disabled={!pagination.hasPrev}
+                className="px-3 py-1 rounded-md border flex items-center border-gray-300 text-gray-700 hover:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Previous
+              </button>
+              {generatePageNumbers().map((page, index) => (
+                page === '...' ? (
+                  <span key={index} className="px-3 py-1 text-gray-500">...</span>
+                ) : (
                   <button
-                    onClick={() => paginate(totalPages)}
-                    className={`w-8 h-8 rounded text-sm ${currentPage === totalPages ? 'bg-blue-500 text-white' : 'border border-gray-300'}`}
+                    key={page}
+                    onClick={() => handlePageChange(page as number)}
+                    className={`px-3 py-1 rounded-md ${pagination.currentPage === page ? 'bg-blue-500 text-white' : 'text-gray-700 hover:bg-gray-100'}`}
                   >
-                    {totalPages}
+                    {page}
                   </button>
-                )}
-                
-                <button
-                  onClick={goToNextPage}
-                  disabled={currentPage === totalPages}
-                  className="p-1 rounded border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={goToLastPage}
-                  disabled={currentPage === totalPages}
-                  className="p-1 rounded border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <ChevronsRight className="w-5 h-5" />
-                </button>
-              </div>
+                )
+              ))}
+              <button
+                onClick={() => handlePageChange(pagination.currentPage + 1)}
+                disabled={!pagination.hasNext}
+                className="px-3 py-1 rounded-md border flex items-center border-gray-300 text-gray-700 hover:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+              >
+                Next
+                <ChevronRight className="w-4 h-4" />
+              </button>
             </div>
           )}
 
-          {/* Summary Statistics for Current Doctor */}
-          {filteredDoctorPayments.length > 0 && (
+          {allPayments.length > 0 && !balanceLoading && (
             <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="bg-blue-50 p-4 rounded-lg">
                 <div className="text-blue-600 text-sm font-medium">My Earnings (Completed)</div>
                 <div className="text-blue-900 text-lg font-bold">
                   {formatCurrency(
-                    filteredDoctorPayments.filter(p => p.status === 'completed').reduce((sum, p) => sum + p.doctorAmount, 0)
+                    allPayments.filter(p => p.status === 'completed').reduce((sum, p) => sum + p.doctorAmount, 0)
                   )}
                 </div>
               </div>
@@ -615,7 +562,7 @@ const DoctorPaymentList: React.FC = () => {
                 <div className="text-yellow-600 text-sm font-medium">My Earnings (Pending)</div>
                 <div className="text-yellow-900 text-lg font-bold">
                   {formatCurrency(
-                    filteredDoctorPayments.filter(p => p.status === 'pending').reduce((sum, p) => sum + p.doctorAmount, 0)
+                    allPayments.filter(p => p.status === 'pending').reduce((sum, p) => sum + p.doctorAmount, 0)
                   )}
                 </div>
               </div>
@@ -623,14 +570,14 @@ const DoctorPaymentList: React.FC = () => {
                 <div className="text-green-600 text-sm font-medium">Total Revenue Generated</div>
                 <div className="text-green-900 text-lg font-bold">
                   {formatCurrency(
-                    filteredDoctorPayments.filter(p => p.status === 'completed').reduce((sum, p) => sum + p.amount, 0)
+                    allPayments.filter(p => p.status === 'completed').reduce((sum, p) => sum + p.amount, 0)
                   )}
                 </div>
               </div>
               <div className="bg-purple-50 p-4 rounded-lg">
                 <div className="text-purple-600 text-sm font-medium">My Total Appointments</div>
                 <div className="text-purple-900 text-lg font-bold">
-                  {filteredDoctorPayments.length}
+                  {allPayments.length}
                 </div>
               </div>
             </div>

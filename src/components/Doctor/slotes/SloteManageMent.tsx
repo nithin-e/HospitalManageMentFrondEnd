@@ -43,6 +43,8 @@ export default function DoctorAppointmentScheduler() {
   
   const doctorEmail = doctorData?.email || '';
   const doctorName = doctorData?.firstName || 'Doctor';
+  const doctorId=doctorData?.id||''
+
   const { socket, connected } = useSocket();
 
   useEffect(() => {
@@ -141,55 +143,47 @@ export default function DoctorAppointmentScheduler() {
     return dates;
   };
 
-  const generateTimeSlots = (start, end, appointmentDuration) => {
-    const slots = [];
-    const [startHour, startMinute] = start.split(':').map(Number);
-    const [endHour, endMinute] = end.split(':').map(Number);
+const generateTimeSlots = (start, end, appointmentDuration) => {
+  const slots = [];
+  const [startHour, startMinute] = start.split(':').map(Number);
+  const [endHour, endMinute] = end.split(':').map(Number);
+  
+  const currentTime = new Date();
+  currentTime.setHours(startHour, startMinute, 0, 0);
+  
+  const endTime = new Date();
+  endTime.setHours(endHour, endMinute, 0, 0);
+  
+  if (endTime <= currentTime) {
+    endTime.setDate(endTime.getDate() + 1);
+  }
+  
+  while (currentTime < endTime) {
+    const timeString = currentTime.toTimeString().slice(0, 5);
     
-    const currentTime = new Date();
-    currentTime.setHours(startHour, startMinute, 0, 0);
+    slots.push({
+      time: timeString, // Store in 24-hour format
+      displayTime: formatTimeForDisplay(timeString), // Convert to 12-hour format for display
+      type: 'appointment'
+    });
     
-    const endTime = new Date();
-    endTime.setHours(endHour, endMinute, 0, 0);
+    currentTime.setMinutes(currentTime.getMinutes() + appointmentDuration);
     
-    if (endTime <= currentTime) {
-      endTime.setDate(endTime.getDate() + 1);
-    }
-    
-    while (currentTime < endTime) {
-      const timeString = currentTime.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-      });
+    if (includeRestPeriods && currentTime < endTime) {
+      const restTimeString = currentTime.toTimeString().slice(0, 5);
       
       slots.push({
-        time: currentTime.toTimeString().slice(0, 5),
-        displayTime: timeString, 
-        type: 'appointment'
+        time: restTimeString, // Store in 24-hour format
+        displayTime: formatTimeForDisplay(restTimeString), // Convert to 12-hour format for display
+        type: 'rest'
       });
       
-      currentTime.setMinutes(currentTime.getMinutes() + appointmentDuration);
-      
-      if (includeRestPeriods && currentTime < endTime) {
-        const restTimeString = currentTime.toLocaleTimeString('en-US', {
-          hour: 'numeric',
-          minute: '2-digit',
-          hour12: true
-        });
-        
-        slots.push({
-          time: currentTime.toTimeString().slice(0, 5), 
-          displayTime: restTimeString, 
-          type: 'rest'
-        });
-        
-        currentTime.setMinutes(currentTime.getMinutes() + 15);
-      }
+      currentTime.setMinutes(currentTime.getMinutes() + 15);
     }
-    
-    return slots;
-  };
+  }
+  
+  return slots;
+};
 
   const toggleDateSelection = (dateString: string) => {
     if (selectedDates.includes(dateString)) {
@@ -226,21 +220,21 @@ export default function DoctorAppointmentScheduler() {
   const nextStep = () => setCurrentStep(currentStep + 1);
   const prevStep = () => setCurrentStep(currentStep - 1);
 
-  const formatTimeForDisplay = (timeString) => {
-    if (timeString.includes('AM') || timeString.includes('PM')) {
-      return timeString;
-    }
-    
-    const [hours, minutes] = timeString.split(':').map(Number);
-    const date = new Date();
-    date.setHours(hours, minutes, 0, 0);
-    
-    return date.toLocaleTimeString('en-US', { 
-      hour: 'numeric', 
-      minute: '2-digit',
-      hour12: true 
-    });
-  };
+const formatTimeForDisplay = (timeString) => {
+  // If it's already in 12-hour format with AM/PM, return as is
+  if (timeString.includes('AM') || timeString.includes('PM')) {
+    return timeString;
+  }
+  
+  
+  const [hours, minutes] = timeString.split(':').map(Number);
+  
+  
+  const period = hours >= 12 ? 'PM' : 'AM';
+  const hours12 = hours % 12 || 12; 
+  
+  return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`;
+};
 
   const getAppointmentSlotsForDate = (date: string) => {
     return timeSlots[date]?.filter(slot => slot.type === 'appointment') || [];
@@ -919,34 +913,77 @@ export default function DoctorAppointmentScheduler() {
       setSelectedSlot(null);
     };
 
-    const handleRemoveAllSlotsForDate = (daySlots) => {
-      const availableSlots = daySlots.filter(slot => !slot.is_booked);
-      const bookedSlots = daySlots.filter(slot => slot.is_booked);
+    // const handleRemoveAllSlotsForDate = (daySlots) => {
+
+    //   console.log('machuve ne ith onn nokkikke',daySlots);
       
-      if (bookedSlots.length > 0) {
-        // const confirmed = window.confirm(
-        //   `Are you sure you want to remove all slots for this date?\n\n` +
-        //   `This will remove:\n` +
-        //   `• ${availableSlots.length} available slots\n` +
-        //   `• ${bookedSlots.length} booked slots (will cancel user appointments)\n\n` +
-        //   `Removing booked slots will cancel user appointments. This action cannot be undone.`
-        // );
 
+    //   const availableSlots = daySlots.filter(slot => !slot.is_booked);
+    //   const bookedSlots = daySlots.filter(slot => slot.is_booked);
+      
+    //   if (bookedSlots.length > 0) {
+    //     // const confirmed = window.confirm(
+    //     //   `Are you sure you want to remove all slots for this date?\n\n` +
+    //     //   `This will remove:\n` +
+    //     //   `• ${availableSlots.length} available slots\n` +
+    //     //   `• ${bookedSlots.length} booked slots (will cancel user appointments)\n\n` +
+    //     //   `Removing booked slots will cancel user appointments. This action cannot be undone.`
+    //     // );
 
-        socket.emit('canceling_Booked_UserAppointMent', bookedSlots, (response) => {
-        console.log("Socket response:", response);
-      });
-         const confirmed =true
+    //     console.log('please check this bookedslotes',bookedSlots)
+
+    //     socket.emit('cancelingBookedUserAppointMent', bookedSlots, (response) => {
+    //     console.log("Socket response:", response);
+    //   });
+    //      const confirmed =true
         
-        if (confirmed) {
-          const slotsToRemove = daySlots.map(slot => slot.id);
-          setRemovedSlots(prev => [...prev, ...slotsToRemove]);
-        }
-      } else {
-        const slotsToRemove = availableSlots.map(slot => slot.id);
+    //     if (confirmed) {
+    //       const slotsToRemove = daySlots.map(slot => slot.id);
+    //       setRemovedSlots(prev => [...prev, ...slotsToRemove]);
+    //     }
+    //   } else {
+    //     const slotsToRemove = availableSlots.map(slot => slot.id);
+    //     setRemovedSlots(prev => [...prev, ...slotsToRemove]);
+    //   }
+    // };
+
+
+
+
+
+const handleRemoveAllSlotsForDate = (daySlots) => {
+  const availableSlots = daySlots.filter(slot => !slot.is_booked);
+  const bookedSlots = daySlots.filter(slot => slot.is_booked);
+  
+  if (bookedSlots.length > 0) {
+    // Create new objects with the correct doctor_id
+    const bookedSlotsWithDoctorId = bookedSlots.map(slot => ({
+      ...slot,
+      doctor_id: doctorId 
+    }));
+
+   
+      console.log('Removing booked slots:', bookedSlotsWithDoctorId);
+
+      socket.emit('cancelingBookedUserAppointMent', {
+  slots: bookedSlotsWithDoctorId
+});
+
+        const slotsToRemove = daySlots.map(slot => slot.id);
         setRemovedSlots(prev => [...prev, ...slotsToRemove]);
-      }
-    };
+
+  
+  
+  } else {
+    // No booked slots, just remove available ones
+    const slotsToRemove = availableSlots.map(slot => slot.id);
+    setRemovedSlots(prev => [...prev, ...slotsToRemove]);
+    toast({
+      title: "Slots Removed",
+      description: `All ${availableSlots.length} available slots have been removed.`,
+    });
+  }
+};
 
     const handleTimeSlotSetupWithAvoidance = (dateString) => {
       if (!startTime || !endTime) {

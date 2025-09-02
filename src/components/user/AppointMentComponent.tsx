@@ -1,13 +1,10 @@
-
 import { useState, useEffect } from 'react';
 import { Calendar, Clock, User, Mail, Phone, MessageSquare, Check, Heart, Activity, Shield, Stethoscope } from 'lucide-react';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import { UserfetchingDoctors } from '@/store/userSideApi/UserfetchingDoctors';
-import { fectingAppointMentSlotes } from '@/store/DoctorSideApi/fectingAppointMentSlotes';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store/redux/store';
-import { makingAppointMent } from '@/store/DoctorSideApi/makingAppointMent';
 import { UserFectingAppointMentSlote } from '@/store/userSideApi/UserFectingAppointMentSlote';
 import axiosInstance from '@/cors/axiousInstance';
 
@@ -75,7 +72,7 @@ export default function AppointmentBooking() {
 
 
 
-  const [doctorIdd, SetdoctorId] = useState('');
+ 
   const [submitted, setSubmitted] = useState(false);
   const [symbols, setSymbols] = useState([]);
   const [circles, setCircles] = useState([]);
@@ -198,11 +195,36 @@ export default function AppointmentBooking() {
 
 
   const user = useSelector((state: RootState) => state.user)
-  const userData = user?.checkUserEmailAndPhone?.user || user?.user?.user || user?.user || null;
+  const userData = user?.user || null;
   const userEmail = userData?.email || '';
   const userId= userData?._id
 
  
+
+  const formatTimeTo12Hour = (timeString) => {
+  // If it's already in AM/PM format, return as is
+  if (timeString.includes('AM') || timeString.includes('PM')) {
+    return timeString;
+  }
+  
+  // Handle 24-hour format (e.g., "17:00")
+  if (timeString.includes(':')) {
+    const [hours, minutes] = timeString.split(':');
+    const hourNum = parseInt(hours, 10);
+    
+    if (hourNum >= 12) {
+      const displayHour = hourNum === 12 ? 12 : hourNum - 12;
+      return `${displayHour}:${minutes} PM`;
+    } else {
+      const displayHour = hourNum === 0 ? 12 : hourNum;
+      return `${displayHour}:${minutes} AM`;
+    }
+  }
+  
+  // Return original if format is unexpected
+  return timeString;
+};
+
 
 
   const handleDoctorSelect = (doctor) => {
@@ -471,7 +493,7 @@ export default function AppointmentBooking() {
 
 
 
- {step === 2 && (
+{step === 2 && (
   <div className="space-y-6">
     <div className="bg-white p-5 rounded-xl border border-blue-200 shadow-sm hover:shadow-md transition-all duration-300">
       <label className="block text-gray-700 mb-3 font-medium flex items-center">
@@ -483,7 +505,7 @@ export default function AppointmentBooking() {
         name="date"
         value={formData.date}
         onChange={handleChange}
-        min={new Date().toISOString().split('T')[0]} // Only allow future dates
+        min={new Date().toISOString().split('T')[0]}
         className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
       />
     </div>
@@ -495,43 +517,52 @@ export default function AppointmentBooking() {
           Available Time Slots
         </label>
         {(() => {
-          // Find the slots for the selected date
           const dateSlots = timeSlots.find(slot => slot.date === formData.date);
           
-          // Helper function to check if a time slot has passed
           const isTimeSlotPassed = (slotTime) => {
             const today = new Date().toISOString().split('T')[0];
             const selectedDate = formData.date;
             
-            // If the selected date is not today, don't check time
             if (selectedDate !== today) {
               return false;
             }
             
-            // Parse the slot time and current time
             const now = new Date();
             const currentHour = now.getHours();
             const currentMinute = now.getMinutes();
             
-            // Parse slot time (assuming format like "09:30 AM" or "2:30 PM")
-            const timeMatch = slotTime.match(/(\d+):(\d+)\s*(AM|PM)/i);
-            if (!timeMatch) return false;
+            // Format the time for comparison (convert to 24-hour format if needed)
+            let compareHour, compareMinute;
             
-            let slotHour = parseInt(timeMatch[1]);
-            const slotMinute = parseInt(timeMatch[2]);
-            const period = timeMatch[3].toUpperCase();
-            
-            // Convert to 24-hour format
-            if (period === 'PM' && slotHour !== 12) {
-              slotHour += 12;
-            } else if (period === 'AM' && slotHour === 12) {
-              slotHour = 0;
+            if (slotTime.includes('AM') || slotTime.includes('PM')) {
+              // Handle AM/PM format
+              const timeMatch = slotTime.match(/(\d+):(\d+)\s*(AM|PM)/i);
+              if (!timeMatch) return false;
+              
+              let hour = parseInt(timeMatch[1]);
+              const minute = parseInt(timeMatch[2]);
+              const period = timeMatch[3].toUpperCase();
+              
+              if (period === 'PM' && hour !== 12) {
+                hour += 12;
+              } else if (period === 'AM' && hour === 12) {
+                hour = 0;
+              }
+              
+              compareHour = hour;
+              compareMinute = minute;
+            } else if (slotTime.includes(':')) {
+              // Handle 24-hour format
+              const [hours, minutes] = slotTime.split(':');
+              compareHour = parseInt(hours, 10);
+              compareMinute = parseInt(minutes, 10);
+            } else {
+              return false;
             }
             
-            // Check if slot time has passed
-            if (slotHour < currentHour) {
+            if (compareHour < currentHour) {
               return true;
-            } else if (slotHour === currentHour && slotMinute <= currentMinute) {
+            } else if (compareHour === currentHour && compareMinute <= currentMinute) {
               return true;
             }
             
@@ -539,7 +570,6 @@ export default function AppointmentBooking() {
           };
           
           if (dateSlots && dateSlots.slots && dateSlots.slots.length > 0) {
-            // Filter out passed time slots and booked slots
             const availableSlots = dateSlots.slots.filter(slot => {
               const isSlotPassed = isTimeSlotPassed(slot.time);
               return !slot.is_booked && !isSlotPassed;
@@ -564,7 +594,7 @@ export default function AppointmentBooking() {
                         ? 'border-blue-500 bg-blue-50 shadow-md text-blue-600 font-medium' 
                         : 'border-gray-200 hover:border-blue-200 hover:bg-gray-50'}`}
                   >
-                    {slot.time}
+                    {formatTimeTo12Hour(slot.time)}
                   </div>
                 ))}
               </div>
@@ -799,68 +829,66 @@ export default function AppointmentBooking() {
       <Footer/>
       
      
-      <style jsx global>{`
-        .bg-grid-pattern {
-          background-image: linear-gradient(to right, rgba(59, 130, 246, 0.05) 1px, transparent 1px),
-                          linear-gradient(to bottom, rgba(59, 130, 246, 0.05) 1px, transparent 1px);
-          background-size: 20px 20px;
-        }
+      <style>{`
+  .bg-grid-pattern {
+    background-image: linear-gradient(to right, rgba(59, 130, 246, 0.05) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(59, 130, 246, 0.05) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
 
-        .pulse-animation {
-          animation: pulse 15s infinite ease-in-out;
-        }
+  .pulse-animation {
+    animation: pulse 15s infinite ease-in-out;
+  }
 
-        @keyframes pulse {
-          0% {
-            transform: scale(0.95);
-            opacity: 0.1;
-          }
-          50% {
-            transform: scale(1.05);
-            opacity: 0.2;
-          }
-          100% {
-            transform: scale(0.95);
-            opacity: 0.1;
-          }
-        }
+  @keyframes pulse {
+    0% {
+      transform: scale(0.95);
+      opacity: 0.1;
+    }
+    50% {
+      transform: scale(1.05);
+      opacity: 0.2;
+    }
+    100% {
+      transform: scale(0.95);
+      opacity: 0.1;
+    }
+  }
 
-        /* For the medical symbols float animation */
-        .medical-symbol {
-          animation-name: float;
-          animation-iteration-count: infinite;
-          animation-timing-function: ease-in-out;
-          opacity: 0.15;
-        }
+  .medical-symbol {
+    animation-name: float;
+    animation-iteration-count: infinite;
+    animation-timing-function: ease-in-out;
+    opacity: 0.15;
+  }
 
-        @keyframes float {
-          0% {
-            transform: translateY(0) rotate(0deg);
-          }
-          50% {
-            transform: translateY(-20px) rotate(10deg);
-          }
-          100% {
-            transform: translateY(0) rotate(0deg);
-          }
-        }
+  @keyframes float {
+    0% {
+      transform: translateY(0) rotate(0deg);
+    }
+    50% {
+      transform: translateY(-20px) rotate(10deg);
+    }
+    100% {
+      transform: translateY(0) rotate(0deg);
+    }
+  }
 
-        /* EKG Animation */
-        .ekg-animation {
-          width: 100%;
-          height: 100%;
-          animation: ekg-move 15s linear infinite;
-        }
+  .ekg-animation {
+    width: 100%;
+    height: 100%;
+    animation: ekg-move 15s linear infinite;
+  }
 
-        @keyframes ekg-move {
-          0% {
-            transform: translateX(0);
-          }
-          100% {
-            transform: translateX(-50%);
-          }
-        }
-      `}</style>
+  @keyframes ekg-move {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+`}</style>
 
 
     </div>

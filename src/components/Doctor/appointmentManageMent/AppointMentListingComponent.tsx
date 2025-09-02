@@ -10,6 +10,7 @@ import Sidebar from "../../Doctor/layout/Sidebar";
 import { fectingAllUserAppointMents } from '@/store/DoctorSideApi/fectingFullUserAppointMents';
 import { useSocket } from "@/context/socketContext";
 import { fetchUserConversations } from '@/store/userSideApi/fetchUserConversations';
+import { app } from '@/store/firebase';
 
 interface Appointment {
   id: string;
@@ -55,12 +56,15 @@ const AppointMentListingComponent = () => {
   const [chatAppointment, setChatAppointment] = useState<Appointment | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  const { socket, connected } = useSocket();
   const [currentPage, setCurrentPage] = useState(1);
-  const [appointmentsPerPage] = useState(4);
-
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalAppointments, setTotalAppointments] = useState(0);
+  const appointmentsPerPage = 2;
+  
+  const { socket, connected } = useSocket();
   const dispatch: AppDispatch = useDispatch();
   const doctor = useSelector((state: RootState) => state.doctor.data.doctor);
+  const email = useSelector((state: RootState) => state.doctor.data.doctor.email);
 
   useEffect(() => {
     if (!doctor) {
@@ -71,7 +75,7 @@ const AppointMentListingComponent = () => {
     }
     
     fetchUserFullAppointments();
-  }, [doctor]);
+  }, [doctor, currentPage]);
 
   useEffect(() => {
     if (appointments.length > 0 && doctor) {
@@ -89,8 +93,6 @@ const AppointMentListingComponent = () => {
     }
   
     const handleReceiveMessage = (data: any) => {
-
-      
       if (data.type === "msgReceive") {
         const newMessageData = data.data;
         
@@ -98,8 +100,7 @@ const AppointMentListingComponent = () => {
           const isImageFile = (mimeType: string) => {
             return mimeType && mimeType.startsWith('image/');
           };
-                console.log('Receiving message data:', newMessageData);
-    
+          
           const newMsg: ChatMessage = {
             id: newMessageData.messageId || Date.now().toString(),
             text: newMessageData.text || newMessageData.message || '',
@@ -136,17 +137,22 @@ const AppointMentListingComponent = () => {
       setLoading(true);
       setError(null);
       
-      if (!doctor) {
+      if (!doctor || !email) {
         throw new Error('Doctor not authenticated');
       }
       
-      const response = await fectingAllUserAppointMents();
+      const response = await fectingAllUserAppointMents(email, currentPage, appointmentsPerPage);
       
       if (response && response.result && response.result.appointments) {
+
+        console.log('edaaei check here the responce from backend',response)
         setAppointments(response.result.appointments);
+        setTotalAppointments(response.result.totalAppointments || response.result.appointments.length);
+        setTotalPages(Math.ceil(response.result.totalAppointments / appointmentsPerPage));
       } else {
         setError('No appointments data received');
         setAppointments([]);
+        setTotalPages(1);
       }
     } catch (error: any) {
       console.error('Error fetching appointments:', error);
@@ -162,6 +168,7 @@ const AppointMentListingComponent = () => {
       }
       
       setAppointments([]);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
@@ -169,7 +176,7 @@ const AppointMentListingComponent = () => {
 
   const filterAppointmentsByDoctor = (appointments: Appointment[]) => {
     if (!doctor) return [];
-    const reduxDoctorName = `${doctor.firstName || ''} ${ ''}`.trim().toLowerCase();
+    const reduxDoctorName = `${doctor.firstName || ''}`.trim().toLowerCase();
     return appointments.filter(appointment => {
       const appointmentDoctorName = appointment.doctorName.toLowerCase().trim();
       return appointmentDoctorName === reduxDoctorName || 
@@ -226,9 +233,8 @@ const AppointMentListingComponent = () => {
   const fetchUserConversation = async (userId: string, doctorId: string) => {
     try {
       const res = await fetchUserConversations(userId, doctorId);  
-      console.log('Previous conversations:', res);
-  
-      if (res.result.success ) {
+      
+      if (res.result.success) {
         const messages = res.result.conversations[0].messages.map(msg => {
           const isImage = msg.messageType === 'file' && 
                           msg.mimeType?.startsWith('image/');
@@ -265,6 +271,7 @@ const AppointMentListingComponent = () => {
   };
 
   const handleChatClick = async (appointment: Appointment) => {
+    console.log('starting chat with appoitment........',appointment)
     setChatAppointment(appointment);
     setShowChatModal(true);
     
@@ -288,6 +295,9 @@ const AppointMentListingComponent = () => {
   };
 
   const sendMessageToBackend = async (message: any) => {
+
+    console.log('{check this chatAppointment{} before sending to backent:}',chatAppointment);
+    
     try {
       if (!socket || !connected || !chatAppointment || !doctor) {
         console.error('Socket not connected or missing data');
@@ -307,8 +317,10 @@ const AppointMentListingComponent = () => {
         fileSize: message.fileSize,
         mimeType: message.mimeType
       };
+
+      console.log('checke here also before sending message too backend',messageData);
+      
   
-      console.log('Message data to emit:', messageData);
       socket.emit('sendMessage', messageData);
     } catch (error) {
       console.error('Error sending message:', error);
@@ -355,6 +367,8 @@ const AppointMentListingComponent = () => {
     if (messageType === 'text') {
       setNewMessage('');
     }
+
+    console.log('check this message before sending to backent:',message)
     
     sendMessageToBackend(message);
   };
@@ -380,24 +394,17 @@ const AppointMentListingComponent = () => {
     appointment.notes.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Pagination logic
-  const indexOfLastAppointment = currentPage * appointmentsPerPage;
-  const indexOfFirstAppointment = indexOfLastAppointment - appointmentsPerPage;
-  const currentAppointments = searchFilteredRequests.slice(
-    indexOfFirstAppointment,
-    indexOfLastAppointment
-  );
-  const totalPages = Math.ceil(searchFilteredRequests.length / appointmentsPerPage);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm]);
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
 
   const getProfileImageUrl = (name: string) => {
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=3B82F6&color=FFFFFF&size=64&bold=true`;
   };
 
-  const doctorName = doctor ? `${doctor.firstName || ''} ${ ''}`.trim() : 'Doctor';
+  const doctorName = doctor ? `${doctor.firstName || ''}`.trim() : 'Doctor';
   const firstName = doctor?.firstName || 'Doctor';
 
   if (loading) {
@@ -459,7 +466,7 @@ const AppointMentListingComponent = () => {
             </p>
             {doctor && (
               <p className="text-sm text-gray-500 mt-1">
-                Showing appointments for: {doctorName} ({filteredAppointments.length} of {appointments.length} total)
+                Showing appointments for: {doctorName} ({searchFilteredRequests.length} of {totalAppointments} total)
               </p>
             )}
           </div>
@@ -497,9 +504,9 @@ const AppointMentListingComponent = () => {
 
                 <div className="flex-1 overflow-hidden">
                   <div className="h-full overflow-y-auto">
-                    {currentAppointments.length > 0 ? (
+                    {searchFilteredRequests.length > 0 ? (
                       <div className="divide-y divide-gray-100">
-                        {currentAppointments.map((appointment) => (
+                        {searchFilteredRequests.map((appointment) => (
                           <div
                             key={appointment.id}
                             className={`p-4 lg:p-6 hover:bg-gray-50 cursor-pointer transition-all duration-200 ${
@@ -522,6 +529,7 @@ const AppointMentListingComponent = () => {
                                 <div className="min-w-0 flex-1">
                                   <h3 className="text-base lg:text-lg font-semibold text-gray-900 truncate">
                                     {appointment.patientName}
+                                    
                                   </h3>
                                   <div className="flex items-center space-x-2 text-sm text-gray-600 mt-1">
                                     <Calendar className="w-4 h-4 flex-shrink-0" />
@@ -571,41 +579,42 @@ const AppointMentListingComponent = () => {
                       </div>
                     )}
                   </div>
+                </div>
 
-                  {/* Pagination Controls */}
-                  {searchFilteredRequests.length > appointmentsPerPage && (
-                    <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-white">
-                      <button
-                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                        disabled={currentPage === 1}
-                        className={`px-3 py-1 rounded-md flex items-center ${currentPage === 1 ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-50'}`}
-                      >
-                        <ChevronLeft className="w-4 h-4 mr-1" />
-                        Previous
-                      </button>
-                      
-                      <div className="flex items-center space-x-1">
-                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                          <button
-                            key={page}
-                            onClick={() => setCurrentPage(page)}
-                            className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${currentPage === page ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-                          >
-                            {page}
-                          </button>
-                        ))}
-                      </div>
-                      
-                      <button
-                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                        disabled={currentPage === totalPages}
-                        className={`px-3 py-1 rounded-md flex items-center ${currentPage === totalPages ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-50'}`}
-                      >
-                        Next
-                        <ChevronRight className="w-4 h-4 ml-1" />
-                      </button>
-                    </div>
-                  )}
+                {/* Pagination Controls */}
+                <div className="p-4 border-t border-gray-200 flex items-center justify-between">
+                  <div className="text-sm text-gray-600">
+                    Showing {(currentPage - 1) * appointmentsPerPage + 1} to{' '}
+                    {Math.min(currentPage * appointmentsPerPage, totalAppointments)} of{' '}
+                    {totalAppointments} appointments
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className={`p-2 rounded-full ${
+                        currentPage === 1
+                          ? 'text-gray-300 cursor-not-allowed'
+                          : 'text-blue-600 hover:bg-blue-50'
+                      }`}
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <span className="text-sm text-gray-600">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className={`p-2 rounded-full ${
+                        currentPage === totalPages
+                          ? 'text-gray-300 cursor-not-allowed'
+                          : 'text-blue-600 hover:bg-blue-50'
+                      }`}
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -701,7 +710,6 @@ const AppointMentListingComponent = () => {
             <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-end pr-4">
               <div className="w-full max-w-md h-[70vh] max-h-[600px] min-h-[400px]">
                 <div className="bg-white h-full shadow-xl flex flex-col rounded-lg overflow-hidden">
-                  {/* Chat Header */}
                   <div className="bg-blue-600 p-4 flex items-start justify-between flex-shrink-0">
                     <div className="flex items-center">
                       <button
@@ -739,7 +747,6 @@ const AppointMentListingComponent = () => {
                     </div>
                   </div>
 
-                  {/* Chat Messages */}
                   <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
                     {chatMessages.length > 0 ? (
                       chatMessages.map((message) => (
@@ -841,7 +848,6 @@ const AppointMentListingComponent = () => {
                     )}
                   </div>
 
-                  {/* Message Input */}
                   <div className="bg-white p-4 border-t border-gray-200 flex-shrink-0">
                     <div className="flex items-center space-x-2">
                       <label className="text-gray-400 hover:text-gray-600 cursor-pointer">

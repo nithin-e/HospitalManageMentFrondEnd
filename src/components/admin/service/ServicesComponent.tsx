@@ -1,8 +1,10 @@
 import Table from "@/components/user/reusable/DataTable";
 import { addServiceApi } from "@/store/AdminSideApi/addServiceApi";
 import { deleteServiceApi } from "@/store/AdminSideApi/deleteServiceApi";
+import { editServiceApi } from "@/store/AdminSideApi/editServiceApi";
 import { fetchServicesApi } from "@/store/AdminSideApi/fetchServices";
-import { useState, ChangeEvent, useEffect } from "react";
+
+import { useState, ChangeEvent, useEffect, useMemo } from "react";
 
 // Type definitions
 interface Service {
@@ -36,9 +38,15 @@ const ServicesAdmin: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingServiceId, setDeletingServiceId] = useState<string | null>(null);
+  const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const itemsPerPage = 5;
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [formData, setFormData] = useState<ServiceFormData>({
     name: '',
     description: ''
@@ -49,6 +57,17 @@ const ServicesAdmin: React.FC = () => {
     name: '',
     description: ''
   });
+
+  // Calculate pagination values
+  const totalPages = Math.ceil(services.length / itemsPerPage);
+  const showPagination = services.length > itemsPerPage;
+
+  // Get current page data
+  const currentServices = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return services.slice(startIndex, endIndex);
+  }, [services, currentPage, itemsPerPage]);
 
   const columns = [
     { key: 'name', label: 'Service Name' },
@@ -62,11 +81,32 @@ const ServicesAdmin: React.FC = () => {
           <button
             onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
               e.stopPropagation();
+              handleEdit(item);
+            }}
+            disabled={editingServiceId === item.id || deletingServiceId === item.id}
+            className={`text-sm flex items-center space-x-1 ${
+              editingServiceId === item.id || deletingServiceId === item.id
+                ? 'text-gray-400 cursor-not-allowed' 
+                : 'text-blue-600 hover:text-blue-800'
+            }`}
+          >
+            {editingServiceId === item.id ? (
+              <>
+                <div className="animate-spin rounded-full h-3 w-3 border border-gray-400 border-t-transparent"></div>
+                <span>Editing...</span>
+              </>
+            ) : (
+              <span>Edit</span>
+            )}
+          </button>
+          <button
+            onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+              e.stopPropagation();
               handleDelete(item);
             }}
-            disabled={deletingServiceId === item.id}
+            disabled={deletingServiceId === item.id || editingServiceId === item.id}
             className={`text-sm flex items-center space-x-1 ${
-              deletingServiceId === item.id 
+              deletingServiceId === item.id || editingServiceId === item.id
                 ? 'text-gray-400 cursor-not-allowed' 
                 : 'text-red-600 hover:text-red-800'
             }`}
@@ -88,6 +128,13 @@ const ServicesAdmin: React.FC = () => {
   useEffect(() => {
     handleFetchServices();
   }, []);
+
+  // Reset to first page when services change
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [services.length, currentPage, totalPages]);
 
   const handleFetchServices = async () => {
     try {
@@ -132,8 +179,21 @@ const ServicesAdmin: React.FC = () => {
   };
 
   const handleAddService = (): void => {
-    setIsModalOpen(true);
+    setIsEditMode(false);
+    setFormData({ name: '', description: '' });
     setErrors({ name: '', description: '' });
+    setIsModalOpen(true);
+  };
+
+  const handleEdit = (service: Service): void => {
+    setIsEditMode(true);
+    setEditingServiceId(service.id);
+    setFormData({
+      name: service.name,
+      description: service.description
+    });
+    setErrors({ name: '', description: '' });
+    setIsModalOpen(true);
   };
 
   // Handle form input changes
@@ -165,9 +225,12 @@ const ServicesAdmin: React.FC = () => {
       newErrors.name = 'Service name is required';
     } else if (formData.name.trim().length < 2) {
       newErrors.name = 'Service name must be at least 2 characters';
-    } else if (services.some(service => 
-      service.name.toLowerCase() === formData.name.trim().toLowerCase()
-    )) {
+    } else if (
+      services.some(service => 
+        service.name.toLowerCase() === formData.name.trim().toLowerCase() &&
+        (!isEditMode || service.id !== editingServiceId)
+      )
+    ) {
       newErrors.name = 'Service name already exists';
     }
 
@@ -188,29 +251,55 @@ const ServicesAdmin: React.FC = () => {
       return;
     }
 
-    const newService = {
+    const serviceData = {
       name: formData.name.trim(),
       description: formData.description.trim()
     };
 
     try {
-      const savedService = await addServiceApi(newService);
-      console.log('Service API response:', savedService);
-
-      if (savedService && savedService.result && savedService.result.success) {
-        // Refresh the services list after successful addition
-        await handleFetchServices();
+      if (isEditMode && editingServiceId) {
         
-        // Reset form
-        setFormData({ name: "", description: "" });
-        setErrors({ name: "", description: "" });
-        setIsModalOpen(false);
+        const updatedService = await editServiceApi(editingServiceId, serviceData);
+        console.log('Service API response:', updatedService);
 
-        console.log("Service added successfully:", savedService);
+        if (updatedService && updatedService.result && updatedService.result.success) {
+          
+          const updatedServices = services.map(service => 
+            service.id === editingServiceId 
+              ? { 
+                  ...service, 
+                  name: serviceData.name, 
+                  description: serviceData.description,
+                  updatedAt: new Date().toISOString()
+                }
+              : service
+          );
+          
+          setServices(updatedServices);
+          setEditingServiceId(null);
+          setIsModalOpen(false);
+          console.log("Service updated successfully:", updatedService);
+        }
+      } else {
+        // Add new service
+        const savedService = await addServiceApi(serviceData);
+        console.log('Service API response:', savedService);
+
+        if (savedService && savedService.result && savedService.result.success) {
+          // Refresh the services list after successful addition
+          await handleFetchServices();
+          
+          // Reset form
+          setFormData({ name: "", description: "" });
+          setErrors({ name: "", description: "" });
+          setIsModalOpen(false);
+
+          console.log("Service added successfully:", savedService);
+        }
       }
     } catch (error) {
-      console.error("Failed to add service:", error);
-      setError("Failed to add service. Please try again.");
+      console.error("Failed to save service:", error);
+      setError(`Failed to ${isEditMode ? 'update' : 'add'} service. Please try again.`);
     }
   };
 
@@ -219,6 +308,8 @@ const ServicesAdmin: React.FC = () => {
     setFormData({ name: '', description: '' });
     setErrors({ name: '', description: '' });
     setIsModalOpen(false);
+    setIsEditMode(false);
+    setEditingServiceId(null);
   };
 
   // Handle row click
@@ -237,7 +328,14 @@ const ServicesAdmin: React.FC = () => {
       if (res.result.success) {
         // Stop loading and remove the deleted service from the table
         setDeletingServiceId(null);
-        setServices(services.filter(s => s.id !== service.id));
+        const updatedServices = services.filter(s => s.id !== service.id);
+        setServices(updatedServices);
+
+        // Adjust current page if necessary
+        const newTotalPages = Math.ceil(updatedServices.length / itemsPerPage);
+        if (currentPage > newTotalPages && newTotalPages > 0) {
+          setCurrentPage(newTotalPages);
+        }
       } else {
         // If deletion failed, show error and stop loading
         setDeletingServiceId(null);
@@ -251,6 +349,44 @@ const ServicesAdmin: React.FC = () => {
       // Ensure loading state is always cleared
       setDeletingServiceId(null);
     }
+  };
+
+  // Pagination handlers
+  const handlePageChange = (page: number): void => {
+    setCurrentPage(page);
+  };
+
+  const handlePreviousPage = (): void => {
+    setCurrentPage(prev => Math.max(prev - 1, 1));
+  };
+
+  const handleNextPage = (): void => {
+    setCurrentPage(prev => Math.min(prev + 1, totalPages));
+  };
+
+  // Generate page numbers for pagination
+  const getPageNumbers = (): number[] => {
+    const pages: number[] = [];
+    const maxVisiblePages = 5;
+    
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      let start = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+      let end = Math.min(totalPages, start + maxVisiblePages - 1);
+      
+      if (end - start + 1 < maxVisiblePages) {
+        start = Math.max(1, end - maxVisiblePages + 1);
+      }
+      
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+    }
+    
+    return pages;
   };
 
   if (loading) {
@@ -309,18 +445,29 @@ const ServicesAdmin: React.FC = () => {
         </button>
       </div>
 
-      {/* Services Count */}
-      <div className="mb-4">
+    
+      <div className="mb-4 flex justify-between items-center">
         <p className="text-gray-600">
           Total services: <span className="font-semibold">{services.length}</span>
+          {showPagination && (
+            <span className="ml-4">
+              Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, services.length)} of {services.length}
+            </span>
+          )}
         </p>
+        
+        {showPagination && (
+          <p className="text-sm text-gray-500">
+            Page {currentPage} of {totalPages}
+          </p>
+        )}
       </div>
 
-      {/* Services Table */}
+    
       <div className="bg-white rounded-lg shadow-sm">
         {services.length > 0 ? (
           <Table
-            data={services}
+            data={currentServices}
             columns={columns}
             sortable={true}
             onRowClick={handleRowClick}
@@ -342,16 +489,68 @@ const ServicesAdmin: React.FC = () => {
             </button>
           </div>
         )}
+
+        {/* Pagination Controls */}
+        {showPagination && (
+          <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-lg">
+            <div className="flex items-center justify-between">
+              {/* Previous Button */}
+              <button
+                onClick={handlePreviousPage}
+                disabled={currentPage === 1}
+                className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                  currentPage === 1
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                Previous
+              </button>
+
+              {/* Page Numbers */}
+              <div className="flex space-x-1">
+                {getPageNumbers().map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => handlePageChange(page)}
+                    className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                      currentPage === page
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+              </div>
+
+              {/* Next Button */}
+              <button
+                onClick={handleNextPage}
+                disabled={currentPage === totalPages}
+                className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                  currentPage === totalPages
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Add Service Modal */}
+      {/* Add/Edit Service Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-gray-200">
               <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold text-gray-900">Add New Service</h2>
+                <h2 className="text-xl font-semibold text-gray-900">
+                  {isEditMode ? 'Edit Service' : 'Add New Service'}
+                </h2>
                 <button
                   onClick={handleCloseModal}
                   className="text-gray-400 hover:text-gray-600 text-2xl"
@@ -425,7 +624,7 @@ const ServicesAdmin: React.FC = () => {
                   onClick={handleSubmit}
                   className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
                 >
-                  Add Service
+                  {isEditMode ? 'Update Service' : 'Add Service'}
                 </button>
               </div>
             </div>

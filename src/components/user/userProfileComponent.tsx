@@ -121,6 +121,14 @@ const UserProfileComponent = () => {
   const [incomingCall, setIncomingCall] = useState<any>(null);
   const [showCallModal, setShowCallModal] = useState(false);
 
+
+
+
+  // Add these state variables to your component
+const [appointmentsPage, setAppointmentsPage] = useState(1);
+const [appointmentsLimit] = useState(3); // You can make this configurable
+const [totalAppointmentsCount, setTotalAppointmentsCount] = useState(0);
+
   // Chat state variables
   const [showChatModal, setShowChatModal] = useState(false);
   const [chatAppointment, setChatAppointment] = useState<Appointment | null>(
@@ -526,6 +534,68 @@ const UserProfileComponent = () => {
       setLoading(false);
     }
   };
+
+
+
+
+
+
+
+// const fetchUserAppoinMents = async (page: number = appointmentsPage) => {
+//   try {
+//     setLoading(true);
+
+//     const res = await UserfetchingAppointMents(userEmail, page, appointmentsLimit);
+
+//     if (res.success && res.appointments) {
+//       const transformedAppointments = res.appointments.map((appointment) => ({
+//         id: appointment.id,
+//         date: new Date(appointment.appointmentDate).toLocaleDateString(
+//           "en-US",
+//           {
+//             year: "numeric",
+//             month: "long",
+//             day: "numeric",
+//           }
+//         ),
+//         time: appointment.appointmentTime,
+//         doctor: appointment.doctorName,
+//         department: appointment.specialty,
+//         purpose: appointment.notes || "General consultation",
+//         status: appointment.status,
+//         message: appointment.message,
+//         doctorEmail: appointment.doctorEmail,
+//         doctorId: appointment.doctorId,
+//         Prescription: appointment.Prescription,
+//       }));
+
+//       setUserData((prevData) => ({
+//         ...(prevData || {
+//           id: "",
+//           name: "",
+//           email: userEmail,
+//           upcomingAppointments: [],
+//         }),
+//         upcomingAppointments: transformedAppointments,
+//       }));
+      
+//       // Set the total count for pagination
+//       if (res.totalCount) {
+//         setTotalAppointmentsCount(res.totalCount);
+//       }
+      
+//       // Update the current page
+//       setAppointmentsPage(page);
+//     }
+//   } catch (error) {
+//     console.log(error);
+//   } finally {
+//     setLoading(false);
+//   }
+// };
+
+
+
 
   const handleDownloadPrescription = async (appointment) => {
     try {
@@ -1594,7 +1664,6 @@ const UserProfileComponent = () => {
                     )}
               </div>
 
-              {/* Rest of your existing code (pagination, instructions, modal) */}
               {totalPages > 1 && (
                 <div className="flex justify-center mt-6">
                   <nav className="inline-flex rounded-md shadow-sm -space-x-px">

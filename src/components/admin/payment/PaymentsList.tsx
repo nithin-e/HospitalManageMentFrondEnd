@@ -1,18 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { Wallet, Calendar, DollarSign, Filter, Search, Loader2, Plus, AlertCircle, RefreshCw, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { Wallet, Calendar, DollarSign, Filter, Search, Loader2, Plus, AlertCircle, RefreshCw, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { FetchingAllUserAppointsMentsAdmin } from '@/store/AdminSideApi/FetchingAllUserAppointsMentsAdmin';
 
 interface Payment {
   id: string;
   amount: number;
   adminAmount: number;
-  doctorAmount: number; // Added doctor amount field
-  userRefoundAmount: number; // Added refund amount field
+  doctorAmount: number; 
+  userRefoundAmount: number; 
   currency: string;
   description: string;
   date: string;
   status: 'completed' | 'pending' | 'failed';
-  appointmentStatus: 'scheduled' | 'completed' | 'cancelled' | 'rescheduled'; // Added appointment status
+  appointmentStatus: 'scheduled' | 'completed' | 'cancelled' | 'rescheduled'; 
   method: 'card' | 'bank' | 'paypal' | 'crypto' | 'online';
   recipient: string;
   patientName?: string;
@@ -20,15 +20,15 @@ interface Payment {
   specialty?: string;
   appointmentTime?: string;
   notes?: string;
-  cancellationNote?: string; // Added cancellation note
+  cancellationNote?: string; 
 }
 
 interface Appointment {
   id: string;
   amount: string;
   adminAmount: string;
-  doctorAmount: string; // Added doctor amount from backend
-  userRefoundAmount: string; // Added refund amount from backend
+  doctorAmount: string; 
+  userRefoundAmount: string; 
   appointmentDate: string;
   appointmentTime: string;
   doctorEmail: string;
@@ -41,24 +41,75 @@ interface Appointment {
   paymentStatus: string;
   payment_method: string;
   specialty: string;
-  status: string; // This is the appointment status
+  status: string; 
+}
+
+interface PaginationInfo {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  itemsPerPage: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
+interface FilterOptions {
+  amountRange: {
+    min: number | '';
+    max: number | '';
+  };
+  paymentStatus: string[];
+  appointmentStatus: string[];
+  showRefundedOnly: boolean;
+  showCancelledOnly: boolean;
+  searchTerm: string;
 }
 
 const PaymentList: React.FC = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [filteredPayments, setFilteredPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [appointmentStatusFilter, setAppointmentStatusFilter] = useState<string>('all');
   
-  // Pagination state
+  // Filter states
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState<FilterOptions>({
+    amountRange: { min: '', max: '' },
+    paymentStatus: [],
+    appointmentStatus: [],
+    showRefundedOnly: false,
+    showCancelledOnly: false,
+    searchTerm: ''
+  });
+  
+  // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 8,
+    hasNextPage: false,
+    hasPrevPage: false
+  });
 
+  // Summary states for all data (not just current page)
+  const [totalAdminWalletAmount, setTotalAdminWalletAmount] = useState(0);
+  const [totalRefundedAmount, setTotalRefundedAmount] = useState(0);
+  const [cancelledAppointmentsCount, setCancelledAppointmentsCount] = useState(0);
+  const [totalTransactions, setTotalTransactions] = useState(0);
+  
+  // Flag to track if summary data has been loaded (to prevent overwriting on pagination)
+  const [summaryDataLoaded, setSummaryDataLoaded] = useState(false);
+  
   useEffect(() => {
-    fetchUserFullAppointments();
-  }, []);
+    fetchUserFullAppointments(currentPage);
+  }, [currentPage]);
+
+  // Apply filters whenever filters change or payments data changes
+  useEffect(() => {
+    applyFilters();
+  }, [payments, filters]);
 
   const transformAppointmentToPayment = (appointment: Appointment): Payment => {
     // Map payment status from API to our status type
@@ -121,20 +172,67 @@ const PaymentList: React.FC = () => {
     };
   };
 
-  const fetchUserFullAppointments = async () => {
+  const fetchUserFullAppointments = async (page: number = 1) => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await FetchingAllUserAppointsMentsAdmin();
-      console.log('API Response:', response);
+      const response = await FetchingAllUserAppointsMentsAdmin({ page, limit: 8 });
       
-      if (response?.result?.appointments && Array.isArray(response.result.appointments)) {
+      if (response?.result) {
+        console.log('API.............. Response:', response);
         const transformedPayments = response.result.appointments.map(transformAppointmentToPayment);
         setPayments(transformedPayments);
+
+        // Update pagination info
+        if (response.result) {
+          setPagination({
+            currentPage: response.result.currentPage || page,
+            totalPages: response.result.totalPages || 1,
+            totalItems: response.result.totalItems || transformedPayments.length,
+            itemsPerPage: response.result.itemsPerPage || 8,
+            hasNextPage: response.result.hasNextPage || false,
+            hasPrevPage: response.result.hasPrevPage || false
+          });
+        }
+
+        // Update summary data from response - these should be totals across all pages
+        // Only update summary data if it's not already loaded (first time or after refresh)
+        if (!summaryDataLoaded) {
+          if (response.result.summary) {
+            // Use API provided summary if available
+            setTotalAdminWalletAmount(response.result.summary.totalAdminWalletAmount || 0);
+            setTotalRefundedAmount(response.result.summary.totalRefundedAmount || 0);
+            setCancelledAppointmentsCount(response.result.summary.cancelledAppointmentsCount || 0);
+            setTotalTransactions(response.result.summary.totalTransactions || response.result.totalItems || transformedPayments.length);
+          } else {
+            // If no summary from API, we need to fetch all data to calculate totals
+            // For now, set what we know and mark that we need to fetch all data
+            console.warn("No summary data available in API response, fetching all data to calculate totals");
+            await fetchAllDataForSummary();
+          }
+          setSummaryDataLoaded(true);
+        }
       } else {
         // If no appointments, set empty array
         setPayments([]);
+        setPagination({
+          currentPage: 1,
+          totalPages: 1,
+          totalItems: 0,
+          itemsPerPage: 8,
+          hasNextPage: false,
+          hasPrevPage: false
+        });
+        
+        // Only reset summary values if this is the first load or a refresh
+        if (!summaryDataLoaded) {
+          setTotalAdminWalletAmount(0);
+          setTotalRefundedAmount(0);
+          setCancelledAppointmentsCount(0);
+          setTotalTransactions(0);
+          setSummaryDataLoaded(true);
+        }
       }
     } catch (error) {
       console.error('Error fetching appointments:', error);
@@ -145,52 +243,223 @@ const PaymentList: React.FC = () => {
     }
   };
 
-  const filteredPayments = payments.filter(payment => {
-    const matchesSearch = payment.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         payment.recipient.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (payment.patientName && payment.patientName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                         (payment.specialty && payment.specialty.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesStatus = statusFilter === 'all' || payment.status === statusFilter;
-    const matchesAppointmentStatus = appointmentStatusFilter === 'all' || payment.appointmentStatus === appointmentStatusFilter;
-    return matchesSearch && matchesStatus && matchesAppointmentStatus;
-  });
-
-  // Pagination calculations
-  const totalItems = filteredPayments.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  
-  // Get current items
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredPayments.slice(indexOfFirstItem, indexOfLastItem);
-
-  // Change page
-  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
-  const goToFirstPage = () => paginate(1);
-  const goToLastPage = () => paginate(totalPages);
-  const goToNextPage = () => {
-    if (currentPage < totalPages) {
-      paginate(currentPage + 1);
+  // Function to fetch all data for summary calculation when API doesn't provide summary
+  const fetchAllDataForSummary = async () => {
+    try {
+      // Fetch first page to get total pages
+      const firstPageResponse = await FetchingAllUserAppointsMentsAdmin({ page: 1, limit: 8 });
+      
+      if (firstPageResponse?.result) {
+        const totalPages = firstPageResponse.result.totalPages || 1;
+        const allAppointments: Appointment[] = [];
+        
+        // Fetch all pages
+        const fetchPromises = [];
+        for (let i = 1; i <= totalPages; i++) {
+          fetchPromises.push(FetchingAllUserAppointsMentsAdmin({ page: i, limit: 8 }));
+        }
+        
+        const allResponses = await Promise.all(fetchPromises);
+        
+        // Collect all appointments
+        allResponses.forEach(response => {
+          if (response?.result?.appointments) {
+            allAppointments.push(...response.result.appointments);
+          }
+        });
+        
+        // Calculate totals
+        let totalAdminAmount = 0;
+        let totalRefunded = 0;
+        let cancelledCount = 0;
+        
+        allAppointments.forEach(appointment => {
+          const adminAmount = parseFloat(appointment.adminAmount || '0');
+          const userRefundAmount = parseFloat(appointment.userRefoundAmount || '0');
+          const status = appointment.status.toLowerCase();
+          
+          // Only add admin amount if appointment is not cancelled
+          if (status !== 'cancelled') {
+            totalAdminAmount += adminAmount;
+          }
+          
+          if (status === 'cancelled') {
+            cancelledCount++;
+            totalRefunded += userRefundAmount;
+          }
+        });
+        
+        // Update summary states
+        setTotalAdminWalletAmount(totalAdminAmount);
+        setTotalRefundedAmount(totalRefunded);
+        setCancelledAppointmentsCount(cancelledCount);
+        setTotalTransactions(allAppointments.length);
+      }
+    } catch (error) {
+      console.error('Error fetching all data for summary:', error);
+      // Fallback to current page data if fetching all fails
+      const currentPageAdminTotal = payments.reduce((sum, payment) => {
+        return payment.appointmentStatus !== 'cancelled' ? sum + payment.adminAmount : sum;
+      }, 0);
+      setTotalAdminWalletAmount(currentPageAdminTotal);
+      setTotalTransactions(payments.length);
     }
   };
-  const goToPreviousPage = () => {
-    if (currentPage > 1) {
-      paginate(currentPage - 1);
+
+  // Filter application function
+  const applyFilters = () => {
+    let filtered = [...payments];
+
+    // Amount range filter
+    if (filters.amountRange.min !== '' || filters.amountRange.max !== '') {
+      filtered = filtered.filter(payment => {
+        const amount = payment.amount;
+        const minAmount = filters.amountRange.min === '' ? 0 : Number(filters.amountRange.min);
+        const maxAmount = filters.amountRange.max === '' ? Infinity : Number(filters.amountRange.max);
+        return amount >= minAmount && amount <= maxAmount;
+      });
+    }
+
+    // Payment status filter
+    if (filters.paymentStatus.length > 0) {
+      filtered = filtered.filter(payment => 
+        filters.paymentStatus.includes(payment.status)
+      );
+    }
+
+    // Appointment status filter
+    if (filters.appointmentStatus.length > 0) {
+      filtered = filtered.filter(payment => 
+        filters.appointmentStatus.includes(payment.appointmentStatus)
+      );
+    }
+
+    // Show refunded only filter
+    if (filters.showRefundedOnly) {
+      filtered = filtered.filter(payment => payment.userRefoundAmount > 0);
+    }
+
+    // Show cancelled only filter
+    if (filters.showCancelledOnly) {
+      filtered = filtered.filter(payment => payment.appointmentStatus === 'cancelled');
+    }
+
+    // Search term filter
+    if (filters.searchTerm) {
+      const searchTerm = filters.searchTerm.toLowerCase();
+      filtered = filtered.filter(payment => 
+        payment.patientName?.toLowerCase().includes(searchTerm) ||
+        payment.doctorName?.toLowerCase().includes(searchTerm) ||
+        payment.specialty?.toLowerCase().includes(searchTerm) ||
+        payment.notes?.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    setFilteredPayments(filtered);
+  };
+
+  // Filter update functions
+  const updateAmountRange = (field: 'min' | 'max', value: string) => {
+    setFilters(prev => ({
+      ...prev,
+      amountRange: {
+        ...prev.amountRange,
+        [field]: value === '' ? '' : Number(value)
+      }
+    }));
+  };
+
+  const togglePaymentStatus = (status: Payment['status']) => {
+    setFilters(prev => ({
+      ...prev,
+      paymentStatus: prev.paymentStatus.includes(status)
+        ? prev.paymentStatus.filter(s => s !== status)
+        : [...prev.paymentStatus, status]
+    }));
+  };
+
+  const toggleAppointmentStatus = (status: Payment['appointmentStatus']) => {
+    setFilters(prev => ({
+      ...prev,
+      appointmentStatus: prev.appointmentStatus.includes(status)
+        ? prev.appointmentStatus.filter(s => s !== status)
+        : [...prev.appointmentStatus, status]
+    }));
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      amountRange: { min: '', max: '' },
+      paymentStatus: [],
+      appointmentStatus: [],
+      showRefundedOnly: false,
+      showCancelledOnly: false,
+      searchTerm: ''
+    });
+  };
+
+  const getActiveFilterCount = () => {
+    let count = 0;
+    if (filters.amountRange.min !== '' || filters.amountRange.max !== '') count++;
+    if (filters.paymentStatus.length > 0) count++;
+    if (filters.appointmentStatus.length > 0) count++;
+    if (filters.showRefundedOnly) count++;
+    if (filters.showCancelledOnly) count++;
+    if (filters.searchTerm) count++;
+    return count;
+  };
+
+  // Modified refresh function to reset summary data
+  const handleRefresh = () => {
+    setSummaryDataLoaded(false); // Reset flag to allow summary data to be updated
+    setCurrentPage(1); // Reset to first page
+    fetchUserFullAppointments(1);
+  };
+
+  // Pagination handlers
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= pagination.totalPages) {
+      setCurrentPage(page);
     }
   };
 
-  // Calculate total admin wallet amount (excluding cancelled appointments for active calculations)
-  const totalAdminWalletAmount = payments
-    .filter(payment => payment.status === 'completed' && payment.appointmentStatus !== 'cancelled')
-    .reduce((sum, payment) => sum + payment.adminAmount, 0);
+  const handlePrevious = () => {
+    if (pagination.hasPrevPage) {
+      handlePageChange(currentPage - 1);
+    }
+  };
 
-  // Calculate refunded amount from cancelled appointments using userRefoundAmount
-  const totalRefundedAmount = payments
-    .filter(payment => payment.appointmentStatus === 'cancelled')
-    .reduce((sum, payment) => sum + payment.userRefoundAmount, 0);
+  const handleNext = () => {
+    if (pagination.hasNextPage) {
+      handlePageChange(currentPage + 1);
+    }
+  };
 
-  // Count cancelled appointments
-  const cancelledAppointmentsCount = payments.filter(payment => payment.appointmentStatus === 'cancelled').length;
+  const handleFirst = () => {
+    handlePageChange(1);
+  };
+
+  const handleLast = () => {
+    handlePageChange(pagination.totalPages);
+  };
+
+  // Generate page numbers for pagination
+  const generatePageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(pagination.totalPages, startPage + maxVisiblePages - 1);
+    
+    if (endPage - startPage < maxVisiblePages - 1) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    
+    return pages;
+  };
 
   const getStatusColor = (status: Payment['status']) => {
     switch (status) {
@@ -277,7 +546,7 @@ const PaymentList: React.FC = () => {
             <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Wallet</h3>
             <p className="text-gray-500 mb-4">{error}</p>
             <button
-              onClick={fetchUserFullAppointments}
+              onClick={handleRefresh}
               className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
             >
               Try Again
@@ -301,19 +570,159 @@ const PaymentList: React.FC = () => {
                 <p className="text-gray-600">Manage all payment transactions</p>
               </div>
             </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors relative ${
+                  showFilters ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <Filter className="w-4 h-4" />
+                Filters
+                {getActiveFilterCount() > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    {getActiveFilterCount()}
+                  </span>
+                )}
+                {showFilters ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </button>
+              <button
+                onClick={handleRefresh}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Refresh
+              </button>
+            </div>
           </div>
         </div>
 
+        {/* Advanced Filters Panel */}
+        {showFilters && (
+          <div className="bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Advanced Filters</h3>
+              <button
+                onClick={clearFilters}
+                className="flex items-center gap-2 px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              >
+                <X className="w-4 h-4" />
+                Clear All
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Search */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <input
+                    type="text"
+                    placeholder="Patient, doctor, specialty..."
+                    value={filters.searchTerm}
+                    onChange={(e) => setFilters(prev => ({ ...prev, searchTerm: e.target.value }))}
+                    className="pl-10 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              {/* Amount Range */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Amount Range (₹)</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    placeholder="Min"
+                    value={filters.amountRange.min}
+                    onChange={(e) => updateAmountRange('min', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <span className="text-gray-500">to</span>
+                  <input
+                    type="number"
+                    placeholder="Max"
+                    value={filters.amountRange.max}
+                    onChange={(e) => updateAmountRange('max', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              {/* Payment Status */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Payment Status</label>
+                <div className="space-y-2">
+                  {(['completed', 'pending', 'failed'] as Payment['status'][]).map((status) => (
+                    <label key={status} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={filters.paymentStatus.includes(status)}
+                        onChange={() => togglePaymentStatus(status)}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <span className="ml-2 text-sm text-gray-700 capitalize">{status}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Appointment Status */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Appointment Status</label>
+                <div className="space-y-2">
+                  {(['scheduled', 'completed', 'cancelled', 'rescheduled'] as Payment['appointmentStatus'][]).map((status) => (
+                    <label key={status} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={filters.appointmentStatus.includes(status)}
+                        onChange={() => toggleAppointmentStatus(status)}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <span className="ml-2 text-sm text-gray-700 capitalize">{status}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Special Filters */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Special Filters</label>
+                <div className="space-y-2">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={filters.showRefundedOnly}
+                      onChange={(e) => setFilters(prev => ({ ...prev, showRefundedOnly: e.target.checked }))}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Show Refunded Only</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={filters.showCancelledOnly}
+                      onChange={(e) => setFilters(prev => ({ ...prev, showCancelledOnly: e.target.checked }))}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Show Cancelled Only</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Wallet Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           {/* Total Admin Wallet Amount Card */}
           <div className="bg-white rounded-xl shadow-lg p-6 text-center">
-            <h2 className="text-lg font-semibold text-gray-600 mb-2">Active Admin Wallet</h2>
+            <h2 className="text-lg font-semibold text-gray-600 mb-2">Total Earnings</h2>
             <p className="text-3xl font-bold text-green-600">
               {formatCurrency(totalAdminWalletAmount)}
             </p>
             <p className="text-gray-500 mt-2 text-sm">
-              From {payments.filter(p => p.status === 'completed' && p.appointmentStatus !== 'cancelled').length} active transactions
+              Admin share from all completed transactions
             </p>
           </div>
 
@@ -321,81 +730,56 @@ const PaymentList: React.FC = () => {
           <div className="bg-white rounded-xl shadow-lg p-6 text-center">
             <h2 className="text-lg font-semibold text-gray-600 mb-2">Total Transactions</h2>
             <p className="text-3xl font-bold text-blue-600">
-              {payments.length}
+              {totalTransactions}
             </p>
             <p className="text-gray-500 mt-2 text-sm">
               All appointment transactions
             </p>
           </div>
           
-          {/* Items Per Page Selector */}
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <h2 className="text-lg font-semibold text-gray-600 mb-2">Items Per Page</h2>
-            <select
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              value={itemsPerPage}
-              onChange={(e) => {
-                setItemsPerPage(Number(e.target.value));
-                setCurrentPage(1); // Reset to first page when changing items per page
-              }}
-            >
-              <option value="5">5</option>
-              <option value="10">10</option>
-              <option value="20">20</option>
-              <option value="50">50</option>
-            </select>
+          {/* Cancelled Appointments Card */}
+          <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+            <h2 className="text-lg font-semibold text-gray-600 mb-2">Cancelled Appointments</h2>
+            <p className="text-3xl font-bold text-red-600">
+              {cancelledAppointmentsCount}
+            </p>
+            <p className="text-gray-500 mt-2 text-sm">
+              Total refunded: {formatCurrency(totalRefundedAmount)}
+            </p>
+          </div>
+
+          {/* Current Page Info Card */}
+          <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+            <h2 className="text-lg font-semibold text-gray-600 mb-2">Filtered Results</h2>
+            <p className="text-3xl font-bold text-indigo-600">
+              {filteredPayments.length}
+            </p>
+            <p className="text-gray-500 mt-2 text-sm">
+              {getActiveFilterCount() > 0 ? 'Matching filters' : `Page ${currentPage} of ${pagination.totalPages}`}
+            </p>
           </div>
         </div>
 
-        {/* Search and Filter Controls */}
-        <div className="mb-6 flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Search by patient, doctor, or specialty..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setCurrentPage(1); // Reset to first page when searching
-              }}
-            />
+        {/* Active Filters Display */}
+        {getActiveFilterCount() > 0 && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-blue-600" />
+                <span className="text-sm font-medium text-blue-900">Active Filters:</span>
+                <span className="text-sm text-blue-700">
+                  {filteredPayments.length} of {payments.length} transactions shown
+                </span>
+              </div>
+              <button
+                onClick={clearFilters}
+                className="text-sm text-blue-600 hover:text-blue-800 underline"
+              >
+                Clear all filters
+              </button>
+            </div>
           </div>
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <select
-              className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
-                setCurrentPage(1); // Reset to first page when filtering
-              }}
-            >
-              <option value="all">All Payment Status</option>
-              <option value="completed">Completed</option>
-              <option value="pending">Pending</option>
-              <option value="failed">Failed</option>
-            </select>
-          </div>
-          <div className="relative">
-            <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <select
-              className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
-              value={appointmentStatusFilter}
-              onChange={(e) => {
-                setAppointmentStatusFilter(e.target.value);
-                setCurrentPage(1); // Reset to first page when filtering
-              }}
-            >
-              <option value="all">All Appointment Status</option>
-              <option value="scheduled">Scheduled</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
-              <option value="rescheduled">Rescheduled</option>
-            </select>
-          </div>
-        </div>
+        )}
 
         {/* Payments Table */}
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
@@ -427,7 +811,7 @@ const PaymentList: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {currentItems.map((payment) => (
+                {filteredPayments.map((payment) => (
                   <tr key={payment.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-3 py-3">
                       <div>
@@ -511,109 +895,121 @@ const PaymentList: React.FC = () => {
           
           {filteredPayments.length === 0 && !loading && (
             <div className="text-center py-8">
-              <Wallet className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No payments found</h3>
+              <Filter className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {getActiveFilterCount() > 0 ? 'No results found' : 'No payments found'}
+              </h3>
               <p className="text-gray-500">
-                {payments.length === 0 
-                  ? "No appointment payments available yet." 
-                  : "Try adjusting your search or filter criteria."}
+                {getActiveFilterCount() > 0 
+                  ? 'Try adjusting your filters to see more results.' 
+                  : 'No appointment payments available yet.'
+                }
               </p>
+              {getActiveFilterCount() > 0 && (
+                <button
+                  onClick={clearFilters}
+                  className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                >
+                  Clear Filters
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Pagination - Only show if we have data and no filters are active */}
+          {pagination.totalPages > 1 && getActiveFilterCount() === 0 && (
+            <div className="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
+              <div className="flex items-center justify-between">
+                <div className="flex-1 flex justify-between sm:hidden">
+                  <button
+                    onClick={handlePrevious}
+                    disabled={!pagination.hasPrevPage}
+                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    onClick={handleNext}
+                    disabled={!pagination.hasNextPage}
+                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                </div>
+                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm text-gray-700">
+                      Showing{' '}
+                      <span className="font-medium">
+                        {Math.min((currentPage - 1) * pagination.itemsPerPage + 1, pagination.totalItems)}
+                      </span>{' '}
+                      to{' '}
+                      <span className="font-medium">
+                        {Math.min(currentPage * pagination.itemsPerPage, pagination.totalItems)}
+                      </span>{' '}
+                      of{' '}
+                      <span className="font-medium">{pagination.totalItems}</span> results
+                    </p>
+                  </div>
+                  <div>
+                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                      {/* First Page */}
+                      <button
+                        onClick={handleFirst}
+                        disabled={currentPage === 1}
+                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <ChevronsLeft className="h-5 w-5" />
+                      </button>
+                      
+                      {/* Previous Page */}
+                      <button
+                        onClick={handlePrevious}
+                        disabled={!pagination.hasPrevPage}
+                        className="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <ChevronLeft className="h-5 w-5" />
+                      </button>
+
+                      {/* Page Numbers */}
+                      {generatePageNumbers().map((pageNumber) => (
+                        <button
+                          key={pageNumber}
+                          onClick={() => handlePageChange(pageNumber)}
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                            pageNumber === currentPage
+                              ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                          }`}
+                        >
+                          {pageNumber}
+                        </button>
+                      ))}
+
+                      {/* Next Page */}
+                      <button
+                        onClick={handleNext}
+                        disabled={!pagination.hasNextPage}
+                        className="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <ChevronRight className="h-5 w-5" />
+                      </button>
+                      
+                      {/* Last Page */}
+                      <button
+                        onClick={handleLast}
+                        disabled={currentPage === pagination.totalPages}
+                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <ChevronsRight className="h-5 w-5" />
+                      </button>
+                    </nav>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
-
-        {/* Pagination Controls */}
-        {totalItems > 0 && (
-          <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="text-sm text-gray-500">
-              Showing <span className="font-medium">{indexOfFirstItem + 1}</span> to{' '}
-              <span className="font-medium">
-                {Math.min(indexOfLastItem, totalItems)}
-              </span>{' '}
-              of <span className="font-medium">{totalItems}</span> results
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <button
-                onClick={goToFirstPage}
-                disabled={currentPage === 1}
-                className={`p-2 rounded-md ${currentPage === 1 ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'}`}
-              >
-                <ChevronsLeft className="w-5 h-5" />
-              </button>
-              <button
-                onClick={goToPreviousPage}
-                disabled={currentPage === 1}
-                className={`p-2 rounded-md ${currentPage === 1 ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'}`}
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              
-              {/* Page numbers */}
-              <div className="flex items-center gap-1">
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  // Show pages around current page
-                  let pageNum;
-                  if (totalPages <= 5) {
-                    pageNum = i + 1;
-                  } else if (currentPage <= 3) {
-                    pageNum = i + 1;
-                  } else if (currentPage >= totalPages - 2) {
-                    pageNum = totalPages - 4 + i;
-                  } else {
-                    pageNum = currentPage - 2 + i;
-                  }
-                  
-                  return (
-                    <button
-                      key={pageNum}
-                      onClick={() => paginate(pageNum)}
-                      className={`w-10 h-10 rounded-md flex items-center justify-center ${
-                        currentPage === pageNum
-                          ? 'bg-blue-500 text-white'
-                          : 'text-gray-700 hover:bg-gray-100'
-                      }`}
-                    >
-                      {pageNum}
-                    </button>
-                  );
-                })}
-                
-                {totalPages > 5 && currentPage < totalPages - 2 && (
-                  <span className="px-2">...</span>
-                )}
-                
-                {totalPages > 5 && currentPage < totalPages - 2 && (
-                  <button
-                    onClick={() => paginate(totalPages)}
-                    className={`w-10 h-10 rounded-md flex items-center justify-center ${
-                      currentPage === totalPages
-                        ? 'bg-blue-500 text-white'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    {totalPages}
-                  </button>
-                )}
-              </div>
-              
-              <button
-                onClick={goToNextPage}
-                disabled={currentPage === totalPages}
-                className={`p-2 rounded-md ${currentPage === totalPages ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'}`}
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-              <button
-                onClick={goToLastPage}
-                disabled={currentPage === totalPages}
-                className={`p-2 rounded-md ${currentPage === totalPages ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'}`}
-              >
-                <ChevronsRight className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

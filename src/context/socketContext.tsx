@@ -29,7 +29,12 @@ export const SocketProvider = ({ children }) => {
     doctor: state.doctor.data.doctor
   });
   
+
+  
+
   const { user, doctor } = useSelector(selectUserAndDoctor);
+
+    console.log('brrrrroooooo check this out',user);
 
   
   useEffect(() => {

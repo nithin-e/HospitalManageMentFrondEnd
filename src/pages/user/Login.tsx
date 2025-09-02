@@ -189,15 +189,34 @@ const Login = () => {
           setShowBlockedMessage(true);
           return;
         }
-  
-        const result = await dispatch(login({
-          ...googleLoginPayload,
+
+
+                const loginPayload = {
           user: {
-            ...googleLoginPayload.user,
-            ...backendResponse.data.user,
+            _id: backendResponse.data._id || backendResponse.data.user?._id,
+            name: backendResponse.data.name || backendResponse.data.user?.name,
+            email: backendResponse.data.email || backendResponse.data.user?.email,
+            role: backendResponse.data.role || backendResponse.data.user?.role,
           },
+          accessToken: backendResponse.data.accessToken || backendResponse.data.token,
           refreshToken: backendResponse.data.refreshToken,
-        }));
+        };
+
+            const result = await dispatch(login(loginPayload));
+        console.log('goofgle 000login result:',result);
+        
+  
+        // const result = await dispatch(login({
+        //   ...googleLoginPayload,
+        //   user: {
+        //     ...googleLoginPayload.user,
+        //     ...backendResponse.data.user,
+        //   },
+        //   refreshToken: backendResponse.data.refreshToken,
+        // }));
+
+
+        
   
         if ((result.payload as any).user.role === 'admin') {
           navigate('/adminDash');

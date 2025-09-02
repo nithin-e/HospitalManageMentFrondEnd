@@ -5,11 +5,11 @@ import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/store/redux/store";
 import { fetchDoctorDashBoardDatas } from "@/store/redux/slices/DoctorSlice";
 import { fectingAllUserAppointMents } from "@/store/DoctorSideApi/fectingFullUserAppointMents";
-import { useSocket } from "@/context/socketContext";
 import { useNavigate } from 'react-router-dom';
 import { AddPrescription } from "@/store/DoctorSideApi/addPrescription";
 import StatusCard from "../components/StatusCard";
 import EnhancedAppointmentCard from "./EnhancedAppointmentCard";
+import { useSocket } from "@/context/socketContext";
 
 // Default avatar as fallback
 const defaultAvatar = "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80";
@@ -48,6 +48,8 @@ const DoctorDashBoard: React.FC = () => {
   const dispatch: AppDispatch = useDispatch();
   const { socket, connected } = useSocket();
   const doctor = useSelector((state: RootState) => state.doctor.data.doctor);
+  const doctorEmail = useSelector((state: RootState) => state.doctor.data.doctor.email);
+  
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState<boolean>(true);
@@ -66,6 +68,9 @@ const DoctorDashBoard: React.FC = () => {
   const [isPrescriptionModalOpen, setIsPrescriptionModalOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<AppointmentData | null>(null);
   const [prescriptionText, setPrescriptionText] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const itemsPerPage = 5; // Adjust as needed
 
   const currentHour = new Date().getHours();
   let greeting = "Good morning";
@@ -201,7 +206,8 @@ const DoctorDashBoard: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await fectingAllUserAppointMents();
+      // Pass required data: email, page=1, limit=500 (high limit to fetch all for client-side filtering and pagination)
+      const response = await fectingAllUserAppointMents(doctorEmail || '', 1, 500);
       
       if (response?.result?.appointments) {
         const todayDoctorAppointments = filterTodayAppointmentsForCurrentDoctor(response.result.appointments);
@@ -335,6 +341,13 @@ const DoctorDashBoard: React.FC = () => {
   const doctorName = `${doctor.firstName || ''}`.trim();
   const firstName = doctor.firstName || '';
 
+  // Client-side pagination calculations
+  const totalPages = Math.ceil(appointments.length / itemsPerPage);
+  const currentAppointments = appointments.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar doctorName={doctorName} />
@@ -408,9 +421,9 @@ const DoctorDashBoard: React.FC = () => {
           <section className="mb-10">
             <h2 className="text-xl font-bold mb-4">Today's appointments</h2>
             <div className="bg-white rounded-lg shadow">
-              {appointments.length > 0 ? (
+              {currentAppointments.length > 0 ? (
                 <div className="divide-y">
-                  {appointments.map((appointment) => {
+                  {currentAppointments.map((appointment) => {
                     const appointmentId = appointment.id || `${appointment.patientName}_${appointment.startTime}`;
                     const isBeeping = beepingAppointments.has(appointmentId);
                     
@@ -436,6 +449,28 @@ const DoctorDashBoard: React.FC = () => {
                 </div>
               )}
             </div>
+            {/* Pagination Controls */}
+            {appointments.length > 0 && (
+              <div className="flex justify-between mt-4">
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(prev => prev - 1)}
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-300"
+                >
+                  Previous
+                </button>
+                <span className="self-center">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(prev => prev + 1)}
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-300"
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </section>
 
           {/* Doctor Details */}
