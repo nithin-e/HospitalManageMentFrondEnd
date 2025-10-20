@@ -47,7 +47,9 @@ const Index = () => {
       <Navbar />
       
       <main className="w-full mx-auto">
-        <Hero doctorImage="/public/uploads/mainDoctor.png" />
+        {/* <Hero doctorImage="/public/uploads/mainDoctor.png" /> */}
+        <Hero doctorImage="/lovable-uploads/mainDoctor.png" />
+
         <About />
         <Services />
         <Stats />
