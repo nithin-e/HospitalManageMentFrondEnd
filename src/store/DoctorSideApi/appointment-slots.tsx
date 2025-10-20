@@ -11,38 +11,30 @@ interface AppointmentSettings {
   }[];
 }
 
-export const storeAppointmentSlotsAPI = async (appointmentSettings: AppointmentSettings) => {
+export const storeAppointmentSlotsAPI = async (
+  appointmentSettings: AppointmentSettings
+) => {
   try {
-    
-   console.log('----------------------<<<<<<<<<appointmentSettings>>>>>>>>>>>>>>>>>>>>>>---------------------------',appointmentSettings);
-   
-    
+    const response = await axiosInstance.post("/api/doctor/appointment-slots", {
+      appointmentSettings,
+    });
 
-    const response = await axiosInstance.post(
-      "/api/doctor/appointment-slots", 
-      { appointmentSettings }
-      
-    );
-
-    return response.data; 
+    return response.data;
   } catch (error) {
     console.error("Error saving appointment slots:", error);
-    throw error; 
+    throw error;
   }
 };
 
-
-export const fetchDoctorSlotsAPI = async (email:any) => {
+export const fetchDoctorSlotsAPI = async (email: any) => {
   try {
-    
-    const response = await axiosInstance.post(
-      "/api/doctor/fetchDoctorSlots", 
-      { email }
-    );
+    const response = await axiosInstance.post("/api/doctor/fetchDoctorSlots", {
+      email,
+    });
 
-    return response.data; 
+    return response.data;
   } catch (error) {
     console.error("Error saving appointment slots:", error);
-    throw error; 
+    throw error;
   }
 };

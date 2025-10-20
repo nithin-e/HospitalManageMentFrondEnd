@@ -47,38 +47,77 @@ const Apply: React.FC = () => {
   // Retrieve userId from Redux store
   const userId = useSelector((state: RootState) => state.user?.user._id||'');
 
-  // Fetch specialties from API
-  useEffect(() => {
-    const fetchSpecialties = async () => {
-      try {
-        setLoadingSpecialties(true);
-        const response = await fetchServicesApi();
-        console.log('fetch services response', response);
 
-        if (response && response.result && response.result.services) {
-          // Extract specialties from the response
-          const specialtiesData = response.result.services.map((service: any) => service.name);
-          setSpecialties(specialtiesData);
-        } else {
-          console.error('No services found or invalid response format');
-          // Fallback to default specialties if API fails
-          setSpecialties([
-            "Cardiology",
-            "Dermatology",
-            "Endocrinology",
-            "Gastroenterology",
-            "Neurology",
-            "Oncology",
-            "Pediatrics",
-            "Psychiatry",
-            "Radiology",
-            "Surgery",
-            "Urology",
-          ]);
-        }
-      } catch (error) {
-        console.error('Fetch services failed', error);
-        // Fallback to default specialties if API fails
+  // useEffect(() => {
+  //   const fetchSpecialties = async () => {
+  //     try {
+  //       setLoadingSpecialties(true);
+  //       const response = await fetchServicesApi();
+  //       console.log('fetch services response', response);
+
+  //       if (response.data) {
+
+  //         const specialtiesData = response.result.services.map((service: any) => service.name);
+  //         setSpecialties(specialtiesData);
+  //       } else {
+  //         console.error('No services found or invalid response format');
+
+  //         setSpecialties([
+  //           "Cardiology",
+  //           "Dermatology",
+  //           "Endocrinology",
+  //           "Gastroenterology",
+  //           "Neurology",
+  //           "Oncology",
+  //           "Pediatrics",
+  //           "Psychiatry",
+  //           "Radiology",
+  //           "Surgery",
+  //           "Urology",
+  //         ]);
+  //       }
+  //     } catch (error) {
+  //       console.error('Fetch services failed', error);
+
+  //       setSpecialties([
+  //         "Cardiology",
+  //         "Dermatology",
+  //         "Endocrinology",
+  //         "Gastroenterology",
+  //         "Neurology",
+  //         "Oncology",
+  //         "Pediatrics",
+  //         "Psychiatry",
+  //         "Radiology",
+  //         "Surgery",
+  //         "Urology",
+  //       ]);
+  //     } finally {
+  //       setLoadingSpecialties(false);
+  //     }
+  //   };
+
+  //   fetchSpecialties();
+  // }, []);
+
+
+
+
+
+  useEffect(() => {
+  const fetchSpecialties = async () => {
+    try {
+      setLoadingSpecialties(true);
+      const response = await fetchServicesApi();
+      console.log('fetch services response', response);
+
+      if (response && response.data && Array.isArray(response.data)) {
+       
+        const specialtiesData = response.data.map((service: any) => service.name);
+        setSpecialties(specialtiesData);
+      } else {
+        console.error('No services found or invalid response format');
+   
         setSpecialties([
           "Cardiology",
           "Dermatology",
@@ -92,19 +131,36 @@ const Apply: React.FC = () => {
           "Surgery",
           "Urology",
         ]);
-      } finally {
-        setLoadingSpecialties(false);
       }
-    };
+    } catch (error) {
+      console.error('Fetch services failed', error);
+     
+      setSpecialties([
+        "Cardiology",
+        "Dermatology",
+        "Endocrinology",
+        "Gastroenterology",
+        "Neurology",
+        "Oncology",
+        "Pediatrics",
+        "Psychiatry",
+        "Radiology",
+        "Surgery",
+        "Urology",
+      ]);
+    } finally {
+      setLoadingSpecialties(false);
+    }
+  };
 
-    fetchSpecialties();
-  }, []);
+  fetchSpecialties();
+}, []);
 
   console.log('this is component Apply.tsx so check the user id getting or not inside the redux',userId)
 
   useEffect(() => {
-    // Calculate form completion progress
-    const totalFields = 9; // All form fields including checkboxes and files
+ 
+    const totalFields = 9; 
     let completedFields = 0;
     
     if (formData.firstName.length >= 2) completedFields++;
@@ -316,14 +372,16 @@ const Apply: React.FC = () => {
       
       
       const response = await registerDoctorApi(apiData);
+
+      console.log('check this responce------------------------',response);
       
-      if (response.success === true) {
+      
+      if (response.data.success === true) {
         navigate('/successForDoctorApplication');
       } else {
-        setSubmitMessage(response.message);
+        setSubmitMessage(response.data.message);
       }
 
-      // Reset form after successful submission
       setFormData({
         firstName: "",
         lastName: "",

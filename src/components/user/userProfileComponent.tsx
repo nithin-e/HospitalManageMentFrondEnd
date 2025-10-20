@@ -7,7 +7,7 @@ import {
   Mail,
   MapPin,
   Clipboard,
-  CheckCircle,
+  
   Heart,
   FileText,
   Shield,
@@ -46,7 +46,6 @@ import { useNavigate } from "react-router-dom";
 import { fetchingPrescription } from "@/store/DoctorSideApi/fetchingPrescription";
 import { generatePrescriptionPDF } from "@/util/generatePrescriptionPDF";
 
-
 interface UserProfile {
   id: string;
   name: string;
@@ -81,6 +80,15 @@ interface Appointment {
   doctorId: string;
   Prescription: string;
 }
+
+interface Prescription {
+  prescriptionDetails: string;
+  date: string;
+  time: string;
+  patientEmail: string;
+  doctorEmail: string;
+}
+
 
 const UserProfileComponent = () => {
   const navigate = useNavigate();
@@ -121,13 +129,9 @@ const UserProfileComponent = () => {
   const [incomingCall, setIncomingCall] = useState<any>(null);
   const [showCallModal, setShowCallModal] = useState(false);
 
-
-
-
-  // Add these state variables to your component
-const [appointmentsPage, setAppointmentsPage] = useState(1);
-const [appointmentsLimit] = useState(3); // You can make this configurable
-const [totalAppointmentsCount, setTotalAppointmentsCount] = useState(0);
+  const [appointmentsPage, setAppointmentsPage] = useState(1);
+  const [appointmentsLimit] = useState(3); 
+  const [totalAppointmentsCount, setTotalAppointmentsCount] = useState(0);
 
   // Chat state variables
   const [showChatModal, setShowChatModal] = useState(false);
@@ -142,16 +146,21 @@ const [totalAppointmentsCount, setTotalAppointmentsCount] = useState(0);
   >({});
   const [pdfData, setPdfData] = useState(null);
 
+  // Prescription view state
+  const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
+  const [prescriptionData, setPrescriptionData] = useState<Prescription | null>(null);
+  const [prescriptionLoading, setPrescriptionLoading] = useState(false);
+
   const appointmentsPerPage = 1;
 
   const user = useSelector((state: RootState) => state.user);
   const userDataa =
     // user?.checkUserEmailAndPhone?.user ||
     user?.user ||
-    user?.user ||null;
+    user?.user || null;
 
-    console.log('dey check Here For UserDataa',userDataa)
-    
+  console.log("dey check Here For UserDataa", userDataa);
+
   const userEmail = userDataa?.email || "";
   const userIdd = userDataa._id;
 
@@ -300,7 +309,6 @@ const [totalAppointmentsCount, setTotalAppointmentsCount] = useState(0);
       ...editFormData,
       [name]: value,
     });
-    // Clear error when user types
     setEditFormErrors({
       ...editFormErrors,
       [name]: "",
@@ -423,12 +431,6 @@ const [totalAppointmentsCount, setTotalAppointmentsCount] = useState(0);
         window.location.href = callData.url;
       }
 
-      // // Send the call information to backend
-      // socket.emit("userInformationForVideoCall", callInfo);
-
-      // // navigate(`/Video-call/${incomingCall.roomId}`)
-
-      // Clean up
       setShowCallModal(false);
       setIncomingCall(null);
       setCallData(null);
@@ -457,6 +459,9 @@ const [totalAppointmentsCount, setTotalAppointmentsCount] = useState(0);
     try {
       setLoading(true);
       const res = await fetchUserProfileData(userEmail);
+
+      console.log('check this data after fecthing user profile',res);
+      
 
       if (res.user) {
         const profile = {
@@ -535,68 +540,6 @@ const [totalAppointmentsCount, setTotalAppointmentsCount] = useState(0);
     }
   };
 
-
-
-
-
-
-
-// const fetchUserAppoinMents = async (page: number = appointmentsPage) => {
-//   try {
-//     setLoading(true);
-
-//     const res = await UserfetchingAppointMents(userEmail, page, appointmentsLimit);
-
-//     if (res.success && res.appointments) {
-//       const transformedAppointments = res.appointments.map((appointment) => ({
-//         id: appointment.id,
-//         date: new Date(appointment.appointmentDate).toLocaleDateString(
-//           "en-US",
-//           {
-//             year: "numeric",
-//             month: "long",
-//             day: "numeric",
-//           }
-//         ),
-//         time: appointment.appointmentTime,
-//         doctor: appointment.doctorName,
-//         department: appointment.specialty,
-//         purpose: appointment.notes || "General consultation",
-//         status: appointment.status,
-//         message: appointment.message,
-//         doctorEmail: appointment.doctorEmail,
-//         doctorId: appointment.doctorId,
-//         Prescription: appointment.Prescription,
-//       }));
-
-//       setUserData((prevData) => ({
-//         ...(prevData || {
-//           id: "",
-//           name: "",
-//           email: userEmail,
-//           upcomingAppointments: [],
-//         }),
-//         upcomingAppointments: transformedAppointments,
-//       }));
-      
-//       // Set the total count for pagination
-//       if (res.totalCount) {
-//         setTotalAppointmentsCount(res.totalCount);
-//       }
-      
-//       // Update the current page
-//       setAppointmentsPage(page);
-//     }
-//   } catch (error) {
-//     console.log(error);
-//   } finally {
-//     setLoading(false);
-//   }
-// };
-
-
-
-
   const handleDownloadPrescription = async (appointment) => {
     try {
       const prescription = {
@@ -608,14 +551,41 @@ const [totalAppointmentsCount, setTotalAppointmentsCount] = useState(0);
       };
 
       const res = await fetchingPrescription(prescription);
-      const data = res.result;
+      console.log('check bro check fetchingPrescription',res);
+      
 
-      // Now generate the PDF
-      await generatePrescriptionPDF(data);
+      await generatePrescriptionPDF(res);
     } catch (error) {
       console.error("Error while downloading prescription:", error);
     }
   };
+
+
+  const handleViewPrescription = async (appointment) => {
+  try {
+    setPrescriptionLoading(true);
+    const prescription = {
+      doctorId: appointment.doctorId,
+      userIdd: userIdd,
+      appointmentId: appointment.id,
+      date: appointment.date,
+      time: appointment.time,
+    };
+
+    const res = await fetchingPrescription(prescription);
+    const data = res.data;
+
+    console.log('Prescription data from backend:', data);
+    
+    setPrescriptionData(data);
+    setShowPrescriptionModal(true);
+  } catch (error) {
+    console.error("Error while fetching prescription:", error);
+  } finally {
+    setPrescriptionLoading(false);
+  }
+};
+
 
   useEffect(() => {
     const fetchInitialConversations = async () => {
@@ -642,18 +612,13 @@ const [totalAppointmentsCount, setTotalAppointmentsCount] = useState(0);
 
   const fetchUserConversation = async (userId: string, doctorId: string) => {
     try {
-      console.log(
-        ".........plz check the user id and doctorId.....",
-        userId,
-        doctorId
-      );
+      
       const res = await fetchUserConversations(userIdd, doctorId);
-      console.log("check<>here<>the<>responce<>fetchUserConversations<>", res);
 
-      if (res.result.success) {
-  console.log('inside the if inside the if kerunundo',res);
-  
-        const messages = res.result.conversations[0].messages.map((msg) => ({
+      if (res.success) {
+       
+
+        const messages = res.conversations[0].messages.map((msg) => ({
           id: msg.messageId,
           text: msg.content,
           sender: msg.senderType === "doctor" ? "doctor" : "user",
@@ -669,11 +634,11 @@ const [totalAppointmentsCount, setTotalAppointmentsCount] = useState(0);
         }));
 
         setChatMessages(messages);
-        return true; // Return true if there are previous messages
+        return true;
       }
-      return false; // Return false if no previous messages
+      return false; 
     } catch (error) {
-      console.log('while the fething conversations',error);
+      console.log("while the fething conversations", error);
       return false;
     }
   };
@@ -689,16 +654,13 @@ const [totalAppointmentsCount, setTotalAppointmentsCount] = useState(0);
         setShowCancelModal(false);
         setAppointmentToCancel(null);
 
-        // Show centered success message
         setSuccessMessage("Appointment cancelled successfully!");
         setShowSuccessMessage(true);
 
-        // Automatically hide after 3 seconds
         setTimeout(() => {
           setShowSuccessMessage(false);
         }, 3000);
 
-        // Refresh appointments after cancellation
         fetchUserAppoinMents();
       } else {
         setSuccessMessage("Failed to cancel appointment. Please try again.");
@@ -722,7 +684,6 @@ const [totalAppointmentsCount, setTotalAppointmentsCount] = useState(0);
     setShowCancelModal(true);
   };
 
-  // Chat handler functions
   const handleChatWithDoctor = async (appointment: Appointment) => {
     setChatAppointment(appointment);
     setShowChatModal(true);
@@ -775,7 +736,7 @@ const [totalAppointmentsCount, setTotalAppointmentsCount] = useState(0);
     }
 
     console.log("Sending messages to backend:", message);
-    // Send to backend
+
     sendMessageToBackend(message);
   };
 
@@ -883,12 +844,11 @@ const [totalAppointmentsCount, setTotalAppointmentsCount] = useState(0);
     });
   };
 
-  // Text message (existing)
   const handleTextMessage = () => {
     sendMessage("text");
   };
 
-  // Image upload
+  
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
     if (file && file.type.startsWith("image/")) {
@@ -900,7 +860,7 @@ const [totalAppointmentsCount, setTotalAppointmentsCount] = useState(0);
     sendMessage("voice", audioBlob);
   };
 
-  // File attachment
+
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
@@ -1022,7 +982,7 @@ const [totalAppointmentsCount, setTotalAppointmentsCount] = useState(0);
           </div>
         </div>
 
-        {/* Edit User Modal */}
+       
         {showEditModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
@@ -1494,20 +1454,29 @@ const [totalAppointmentsCount, setTotalAppointmentsCount] = useState(0);
 
                             {/* Download Prescription Button - Only show when prescription is done */}
                             {appointment?.Prescription === "done" && (
-                              <button
-                                onClick={() =>
-                                  handleDownloadPrescription(appointment)
-                                }
-                                className="text-sm font-medium px-4 py-2 bg-green-600 hover:bg-green-700 text-white border border-green-600 rounded-lg transition-colors shadow-sm flex items-center"
-                              >
-                                <Download className="w-4 h-4 mr-1" />
-                                Download Prescription
-                              </button>
+                              <>
+                                <button
+                                  onClick={() =>
+                                    handleDownloadPrescription(appointment)
+                                  }
+                                  className="text-sm font-medium px-4 py-2 bg-green-600 hover:bg-green-700 text-white border border-green-600 rounded-lg transition-colors shadow-sm flex items-center"
+                                >
+                                  <Download className="w-4 h-4 mr-1" />
+                                  Download Prescription
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    handleViewPrescription(appointment)
+                                  }
+                                  className="text-sm font-medium px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white border border-blue-600 rounded-lg transition-colors shadow-sm flex items-center"
+                                >
+                                  <Eye className="w-4 h-4 mr-1" />
+                                  View 
+                                </button>
+                              </>
                             )}
 
-                            {/* <button className="text-sm font-medium px-4 py-2 bg-white text-gray-600 hover:bg-gray-50 border border-gray-200 rounded-lg transition-colors shadow-sm">
-                    View Details
-                  </button> */}
+                        
                           </div>
                         </div>
                       ))}
@@ -1515,7 +1484,7 @@ const [totalAppointmentsCount, setTotalAppointmentsCount] = useState(0);
                 </div>
               )}
 
-              {/* Cancelled Appointments Section */}
+            
               {currentAppointments.some((a) => a.status === "cancelled") && (
                 <div className="mb-8">
                   <h3 className="text-lg font-semibold text-gray-700 mb-4">
@@ -1531,7 +1500,7 @@ const [totalAppointmentsCount, setTotalAppointmentsCount] = useState(0);
                           key={appointment.id}
                           className="border border-gray-200 bg-gray-50 rounded-xl p-5"
                         >
-                          <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+                          <div className="flex flex-col md:flex-Row justify-between items-start md:items-center">
                             <div>
                               <h3 className="font-bold text-lg text-gray-600 line-through">
                                 {appointment.purpose}
@@ -1987,6 +1956,79 @@ const [totalAppointmentsCount, setTotalAppointmentsCount] = useState(0);
           )}
         </div>
 
+        {/* Prescription View Modal */}
+       {showPrescriptionModal && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-bold text-gray-800">
+            Prescription Details
+          </h3>
+          <button
+            onClick={() => {
+              setShowPrescriptionModal(false);
+              setPrescriptionData(null);
+            }}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        {prescriptionLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <span className="ml-2 text-gray-600">Loading prescription...</span>
+          </div>
+        ) : prescriptionData ? (
+          <div className="space-y-6">
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+              <h4 className="font-semibold text-blue-800 mb-2">Appointment Information</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-600">Date</p>
+                  <p className="font-medium">
+                    {new Date(prescriptionData.date).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Time</p>
+                  <p className="font-medium">{prescriptionData.time}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Doctor Email</p>
+                  <p className="font-medium">{prescriptionData.doctorEmail}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Patient Email</p>
+                  <p className="font-medium">{prescriptionData.patientEmail}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+              <h4 className="font-semibold text-blue-800 mb-2">Prescription Details</h4>
+              <div className="bg-white p-4 rounded border border-blue-200">
+                <p className="whitespace-pre-wrap">{prescriptionData.prescriptionDetails}</p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            <FileText className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+            <p>No prescription data available.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+)}
+
         {showChatModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-end pr-4">
             <div className="w-full max-w-md h-[70vh] max-h-[600px] min-h-[400px]">
@@ -2308,14 +2350,6 @@ const [totalAppointmentsCount, setTotalAppointmentsCount] = useState(0);
                 </p>
 
                 <div className="flex gap-4 w-full">
-                  {/* <button
-            onClick={rejectCall}
-            className="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center"
-          >
-            <X className="w-5 h-5 mr-2" />
-            Decline
-          </button> */}
-
                   <button
                     onClick={acceptCall}
                     className="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center"

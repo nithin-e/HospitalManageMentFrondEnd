@@ -113,10 +113,10 @@ export const DoctorsList = () => {
       console.log("Fetching doctors with params:", params.toString());
       
       const response = await doctorPaginationApi(params);
-      console.log('Doctor data response:', response.data);
+      console.log('Doctor data response:', response.data.data);
       
       // Process response based on your API structure
-      const responseData = response.data;
+      const responseData = response.data.data;
       
       let doctorData = [];
       let totalCount = 0;

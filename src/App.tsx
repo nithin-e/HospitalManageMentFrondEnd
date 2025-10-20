@@ -37,7 +37,7 @@ import PrescriptionForm from './pages/doctor/PrescriptionForm';
 import DoctorProtectedRoute from './protecting/doctorProtectedRoute';
 import ProtectedRoute from './protecting/ProctedRoute';
 import { BlockStatusChecker } from './protecting/BlockStatusChecker';
-import AdminAddService from './pages/admin/adminAddService';
+import AdminAddService from './pages/admin/AdminAddService';
 
 const queryClient = new QueryClient();
 

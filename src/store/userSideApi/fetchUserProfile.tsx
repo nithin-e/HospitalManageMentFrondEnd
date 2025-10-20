@@ -3,7 +3,7 @@ import axiosInstance from "@/cors/axiousInstance";
 export const fetchUserProfileData = async (email: string) => {
   try {
     
-    const response = await axiosInstance.post("api/auth/user/fectingUserProfileData", 
+    const response = await axiosInstance.post("api/user/fectingUserProfileData", 
       { email },
     );
     return response.data;

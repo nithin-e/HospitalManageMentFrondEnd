@@ -178,36 +178,35 @@ const PaymentList: React.FC = () => {
       setError(null);
       
       const response = await FetchingAllUserAppointsMentsAdmin({ page, limit: 8 });
+      console.log('check this response while the fecting payments',response);
       
-      if (response?.result) {
-        console.log('API.............. Response:', response);
-        const transformedPayments = response.result.appointments.map(transformAppointmentToPayment);
+      if (response.appointments) {
+        const transformedPayments = response.appointments.map(transformAppointmentToPayment);
         setPayments(transformedPayments);
-
-        // Update pagination info
-        if (response.result) {
+        
+        
+        if (response.appointments) {
           setPagination({
-            currentPage: response.result.currentPage || page,
-            totalPages: response.result.totalPages || 1,
-            totalItems: response.result.totalItems || transformedPayments.length,
-            itemsPerPage: response.result.itemsPerPage || 8,
-            hasNextPage: response.result.hasNextPage || false,
-            hasPrevPage: response.result.hasPrevPage || false
+            currentPage: response.appointments.currentPage || page,
+            totalPages: response.appointments.totalPages || 1,
+            totalItems: response.appointments.totalItems || transformedPayments.length,
+            itemsPerPage: response.appointments.itemsPerPage || 8,
+            hasNextPage: response.appointments.hasNextPage || false,
+            hasPrevPage: response.appointments.hasPrevPage || false
           });
         }
-
-        // Update summary data from response - these should be totals across all pages
-        // Only update summary data if it's not already loaded (first time or after refresh)
+        
+        
         if (!summaryDataLoaded) {
-          if (response.result.summary) {
-            // Use API provided summary if available
-            setTotalAdminWalletAmount(response.result.summary.totalAdminWalletAmount || 0);
-            setTotalRefundedAmount(response.result.summary.totalRefundedAmount || 0);
-            setCancelledAppointmentsCount(response.result.summary.cancelledAppointmentsCount || 0);
-            setTotalTransactions(response.result.summary.totalTransactions || response.result.totalItems || transformedPayments.length);
+          if (response.appointments.summary) {
+            console.log('API.............. Response:', response);
+          
+            setTotalAdminWalletAmount(response.appointments.summary.totalAdminWalletAmount || 0);
+            setTotalRefundedAmount(response.result.appointments.totalRefundedAmount || 0);
+            setCancelledAppointmentsCount(response.appointments.summary.cancelledAppointmentsCount || 0);
+            setTotalTransactions(response.appointments.summary.totalTransactions || response.appointments.totalItems || transformedPayments.length);
           } else {
-            // If no summary from API, we need to fetch all data to calculate totals
-            // For now, set what we know and mark that we need to fetch all data
+
             console.warn("No summary data available in API response, fetching all data to calculate totals");
             await fetchAllDataForSummary();
           }

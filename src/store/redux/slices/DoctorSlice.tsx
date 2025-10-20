@@ -15,6 +15,8 @@ interface Doctor {
   profileImage?: string;
   isAvailable: boolean;
   firstName?: string;
+  isActive:boolean
+
 }
 
 

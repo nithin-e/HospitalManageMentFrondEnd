@@ -8,7 +8,7 @@ import { useState, ChangeEvent, useEffect, useMemo } from "react";
 
 // Type definitions
 interface Service {
-  id: string;
+  _id: string;
   name: string;
   description: string;
   createdAt: string;
@@ -83,14 +83,14 @@ const ServicesAdmin: React.FC = () => {
               e.stopPropagation();
               handleEdit(item);
             }}
-            disabled={editingServiceId === item.id || deletingServiceId === item.id}
+            disabled={editingServiceId === item._id || deletingServiceId === item._id}
             className={`text-sm flex items-center space-x-1 ${
-              editingServiceId === item.id || deletingServiceId === item.id
+              editingServiceId === item._id || deletingServiceId === item._id
                 ? 'text-gray-400 cursor-not-allowed' 
                 : 'text-blue-600 hover:text-blue-800'
             }`}
           >
-            {editingServiceId === item.id ? (
+            {editingServiceId === item._id ? (
               <>
                 <div className="animate-spin rounded-full h-3 w-3 border border-gray-400 border-t-transparent"></div>
                 <span>Editing...</span>
@@ -104,14 +104,14 @@ const ServicesAdmin: React.FC = () => {
               e.stopPropagation();
               handleDelete(item);
             }}
-            disabled={deletingServiceId === item.id || editingServiceId === item.id}
+            disabled={deletingServiceId === item._id || editingServiceId === item._id}
             className={`text-sm flex items-center space-x-1 ${
-              deletingServiceId === item.id || editingServiceId === item.id
+              deletingServiceId === item._id || editingServiceId === item._id
                 ? 'text-gray-400 cursor-not-allowed' 
                 : 'text-red-600 hover:text-red-800'
             }`}
           >
-            {deletingServiceId === item.id ? (
+            {deletingServiceId === item._id ? (
               <>
                 <div className="animate-spin rounded-full h-3 w-3 border border-gray-400 border-t-transparent"></div>
                 <span>Deleting...</span>
@@ -143,9 +143,9 @@ const ServicesAdmin: React.FC = () => {
       const response = await fetchServicesApi();
       console.log('fetch services response', response);
 
-      if (response && response.result && response.result.services) {
+      if (response && response.data ) {
         // Format dates for display
-        const formattedServices = response.result.services.map(service => ({
+        const formattedServices = response.data.map(service => ({
           ...service,
           createdAt: formatDateForDisplay(service.createdAt),
           updatedAt: formatDateForDisplay(service.updatedAt)
@@ -187,7 +187,8 @@ const ServicesAdmin: React.FC = () => {
 
   const handleEdit = (service: Service): void => {
     setIsEditMode(true);
-    setEditingServiceId(service.id);
+    console.log('id is correct or not',service)
+    setEditingServiceId(service._id);
     setFormData({
       name: service.name,
       description: service.description
@@ -228,7 +229,7 @@ const ServicesAdmin: React.FC = () => {
     } else if (
       services.some(service => 
         service.name.toLowerCase() === formData.name.trim().toLowerCase() &&
-        (!isEditMode || service.id !== editingServiceId)
+        (!isEditMode || service._id !== editingServiceId)
       )
     ) {
       newErrors.name = 'Service name already exists';
@@ -245,63 +246,80 @@ const ServicesAdmin: React.FC = () => {
     return Object.keys(newErrors).every(key => !newErrors[key as keyof ValidationErrors]);
   };
 
-  // Handle form submission
-  const handleSubmit = async (): Promise<void> => {
-    if (!validateForm()) {
-      return;
-    }
+ // Replace your handleSubmit function with this corrected version:
 
-    const serviceData = {
-      name: formData.name.trim(),
-      description: formData.description.trim()
-    };
+const handleSubmit = async (): Promise<void> => {
+  if (!validateForm()) {
+    return;
+  }
 
-    try {
-      if (isEditMode && editingServiceId) {
-        
-        const updatedService = await editServiceApi(editingServiceId, serviceData);
-        console.log('Service API response:', updatedService);
-
-        if (updatedService && updatedService.result && updatedService.result.success) {
-          
-          const updatedServices = services.map(service => 
-            service.id === editingServiceId 
-              ? { 
-                  ...service, 
-                  name: serviceData.name, 
-                  description: serviceData.description,
-                  updatedAt: new Date().toISOString()
-                }
-              : service
-          );
-          
-          setServices(updatedServices);
-          setEditingServiceId(null);
-          setIsModalOpen(false);
-          console.log("Service updated successfully:", updatedService);
-        }
-      } else {
-        // Add new service
-        const savedService = await addServiceApi(serviceData);
-        console.log('Service API response:', savedService);
-
-        if (savedService && savedService.result && savedService.result.success) {
-          // Refresh the services list after successful addition
-          await handleFetchServices();
-          
-          // Reset form
-          setFormData({ name: "", description: "" });
-          setErrors({ name: "", description: "" });
-          setIsModalOpen(false);
-
-          console.log("Service added successfully:", savedService);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to save service:", error);
-      setError(`Failed to ${isEditMode ? 'update' : 'add'} service. Please try again.`);
-    }
+  const serviceData = {
+    name: formData.name.trim(),
+    description: formData.description.trim()
   };
+
+  try {
+    if (isEditMode && editingServiceId) {
+   
+      
+      const response = await editServiceApi(editingServiceId, serviceData);
+      console.log('Edit Service API response:', response);
+
+      if (response && response.success) {
+        
+        const formattedDate = formatDateForDisplay(new Date().toISOString());
+        
+       
+        const updatedServices = services.map(service => 
+          service._id === editingServiceId 
+            ? { 
+                ...service, 
+                name: serviceData.name, 
+                description: serviceData.description,
+                updatedAt: formattedDate 
+              }
+            : service
+        );
+        
+        setServices(updatedServices);
+        setEditingServiceId(null);
+        setIsModalOpen(false);
+        setFormData({ name: "", description: "" });
+        setErrors({ name: "", description: "" });
+        
+        console.log("Service updated successfully");
+      } else {
+        // Handle failed update
+        setError('Failed to update service. Please try again.');
+        console.error('Update failed:', response);
+      }
+    } else {
+      // Add new service
+      const savedService = await addServiceApi(serviceData);
+      console.log('Add Service API response:', savedService);
+
+      if (savedService && savedService.success) {
+        // Refresh the services list after successful addition
+        await handleFetchServices();
+        
+        // Reset form
+        setFormData({ name: "", description: "" });
+        setErrors({ name: "", description: "" });
+        setIsModalOpen(false);
+
+        console.log("Service added successfully");
+      } else {
+        setError('Failed to add service. Please try again.');
+      }
+    }
+  } catch (error) {
+    console.error("Failed to save service:", error);
+    setError(`Failed to ${isEditMode ? 'update' : 'add'} service. Please try again.`);
+  } finally {
+    // Always clear the editing state
+    setEditingServiceId(null);
+  }
+};
 
   // Handle modal close
   const handleCloseModal = (): void => {
@@ -314,21 +332,21 @@ const ServicesAdmin: React.FC = () => {
 
   // Handle row click
   const handleRowClick = (service: Service): void => {
-    console.log('Service clicked:', service);
+    console.log('Service clicked:', service)
   };
 
   const handleDelete = async (service: Service): Promise<void> => {
     try {
-      // Set loading state for this specific service
-      setDeletingServiceId(service.id);
+  
+      setDeletingServiceId(service._id);
       
-      const res = await deleteServiceApi({ serviceId: service.id });
-      console.log('Deleting service with Id', res);
+      const res = await deleteServiceApi({ serviceId: service._id });
+      
 
-      if (res.result.success) {
-        // Stop loading and remove the deleted service from the table
+      if (res.success) {
+       
         setDeletingServiceId(null);
-        const updatedServices = services.filter(s => s.id !== service.id);
+        const updatedServices = services.filter(s => s._id !== service._id);
         setServices(updatedServices);
 
         // Adjust current page if necessary

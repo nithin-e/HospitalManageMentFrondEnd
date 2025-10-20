@@ -7,7 +7,7 @@ export const UserFectingAppointMentSlote = async (email: string) => {
    
 
     const response = await axiosInstance.post(
-      "/api/auth/user/fectingAppointMentSlotes", 
+      "/api/doctor/fectingAppointMentSlotes", 
       { email: email }, 
     );
 

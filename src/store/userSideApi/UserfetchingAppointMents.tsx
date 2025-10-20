@@ -7,7 +7,7 @@ export const UserfetchingAppointMents = async (
 ) => {
   try {
     const response = await axiosInstance.post(
-      "/api/auth/user/fectingAppointMent", 
+      "/api/doctor/fectingAppointMent", 
       { 
         email: email,
         page: page,

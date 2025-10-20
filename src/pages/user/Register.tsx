@@ -90,7 +90,7 @@ const Register = () => {
     onSubmit: async (values) => {
       setIsLoading(true);
       try {
-        const response = await axiosInstance.post("/api/auth/user/checkUser", { 
+        const response = await axiosInstance.post("/api/user/checkUser", { 
           email: values.email, 
           phoneNumber: values.phoneNumber 
         });
@@ -246,10 +246,7 @@ const Register = () => {
     }
   };
 
-  const googleButtonVariants = {
-    hover: { scale: 1.02 },
-    tap: { scale: 0.98 },
-  };
+
 
   return (
     <div className="min-h-[85vh] w-full flex flex-col md:flex-row-reverse overflow-hidden relative">

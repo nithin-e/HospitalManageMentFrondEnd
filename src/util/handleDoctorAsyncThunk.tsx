@@ -15,7 +15,7 @@ interface DoctorState {
  * Reusable thunk handler for doctor slice
  * @param builder - The builder from createSlice's extraReducers
  * @param asyncThunk - The async thunk to handle
- * @param stateKey - The key in state where results will be stored
+ * @param stateKey - The key in state where results will be stored (default: 'data')
  * @param onSuccess - Optional callback for successful responses
  */
 export const handleDoctorAsyncThunk = <ThunkArg, ThunkReturn>(
@@ -30,10 +30,14 @@ export const handleDoctorAsyncThunk = <ThunkArg, ThunkReturn>(
       state.error = null;
     })
     .addCase(asyncThunk.fulfilled, (state: DoctorState, action: PayloadAction<ThunkReturn>) => {
+      const payload: any = action.payload;
 
-     
-      
-      state[stateKey] = action.payload;
+      if (payload && typeof payload === "object" && "data" in payload) {
+        state[stateKey] = payload.data;
+      } else {
+        state[stateKey] = payload;
+      }
+
       state.loading = false;
 
       if (onSuccess && typeof onSuccess === "function") {
@@ -42,6 +46,6 @@ export const handleDoctorAsyncThunk = <ThunkArg, ThunkReturn>(
     })
     .addCase(asyncThunk.rejected, (state: DoctorState, action) => {
       state.loading = false;
-      state.error = action.payload as string || "An unknown error occurred";
+      state.error = (action.payload as string) || "An unknown error occurred";
     });
 };

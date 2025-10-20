@@ -20,7 +20,7 @@ export const registerDoctorApi = async (doctorData: FormData) => {
     console.log("Preparing to send doctor registration data");
    
     const response = await axiosInstance.post(
-      "/api/auth/user/applyDoctor",
+      "/api/user/applyDoctor",
       doctorData
     );
 

@@ -17,8 +17,8 @@ import { useGoogleLogin } from '@react-oauth/google';
 const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [showMessage, setShowMessage] = useState(false); // State for password reset message
-  const [showBlockedMessage, setShowBlockedMessage] = useState(false); // State for blocked user message
+  const [showMessage, setShowMessage] = useState(false); 
+  const [showBlockedMessage, setShowBlockedMessage] = useState(false); 
 
   const location = useLocation();
   const passwordReset = location.state?.passwordReset;
@@ -40,7 +40,6 @@ const Login = () => {
     }
   }, [passwordReset]);
 
-  // Effect to handle blocked user message display
   useEffect(() => {
     if (showBlockedMessage) {
       const timeout = setTimeout(() => {
@@ -76,7 +75,7 @@ const Login = () => {
       setIsLoading(true);
       try {
         const response = await axiosInstance.post(
-          "/api/auth/user/loginUser",
+          "/api/user/loginUser",
           {
             email: values.email,
             password: values.password,
@@ -101,8 +100,10 @@ const Login = () => {
             email: response.data.email || response.data.user?.email,
             role: response.data.role || response.data.user?.role,
           },
-          accessToken: response.data.accessToken || response.data.token,
-          refreshToken: response.data.refreshToken,
+          accessToken: response.data.access_token || response.data.token,
+
+          refreshToken: response.data.refresh_token,
+
         };
 
         console.log('Login payload:',response)
@@ -115,7 +116,8 @@ const Login = () => {
         }else if ((result.payload as any).user.role ==='doctor') {
           
            let email=result.payload.user?.email
-           console.log('........nekeeeeee...........',email);
+           console.log('dey dey check this payload first',result.payload.user.email);
+           
            navigate('/DoctorDashboard',{ state: { email: email } });
           //  navigate('/DoctorDashboard');
         }
@@ -169,16 +171,9 @@ const Login = () => {
         const userData = await userInfoResponse.json();
         console.log('check this responce after thhe google login',userData)
 
-        const googleLoginPayload = {
-          user: {
-            googleId: userData.sub,
-            email: userData.email,
-            name: userData.name,
-          },
-          accessToken: tokenResponse.access_token,
-        };
+       
   
-        const backendResponse = await axiosInstance.post("/api/auth/user/loginUser", {
+        const backendResponse = await axiosInstance.post("/api/user/loginUser", {
           googleId: userData.sub,
           email: userData.email,
           name: userData.name,
@@ -206,15 +201,7 @@ const Login = () => {
         console.log('goofgle 000login result:',result);
         
   
-        // const result = await dispatch(login({
-        //   ...googleLoginPayload,
-        //   user: {
-        //     ...googleLoginPayload.user,
-        //     ...backendResponse.data.user,
-        //   },
-        //   refreshToken: backendResponse.data.refreshToken,
-        // }));
-
+       
 
         
   

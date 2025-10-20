@@ -62,9 +62,6 @@ axiosInstance.interceptors.response.use(
 
           const response=   await  refreshTokenApi(refreshToken)
 
-          // const response = await axios.post(`http://localhost:4000/auth/refresh`, {
-          //   token: refreshToken,
-          // });
 
           console.log('Doctor refresh response insidde the intercepter:', response);
           

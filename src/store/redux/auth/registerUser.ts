@@ -19,7 +19,7 @@ export interface RegisterProps {
 
 export const registerUserApi = async (userData: RegisterProps, accessToken: string, refreshToken: string) => {
   const response = await axiosInstance.post(
-    "/api/auth/user/register",
+    "/api/user/register",
     userData,
     {
       headers: {

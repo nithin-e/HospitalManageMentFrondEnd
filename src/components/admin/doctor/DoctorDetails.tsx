@@ -140,7 +140,7 @@ export const DoctorDetails = () => {
     ).filter(Boolean);
   
     try {
-      // Show loading state for exactly 2 seconds
+      
       await new Promise((resolve) => setTimeout(resolve, 2000));
       const result = await handlingAdminCancel(doctor.email, rejectionReasonTexts);
       
@@ -177,8 +177,8 @@ export const DoctorDetails = () => {
       const reason=blockReasons.find(r => r.id === selectedReason)?.label
           if(reason){
            const  res=  await blockingDoctor(reason,doctor.email)
-           if(res.data.result.success){
-            console.log('check the responce first then make the conditions',res)
+           console.log('check the responce first then make the conditions',res)
+           if(res.data.success){
            handleCloseModal();
            }
 

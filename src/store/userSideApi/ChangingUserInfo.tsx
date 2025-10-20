@@ -6,7 +6,7 @@ export const ChangingUserInfo = async (userData: {
   phoneNumber?: string 
 }) => {
   try {
-    const response = await axiosInstance.post("api/auth/user/ChangingUserInfo", userData);
+    const response = await axiosInstance.post("api/user/ChangingUserInfo", userData);
     return response.data;
   } catch (error) {
     console.error("Error updating user info:", error);

@@ -3,7 +3,7 @@ import axiosInstance from "@/cors/axiousInstance";
 
 export const UserfetchingDoctors = async () => {
   try {
-    const response = await axiosInstance.get("/api/auth/user/fecthAllDoctors", {
+    const response = await axiosInstance.get("/api/user/fecthAllDoctors", {
     });
    console.log('checkig tyme',response.data);
    

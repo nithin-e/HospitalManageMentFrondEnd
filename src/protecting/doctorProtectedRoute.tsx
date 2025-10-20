@@ -4,8 +4,11 @@ import { useSelector } from 'react-redux';
 import { Navigate } from 'react-router-dom';
 
 const doctorProtectedRoute = ({ children }) => {
-const doctor = useSelector((state: RootState) => state.doctor.data.doctor);
 
+
+
+  const doctor = useSelector((state: RootState) => state.doctor.data?.doctor);
+const doctorEmail = doctor?.email;
 
 console.log('check this doctor data inside the protected route',doctor)
 

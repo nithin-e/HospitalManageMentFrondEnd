@@ -438,8 +438,8 @@ const Navbar: React.FC = () => {
       setIsLoggingOut(true);
       await new Promise((resolve) => setTimeout(resolve, 800));
 
-      localStorage.removeItem('userAccessToken');
-      localStorage.removeItem('userRefreshToken');
+      localStorage.removeItem('AccessToken');
+      localStorage.removeItem('RefreshToken');
 
       dispatch(logoutUser());
       console.log('User logged out successfully');

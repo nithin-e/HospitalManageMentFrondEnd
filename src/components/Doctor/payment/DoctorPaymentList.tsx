@@ -133,19 +133,16 @@ const DoctorPaymentList: React.FC = () => {
     };
   };
 
-  // Fetch all appointments for balance calculation (without pagination)
   const fetchAllAppointmentsForBalance = async () => {
     if (!email) return;
 
     try {
       setBalanceLoading(true);
-      // Fetch with a large limit to get all appointments for balance calculation
-      const response = await fectingAllUserAppointMents(email, 1, 1000); // Large limit to get all
+      const response = await fectingAllUserAppointMents(email, 1, 1000);
       
-      if (response?.result?.appointments) {
-        const transformedPayments = response.result.appointments.map(transformAppointmentToPayment);
+      if (response?.appointments) {
+        const transformedPayments = response.appointments.map(transformAppointmentToPayment);
         
-        // Filter for current doctor's payments
         const doctorSpecificPayments = transformedPayments.filter(payment => {
           const isDoctorPayment = 
             payment.doctorId === doctorId?.id || 
@@ -174,15 +171,15 @@ const DoctorPaymentList: React.FC = () => {
       
       const response = await fectingAllUserAppointMents(email, page, limit);
       
-      if (response?.result?.appointments) {
-        const transformedPayments = response.result.appointments.map(transformAppointmentToPayment);
+      if (response?.appointments) {
+        const transformedPayments = response.appointments.map(transformAppointmentToPayment);
         setPayments(transformedPayments);
         setPagination({
-          currentPage: response.result.currentPage || page,
-          totalPages: response.result.totalPages || 1,
-          totalItems: response.result.totalAppointments || 0,
-          hasNext: response.result.hasNextPage || false,
-          hasPrev: response.result.hasPrevPage || false
+          currentPage: response.currentPage || page,
+          totalPages: response.totalPages || 1,
+          totalItems: response.totalAppointments || 0,
+          hasNext: response.hasNextPage || false,
+          hasPrev: response.hasPrevPage || false
         });
       } else {
         setPayments([]);

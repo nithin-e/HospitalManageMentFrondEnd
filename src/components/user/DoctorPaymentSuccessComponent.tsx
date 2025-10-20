@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Check, Calendar, UserRound, ArrowRight, Activity, Heart, Stethoscope, Clipboard, Phone, Clock, PlusCircle, AlertCircle, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { logoutUser } from '@/store/redux/slices/authSlice';
 
 const DoctorPaymentSuccessComponent = () => {
   const [showConfetti, setShowConfetti] = useState(true);
@@ -8,6 +10,9 @@ const DoctorPaymentSuccessComponent = () => {
   const [pulse, setPulse] = useState(false);
   const cardRef = useRef(null);
   const Navigate=useNavigate()
+
+    const dispatch = useDispatch();
+
   
   useEffect(() => {
     // Add floating medical symbols effect with enhanced visibility
@@ -89,9 +94,20 @@ console.log("Extracted email:", email);
   const navigateToDashboard = () => {
     console.log("Navigating to doctor dashboard");
   
-    
-    // Navigate('/DoctorDashboard', { state: { email: email } });
-    Navigate('/login')
+       localStorage.removeItem('AccessToken');
+       localStorage.removeItem('RefreshToken');
+ 
+
+       
+
+
+       dispatch(logoutUser())
+       console.log('User logged out successfully');
+
+           Navigate('/DoctorDashboard', { state: { email: email } });
+
+ 
+    // Navigate('/login')
    
     if (cardRef.current) {
       cardRef.current.classList.add('scale-95');

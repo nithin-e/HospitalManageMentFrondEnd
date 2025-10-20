@@ -7,7 +7,7 @@ export const fetchUserConversations = async (
 ) => {
   try {
     const response = await axiosInstance.post(
-      "api/auth/user/fetchUserConversations",
+      "/api/doctor/fetchUserConversations",
       {
         userId,
         doctorId,

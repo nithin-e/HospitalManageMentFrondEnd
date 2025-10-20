@@ -62,9 +62,15 @@ const AppointMentListingComponent = () => {
   const appointmentsPerPage = 2;
   
   const { socket, connected } = useSocket();
-  const dispatch: AppDispatch = useDispatch();
-  const doctor = useSelector((state: RootState) => state.doctor.data.doctor);
-  const email = useSelector((state: RootState) => state.doctor.data.doctor.email);
+
+
+
+    const doctor = useSelector((state: RootState) => state.doctor.data?.doctor);
+  const email = doctor?.email;
+
+
+  
+  
 
   useEffect(() => {
     if (!doctor) {
@@ -142,13 +148,15 @@ const AppointMentListingComponent = () => {
       }
       
       const response = await fectingAllUserAppointMents(email, currentPage, appointmentsPerPage);
+      console.log('check the response are u getting the appointments',response);
       
-      if (response && response.result && response.result.appointments) {
+      
+      if (response  && response.appointments) {
 
         console.log('edaaei check here the responce from backend',response)
-        setAppointments(response.result.appointments);
-        setTotalAppointments(response.result.totalAppointments || response.result.appointments.length);
-        setTotalPages(Math.ceil(response.result.totalAppointments / appointmentsPerPage));
+        setAppointments(response.appointments);
+        setTotalAppointments(response.totalAppointments || response.appointments.length);
+        setTotalPages(Math.ceil(response.totalAppointments / appointmentsPerPage));
       } else {
         setError('No appointments data received');
         setAppointments([]);
@@ -234,8 +242,8 @@ const AppointMentListingComponent = () => {
     try {
       const res = await fetchUserConversations(userId, doctorId);  
       
-      if (res.result.success) {
-        const messages = res.result.conversations[0].messages.map(msg => {
+      if (res.success) {
+        const messages = res.conversations[0].messages.map(msg => {
           const isImage = msg.messageType === 'file' && 
                           msg.mimeType?.startsWith('image/');
           

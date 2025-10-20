@@ -1,10 +1,6 @@
 import axiosInstance from "@/cors/axiousInstance";
 
 
-interface doctorBlockData{
-  
-  email:string;
-}
 
 
 export const blockingDoctor = async (reason:string, email:string) => {
