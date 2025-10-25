@@ -38,20 +38,21 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     console.log("SocketProvider initializing...");
 
-    // Log socket connection details
-const socketUrl = "https://api.healnova.fun/admin";
+    
+const socketUrl = "https://api.healnova.fun/admin"; 
     console.log("Attempting to connect to socket server at:", socketUrl);
 
   
 
 const newSocket = io(socketUrl, {
+  path: "/socket.io",
   transports: ["websocket"],
-  withCredentials: true,      
-  autoConnect: true,
+  withCredentials: true,
   reconnectionAttempts: 5,
   reconnectionDelay: 1000,
-  timeout: 20000
+  timeout: 20000,
 });
+
 
 
 
