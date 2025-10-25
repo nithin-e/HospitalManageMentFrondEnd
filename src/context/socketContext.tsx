@@ -43,17 +43,19 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     console.log("SocketProvider initializing...");
 
     // ✅ Connect directly to the /admin namespace
-    const socketUrl = "https://api.healnova.fun/admin";
-    console.log("Attempting to connect to socket server at:", socketUrl);
+  const socketUrl = "https://socket.healnova.fun";
+      console.log("Attempting to connect to socket server at:", socketUrl);
 
-    const newSocket = io(socketUrl, {
-      path: "/socket.io",
-      transports: ["websocket", "polling"], // ✅ Add polling as fallback
-      withCredentials: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      timeout: 20000,
-    });
+const newSocket = io(`${socketUrl}/admin`, {
+  path: "/socket.io",
+  transports: ["websocket", "polling"],
+  withCredentials: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 1000,
+  timeout: 20000,
+});
+
+
 
     newSocket.on("connect", () => {
       console.log("Socket connected successfully with ID:", newSocket.id);
