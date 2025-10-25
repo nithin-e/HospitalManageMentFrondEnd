@@ -1,10 +1,15 @@
 import { RootState } from "@/store/redux/store";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { io } from "socket.io-client";
+import { io, Socket } from "socket.io-client";
 
 // Create context
-const SocketContext = createContext(null);
+const SocketContext = createContext<{
+  socket: Socket | null;
+  connected: boolean;
+  userBlockStatus: Record<string, boolean>;
+  isUserBlocked: (userId: string) => boolean;
+} | null>(null);
 
 // Custom hook to use the socket context
 export const useSocket = () => {
@@ -16,20 +21,19 @@ export const useSocket = () => {
 };
 
 // Provider component
-export const SocketProvider = ({ children }) => {
-  const [socket, setSocket] = useState(null);
+export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [socket, setSocket] = useState<Socket | null>(null);
   const [connected, setConnected] = useState(false);
-  const [userBlockStatus, setUserBlockStatus] = useState({});
+  const [userBlockStatus, setUserBlockStatus] = useState<Record<string, boolean>>({});
 
   const selectUserAndDoctor = (state: RootState) => ({
     user: state.user?.user,
-    doctor: state.doctor.data?.doctor
+    doctor: state.doctor.data?.doctor,
   });
 
-      const doctors = useSelector((state: RootState) => state.doctor.data?.doctor);
-  
-      console.log('check this doctor data ---------',doctors);
-      
+  const doctors = useSelector((state: RootState) => state.doctor.data?.doctor);
+
+  console.log("check this doctor data ---------", doctors);
 
   const { user, doctor } = useSelector(selectUserAndDoctor);
 
@@ -38,24 +42,18 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     console.log("SocketProvider initializing...");
 
-    
-const socketUrl = "https://api.healnova.fun/admin"; 
+    // ✅ Connect directly to the /admin namespace
+    const socketUrl = "https://api.healnova.fun/admin";
     console.log("Attempting to connect to socket server at:", socketUrl);
 
-  
-
-const newSocket = io(socketUrl, {
-  path: "/socket.io",
-  transports: ["websocket"],
-  withCredentials: true,
-  reconnectionAttempts: 5,
-  reconnectionDelay: 1000,
-  timeout: 20000,
-});
-
-
-
-
+    const newSocket = io(socketUrl, {
+      path: "/socket.io",
+      transports: ["websocket", "polling"], // ✅ Add polling as fallback
+      withCredentials: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      timeout: 20000,
+    });
 
     newSocket.on("connect", () => {
       console.log("Socket connected successfully with ID:", newSocket.id);
@@ -64,7 +62,7 @@ const newSocket = io(socketUrl, {
       const email = user?.email || doctors?.email;
       const role = user ? "user" : doctors ? "doctor" : "admin";
 
-      console.log("Emitting register with??????__-------------------:", {
+      console.log("Emitting register with:", {
         userId,
         role,
         email,
@@ -98,7 +96,7 @@ const newSocket = io(socketUrl, {
       console.log(`Socket reconnected after ${attemptNumber} attempts`);
     });
 
-    newSocket.on('reconnect_attempt', (attemptNumber) => {
+    newSocket.on("reconnect_attempt", (attemptNumber) => {
       console.log(`Socket reconnection attempt #${attemptNumber}`);
     });
 
@@ -133,7 +131,7 @@ const newSocket = io(socketUrl, {
       console.log("Cleaning up socket connection");
       newSocket.disconnect();
     };
-  }, []);
+  }, []); // ✅ Empty dependency array - only run once on mount
 
   // Log connection status changes
   useEffect(() => {
@@ -149,7 +147,7 @@ const newSocket = io(socketUrl, {
     socket,
     connected,
     userBlockStatus,
-    isUserBlocked: (userId) => userBlockStatus[userId] ?? false,
+    isUserBlocked: (userId: string) => userBlockStatus[userId] ?? false,
   };
 
   return (
