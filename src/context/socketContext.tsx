@@ -39,7 +39,7 @@ export const SocketProvider = ({ children }) => {
     console.log("SocketProvider initializing...");
 
     // Log socket connection details
-const socketUrl = "http://localhost:6001/admin";
+const socketUrl = "https://api.healnova.fun/admin";
     console.log("Attempting to connect to socket server at:", socketUrl);
 
   
