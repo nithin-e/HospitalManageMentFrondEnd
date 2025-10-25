@@ -31,7 +31,7 @@ const PopUpMessage = ({
     
     for (let hour = startHour; hour < endHour; hour++) {
       // Add slots at :00 and :30 minutes
-      for (let minutes of [0, 30]) {
+      for (const minutes of [0, 30]) {
         const time24 = `${hour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
         const time12 = convertTo12Hour(time24);
         

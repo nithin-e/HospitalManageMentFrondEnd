@@ -40,7 +40,7 @@ const VideoCallPage = () => {
     return null;
   };
 
-  var appointmentId = getAppointmentId();
+  const appointmentId = getAppointmentId();
 
   useEffect(() => {
     if (socket && connected) {

@@ -1,6 +1,6 @@
 import axiosInstance from "@/cors/axiousInstance";
 
-export const CancelingUserAppointMent = async (time:String,date:String,email:String) => {
+export const CancelingUserAppointMent = async (time:string,date:string,email:string) => {
   try {
     
     const response = await axiosInstance.post("/api/doctor/CancelingUserAppointMent", 

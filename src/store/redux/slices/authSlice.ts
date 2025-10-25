@@ -67,7 +67,7 @@ export const checkUser = createAsyncThunk<
   "auth/checkUser",
   async ({ email, phoneNumber }, { rejectWithValue }) => {
     try {
-      let res = await checkUserApi(email, phoneNumber);
+      const res = await checkUserApi(email, phoneNumber);
       console.log('............', res);
       return res;
     } catch (error: any) {

@@ -115,7 +115,7 @@ const Login = () => {
           navigate('/');
         }else if ((result.payload as any).user.role ==='doctor') {
           
-           let email=result.payload.user?.email
+           const email=result.payload.user?.email
            console.log('dey dey check this payload first',result.payload.user.email);
            
            navigate('/DoctorDashboard',{ state: { email: email } });

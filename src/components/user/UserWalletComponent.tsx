@@ -58,11 +58,11 @@ interface PaginationInfo {
 }
 
 const UserWalletComponent: React.FC = () => {
-  const [totalBalance, setTotalBalance] = useState(0); // Renamed for clarity
+  const [totalBalance, setTotalBalance] = useState(0); 
   const [showBalance, setShowBalance] = useState(true);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [allAppointments, setAllAppointments] = useState<Appointment[]>([]); // Store all appointments for balance calculation
+  const [allAppointments, setAllAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [paginationInfo, setPaginationInfo] = useState<PaginationInfo>({

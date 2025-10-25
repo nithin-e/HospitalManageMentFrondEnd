@@ -283,8 +283,8 @@ const DoctorPaymentList: React.FC = () => {
     } else {
       pages.push(1);
       
-      let start = Math.max(2, pagination.currentPage - 1);
-      let end = Math.min(pagination.totalPages - 1, pagination.currentPage + 1);
+      const start = Math.max(2, pagination.currentPage - 1);
+      const end = Math.min(pagination.totalPages - 1, pagination.currentPage + 1);
       
       if (start > 2) {
         pages.push('...');
