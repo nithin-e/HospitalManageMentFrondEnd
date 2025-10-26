@@ -44,14 +44,16 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
    
 
-    const newSocket = io(import.meta.env.socketUrl, {
-      path: "/socket.io",
-      transports: ["websocket", "polling"],
-      withCredentials: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      timeout: 20000,
-    });
+  
+
+
+    const newSocket = io(import.meta.env.VITE_SOCKET_URL || 'https://api.healnova.fun', {
+  transports: ['websocket', 'polling'],
+  withCredentials: true,
+  reconnection: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 1000,
+});
 
     newSocket.on("connect", () => {
       console.log("Socket connected successfully with ID:", newSocket.id);
