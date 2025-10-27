@@ -41,18 +41,22 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   useEffect(() => {
     console.log("SocketProvider initializing...");
+const socketBase =
+  import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_BASE_URL || window.location.origin;
 
+console.log("Socket connecting to:", socketBase, "env:", import.meta.env);
+
+const newSocket = io(socketBase, {
+  path: "/socket.io",
+  transports: ["websocket", "polling"],
+  withCredentials: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 1000,
+  timeout: 20000,
+});
    
 
-    const newSocket = io(import.meta.env.socketUrl, {
-      path: "/socket.io",
-      transports: ["websocket", "polling"],
-      withCredentials: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      timeout: 20000,
-    });
-
+   
 
 
     newSocket.on("connect", () => {
