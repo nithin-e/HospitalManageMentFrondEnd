@@ -48,59 +48,6 @@ const Apply: React.FC = () => {
   const userId = useSelector((state: RootState) => state.user?.user._id||'');
 
 
-  // useEffect(() => {
-  //   const fetchSpecialties = async () => {
-  //     try {
-  //       setLoadingSpecialties(true);
-  //       const response = await fetchServicesApi();
-  //       console.log('fetch services response', response);
-
-  //       if (response.data) {
-
-  //         const specialtiesData = response.result.services.map((service: any) => service.name);
-  //         setSpecialties(specialtiesData);
-  //       } else {
-  //         console.error('No services found or invalid response format');
-
-  //         setSpecialties([
-  //           "Cardiology",
-  //           "Dermatology",
-  //           "Endocrinology",
-  //           "Gastroenterology",
-  //           "Neurology",
-  //           "Oncology",
-  //           "Pediatrics",
-  //           "Psychiatry",
-  //           "Radiology",
-  //           "Surgery",
-  //           "Urology",
-  //         ]);
-  //       }
-  //     } catch (error) {
-  //       console.error('Fetch services failed', error);
-
-  //       setSpecialties([
-  //         "Cardiology",
-  //         "Dermatology",
-  //         "Endocrinology",
-  //         "Gastroenterology",
-  //         "Neurology",
-  //         "Oncology",
-  //         "Pediatrics",
-  //         "Psychiatry",
-  //         "Radiology",
-  //         "Surgery",
-  //         "Urology",
-  //       ]);
-  //     } finally {
-  //       setLoadingSpecialties(false);
-  //     }
-  //   };
-
-  //   fetchSpecialties();
-  // }, []);
-
-
 
 
 
