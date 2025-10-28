@@ -175,8 +175,9 @@ export default function AppointmentBooking() {
       if (response.data.data.doctors) {
         console.log('kerindooo.............');
         
-        response.data.data.doctors.forEach((doctor) => {
+        response.data.doctors.forEach((doctor) => {
           if (doctor.status === "completed") {
+            console.log('check the id of doctor',doctor.id);
             const doctorId = doctor.id|| doctor._id;
             const email = doctor.email;
             const specialty = doctor.specialty;
