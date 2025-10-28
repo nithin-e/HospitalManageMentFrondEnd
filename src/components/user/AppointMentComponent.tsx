@@ -172,7 +172,7 @@ export default function AppointmentBooking() {
       const groupedDoctors = {};
 
      
-      if (response.data.doctors) {
+      if (response.data.data.doctors) {
         console.log('kerindooo.............');
         
         response.data.doctors.forEach((doctor) => {
