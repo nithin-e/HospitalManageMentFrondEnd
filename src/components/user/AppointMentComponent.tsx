@@ -162,63 +162,69 @@ export default function AppointmentBooking() {
     fetchDoctorData();
   }, []);
 
-  const fetchDoctorData = async () => {
-    try {
-      setLoading(true);
-      const response = await UserfetchingDoctors();
-      console.log('Fetched doctors:', response);
-      
+ const fetchDoctorData = async () => {
+  try {
+    setLoading(true);
+    const response = await UserfetchingDoctors();
+    console.log('Fetched doctors:', response);
 
-      const groupedDoctors = {};
+    const groupedDoctors = {};
 
-     
-      if (response.data.data.doctors) {
-        console.log('kerindooo.............');
-        
-        response.data.doctors.forEach((doctor) => {
-          if (doctor.status === "completed") {
-            console.log('check the id of doctor',doctor.id);
-            const doctorId = doctor.id|| doctor._id;
-            const email = doctor.email;
-            const specialty = doctor.specialty;
-            const doctorName = `Dr. ${doctor.firstName} ${doctor.lastName}`;
+    // ✅ Correct access path
+    const doctors = response.data?.doctors || [];
 
-            if (!groupedDoctors[specialty]) {
-              groupedDoctors[specialty] = [];
-            }
+    if (doctors.length > 0) {
+      console.log('Doctors found:', doctors.length);
 
-            groupedDoctors[specialty].push({
-              name: doctorName,
-              email: email,
-              doctorId: doctorId,
-            });
+      doctors.forEach((doctor) => {
+        if (doctor.status === "completed") {
+          console.log('check the id of doctor', doctor.id);
+          const doctorId = doctor.id || doctor._id;
+          const email = doctor.email;
+          const specialty = doctor.specialty;
+          const doctorName = `Dr. ${doctor.firstName} ${doctor.lastName}`;
+
+          if (!groupedDoctors[specialty]) {
+            groupedDoctors[specialty] = [];
           }
-        });
-      }
 
-      console.log("Doctors grouped by specialty:", groupedDoctors);
-      setDoctorsBySpecialty(groupedDoctors);
-      setLoading(false);
-    } catch (error) {
-      console.error("Error fetching doctors:", error);
-   
-      const fallbackDoctors = {};
-      specialties.forEach((spec) => {
-        fallbackDoctors[spec.name] = [
-          {
-            name: `Dr. ${spec.name.substring(0, 3)} Smith`,
-            email: `smith@example.com`,
-          },
-          {
-            name: `Dr. ${spec.name.substring(0, 3)} Johnson`,
-            email: `johnson@example.com`,
-          },
-        ];
+          groupedDoctors[specialty].push({
+            name: doctorName,
+            email: email,
+            doctorId: doctorId,
+          });
+        }
       });
-      setDoctorsBySpecialty(fallbackDoctors);
-      setLoading(false);
+    } else {
+      console.warn("No doctors found in response");
     }
-  };
+
+    console.log("Doctors grouped by specialty:", groupedDoctors);
+    setDoctorsBySpecialty(groupedDoctors);
+  } catch (error) {
+    console.error("Error fetching doctors:", error);
+
+    // ✅ Fallback data (in case of API failure)
+    const fallbackDoctors = {};
+    specialties.forEach((spec) => {
+      fallbackDoctors[spec.name] = [
+        {
+          name: `Dr. ${spec.name.substring(0, 3)} Smith`,
+          email: `smith@example.com`,
+        },
+        {
+          name: `Dr. ${spec.name.substring(0, 3)} Johnson`,
+          email: `johnson@example.com`,
+        },
+      ];
+    });
+
+    setDoctorsBySpecialty(fallbackDoctors);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
