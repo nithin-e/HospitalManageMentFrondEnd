@@ -172,10 +172,10 @@ export default function AppointmentBooking() {
       const groupedDoctors = {};
 
      
-      if (response && response.data.data.doctors) {
+      if (response.data.doctors) {
         console.log('kerindooo.............');
         
-        response.data.data.doctors.forEach((doctor) => {
+        response.data.doctors.forEach((doctor) => {
           if (doctor.status === "completed") {
             const doctorId = doctor.id|| doctor._id;
             const email = doctor.email;
