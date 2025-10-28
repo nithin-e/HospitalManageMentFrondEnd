@@ -7,9 +7,7 @@ import {
   Phone,
   MessageSquare,
   Check,
-  Heart,
-  Activity,
-  Shield,
+
   Stethoscope,
 } from "lucide-react";
 import Navbar from "./Navbar";
@@ -168,14 +166,18 @@ export default function AppointmentBooking() {
     try {
       setLoading(true);
       const response = await UserfetchingDoctors();
+      console.log('Fetched doctors:', response);
+      
 
       const groupedDoctors = {};
 
      
-      if (response && response.data.doctors) {
-        response.data.doctors.forEach((doctor) => {
+      if (response && response.data.data.doctors) {
+        console.log('kerindooo.............');
+        
+        response.data.data.doctors.forEach((doctor) => {
           if (doctor.status === "completed") {
-            const doctorId = doctor.id;
+            const doctorId = doctor.id|| doctor._id;
             const email = doctor.email;
             const specialty = doctor.specialty;
             const doctorName = `Dr. ${doctor.firstName} ${doctor.lastName}`;
@@ -221,7 +223,7 @@ export default function AppointmentBooking() {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
 
-    // When date changes, reset time selection
+    
     if (name === "date") {
       setFormData((prev) => ({ ...prev, [name]: value, time: "" }));
     }
@@ -254,6 +256,8 @@ export default function AppointmentBooking() {
   };
 
   const handleDoctorSelect = (doctor) => {
+    console.log('check this doctor are u getting the doctor id',doctor);
+    
     setFormData((prev) => ({
       ...prev,
       doctor: doctor.name,
@@ -275,6 +279,7 @@ export default function AppointmentBooking() {
     try {
       const response = await axiosInstance.post(
         "/api/notification/create-checkout-session",
+        
         { appointmentData }
       );
 
