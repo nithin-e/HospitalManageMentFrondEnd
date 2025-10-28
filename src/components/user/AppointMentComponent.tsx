@@ -283,19 +283,22 @@ export default function AppointmentBooking() {
       doctorId: formData.doctorId,
     };
 
-    try {
-      const response = await axiosInstance.post(
-        "/api/notification/create-checkout-session",
-        
-        { appointmentData }
-      );
+    console.log('bro plazzz check form data',formData);
+    
 
-      if (response.data.success) {
-        console.log("Redirecting to Stripe checkout...");
-        window.location.href = response.data.checkout_url; 
-      } else {
-        console.error("Checkout session creation failed");
-      }
+    try {
+      // const response = await axiosInstance.post(
+      //   "/api/notification/create-checkout-session",
+        
+      //   { appointmentData }
+      // );
+
+      // if (response.data.success) {
+      //   console.log("Redirecting to Stripe checkout...");
+      //   window.location.href = response.data.checkout_url; 
+      // } else {
+      //   console.error("Checkout session creation failed");
+      // }
     } catch (error) {
       console.error("Error creating checkout session:", error);
     }
