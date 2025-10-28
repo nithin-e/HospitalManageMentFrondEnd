@@ -149,19 +149,18 @@ const DoctorDashBoard: React.FC = () => {
     }
   };
 
-const handleStartButtonClick = (appointment: AppointmentData) => {
-  stopBeeping(appointment.id || "");
-  const roomId = `consultation_${doctor?.id}_${appointment.id}_${Date.now()}`;
-  socket.emit("initiateConsultation", {
-    appointmentId: appointment.id,
-    patientId: appointment.userId,
-    url: `https://api.healnova.fun/Video-call/${roomId}`,
-    doctorId: doctor?.id,
-    doctorName: `${doctor?.firstName} ${"doctor"}`,
-  });
-  navigate(`/Video-call/${roomId}`);
-};
-
+  const handleStartButtonClick = (appointment: AppointmentData) => {
+    stopBeeping(appointment.id || "");
+    const roomId = `consultation_${doctor?.id}_${appointment.id}_${Date.now()}`;
+    socket.emit("initiateConsultation", {
+      appointmentId: appointment.id,
+      patientId: appointment.userId,
+      url: `https://www.healnova.fun/Video-call/${roomId}`,
+      doctorId: doctor?.id,
+      doctorName: `${doctor?.firstName} ${"doctor"}`,
+    });
+    navigate(`/Video-call/${roomId}`);
+  };
 
   const handleAddPrescriptionClick = (appointment: AppointmentData) => {
     setSelectedAppointment(appointment);
