@@ -88,7 +88,8 @@ const About: React.FC = () => {
               >
                 {/* Replace the SVG with an actual image */}
                 <img 
-                  src="/public/lovable-uploads/image.png" 
+                  // src="/public/lovable-uploads/image.png" 
+                  src="/uploads/image.png" 
                   alt="Healthcare professional" 
                   className="w-full h-full object-cover"
                 />

@@ -69,10 +69,12 @@ const Hero: React.FC<HeroProps> = ({ doctorImage }) => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
+                 <Link to="/services">
                 <Button variant="outline" className="border-gray-300 text-gray-700 flex items-center px-6 py-6 h-auto button-transition">
                   <ShieldCheck size={20} className="mr-2 text-brand-blue" />
                   Our Services
                 </Button>
+                </Link>
               </motion.div>
             </div>
             
