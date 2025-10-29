@@ -359,7 +359,7 @@ const Login = () => {
             animate={{ y: [0, -5, 0] }}
             transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
           >
-            Welcome to <span className="text-brand-accent">ONA</span> Healthcare
+            Welcome to <span className="text-brand-accent">HealNova</span> Healthcare
           </motion.h2>
           <motion.p
             className="mt-3 text-lg text-white/80"
@@ -409,7 +409,7 @@ const Login = () => {
                 className="text-transparent bg-clip-text bg-gradient-to-r from-brand-blue to-brand-accent text-3xl font-bold"
                 whileHover={{ scale: 1.05 }}
               >
-                ONA
+                HealNova
               </motion.span>
             </div>
           </motion.div>

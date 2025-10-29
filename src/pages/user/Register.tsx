@@ -285,7 +285,7 @@ const Register = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4, duration: 0.6 }}
           >
-            <h2 className="text-2xl font-bold">Join <span className="text-brand-accent">ONA</span></h2>
+            <h2 className="text-2xl font-bold">Join <span className="text-brand-accent">HealNova</span></h2>
             <p className="mt-1 text-sm text-white/80">Personalized healthcare services</p>
           </motion.div>
         </motion.div>
@@ -314,7 +314,7 @@ const Register = () => {
                 </svg>
               </motion.div>
               <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-brand-blue to-brand-accent">
-                ONA
+                HealNova
               </span>
             </div>
           </motion.div>

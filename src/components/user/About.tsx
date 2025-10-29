@@ -86,9 +86,8 @@ const About: React.FC = () => {
                 transition={{ duration: 0.5 }}
                 whileHover={{ scale: 1.02 }}
               >
-                {/* Replace the SVG with an actual image */}
+               
                 <img 
-                  // src="/public/lovable-uploads/image.png" 
                   src="/uploads/image.png" 
                   alt="Healthcare professional" 
                   className="w-full h-full object-cover"
