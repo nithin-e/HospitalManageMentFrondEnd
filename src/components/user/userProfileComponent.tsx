@@ -441,15 +441,15 @@ const UserProfileComponent = () => {
     }
   };
 
-  const rejectCall = () => {
-    if (socket && incomingCall) {
-      socket.emit("rejectConsultation", {
-        appointmentId: incomingCall.appointmentId,
-        doctorId: incomingCall.doctorId,
-      });
-      setShowCallModal(false);
-    }
-  };
+  // const rejectCall = () => {
+  //   if (socket && incomingCall) {
+  //     socket.emit("rejectConsultation", {
+  //       appointmentId: incomingCall.appointmentId,
+  //       doctorId: incomingCall.doctorId,
+  //     });
+  //     setShowCallModal(false);
+  //   }
+  // };
 
   useEffect(() => {
     fetchUserData();
@@ -554,7 +554,7 @@ const UserProfileComponent = () => {
       console.log('check bro check fetchingPrescription',res);
       
 
-      await generatePrescriptionPDF(res);
+      await generatePrescriptionPDF(res.data);
     } catch (error) {
       console.error("Error while downloading prescription:", error);
     }
