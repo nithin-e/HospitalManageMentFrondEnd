@@ -74,8 +74,8 @@ const App = () => {
                   <Route path="/NotificationDetails/:id" element={<NotificationDetails />} />
                   <Route path="/payment-success" element={<DoctorPaymentSucces />} />
                                   
-                  <Route path="/userprofile" element={<UserProfile />} />
-                  {/* <Route path="/userprofile"  element={<ProtectedRoute><UserProfile /></ProtectedRoute>} /> */}
+                  {/* <Route path="/userprofile" element={<UserProfile />} /> */}
+                  <Route path="/userprofile"  element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
                   <Route path="/success" element={<UserProfile />} />
                   <Route path="/userWallet" element={<UserWallet />}/>
                   <Route path="/video-call/:roomId" element={<ProtectedRoute><VideoCallPage /></ProtectedRoute>} />

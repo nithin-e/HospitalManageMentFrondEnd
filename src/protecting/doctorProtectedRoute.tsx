@@ -1,4 +1,3 @@
-// components/ProtectedRoute.jsx
 import { RootState } from '@/store/redux/store';
 import { useSelector } from 'react-redux';
 import { Navigate } from 'react-router-dom';
