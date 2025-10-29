@@ -64,11 +64,13 @@ const App = () => {
                   <Route path="/register" element={<Register />} />
                   <Route path="*" element={<NotFound />} />
                   <Route path="/" element={<Index />} />
-                  <Route path="/AppointMent" element={<AppointMent />} />
+                  {/* <Route path="/AppointMent" element={<AppointMent />} /> */}
+                 <Route path="/AppointMent"  element={<ProtectedRoute><AppointMent /></ProtectedRoute>} />
 
                   {/* Protected routes */}
                   <Route path="/services" element={<Services2 />} />
-                  <Route path="/applyAsDoctor" element={<Apply />} />
+                  {/* <Route path="/applyAsDoctor" element={<Apply />} /> */}
+                  <Route path="/applyAsDoctor"  element={<ProtectedRoute><Apply /></ProtectedRoute>} />
                   <Route path="/resetPass" element={<ResetPassword />} />
                   <Route path="/NotificationList" element={<NotificationList />} />
                   <Route path="/NotificationDetails/:id" element={<NotificationDetails />} />
@@ -77,7 +79,8 @@ const App = () => {
                   {/* <Route path="/userprofile" element={<UserProfile />} /> */}
                   <Route path="/userprofile"  element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
                   <Route path="/success" element={<UserProfile />} />
-                  <Route path="/userWallet" element={<UserWallet />}/>
+                  {/* <Route path="/userWallet" element={<UserWallet />}/> */}
+                   <Route path="/userWallet"  element={<ProtectedRoute><UserWallet /></ProtectedRoute>} />
                   <Route path="/video-call/:roomId" element={<ProtectedRoute><VideoCallPage /></ProtectedRoute>} />
                   
                   {/* Admin routes */}
