@@ -75,11 +75,12 @@ const App = () => {
                   <Route path="/payment-success" element={<DoctorPaymentSucces />} />
                                   
                   
-                  {/* <Route path="/userprofile"  element={<ProtectedRoute><UserProfile /></ProtectedRoute>} /> */}
-                  <Route path="/userprofile"  element={<UserProfile />} />
+                  <Route path="/userprofile"  element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+                  {/* <Route path="/userprofile"  element={<UserProfile />} /> */}
                   <Route path="/success" element={<UserProfile />} />
                    <Route path="/userWallet"  element={<ProtectedRoute><UserWallet /></ProtectedRoute>} />
-                  <Route path="/video-call/:roomId" element={<ProtectedRoute><VideoCallPage /></ProtectedRoute>} />
+                  {/* <Route path="/video-call/:roomId" element={<ProtectedRoute><VideoCallPage /></ProtectedRoute>} /> */}
+                  <Route path="/video-call/:roomId" element={<VideoCallPage />} />
                   
                   {/* Admin routes */}
                   <Route path="/adminDash" element={<AdminDashboard />} />
