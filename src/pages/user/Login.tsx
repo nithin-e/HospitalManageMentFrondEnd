@@ -185,6 +185,7 @@ const Login = () => {
           return;
         }
 
+console.log('backendResponse after google login',backendResponse);
 
                 const loginPayload = {
           user: {
@@ -193,8 +194,8 @@ const Login = () => {
             email: backendResponse.data.email || backendResponse.data.user?.email,
             role: backendResponse.data.role || backendResponse.data.user?.role,
           },
-          accessToken: backendResponse.data.accessToken || backendResponse.data.token,
-          refreshToken: backendResponse.data.refreshToken,
+          accessToken: backendResponse.data.access_token || backendResponse.data.token,
+          refreshToken: backendResponse.data.refresh_token,
         };
 
             const result = await dispatch(login(loginPayload));
