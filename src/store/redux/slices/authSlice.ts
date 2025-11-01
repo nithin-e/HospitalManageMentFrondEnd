@@ -82,6 +82,10 @@ const authSlice = createSlice({
   initialState,
   reducers: {
     login: (state, action: PayloadAction<LoginPayload>) => {
+
+
+      console.log('hitting payload after login',action.payload);
+      
       const { user, accessToken, refreshToken } = action.payload;
       
       if (user.role === 'admin') {
