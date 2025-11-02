@@ -172,77 +172,196 @@ const PaymentList: React.FC = () => {
     };
   };
 
-  const fetchUserFullAppointments = async (page: number = 1) => {
-    try {
-      setLoading(true);
-      setError(null);
+  // const fetchUserFullAppointments = async (page: number = 1) => {
+  //   try {
+  //     setLoading(true);
+  //     setError(null);
       
-      const response = await FetchingAllUserAppointsMentsAdmin({ page, limit: 8 });
-      console.log('check this response while the fecting payments',response);
+  //     const response = await FetchingAllUserAppointsMentsAdmin({ page, limit: 8 });
+  //     console.log('check this response while the fecting payments',response);
       
-      if (response.appointments) {
-        const transformedPayments = response.appointments.map(transformAppointmentToPayment);
-        setPayments(transformedPayments);
+  //     if (response.appointments) {
+  //       const transformedPayments = response.appointments.map(transformAppointmentToPayment);
+  //       setPayments(transformedPayments);
         
         
-        if (response.appointments) {
-          setPagination({
-            currentPage: response.appointments.currentPage || page,
-            totalPages: response.appointments.totalPages || 1,
-            totalItems: response.appointments.totalItems || transformedPayments.length,
-            itemsPerPage: response.appointments.itemsPerPage || 8,
-            hasNextPage: response.appointments.hasNextPage || false,
-            hasPrevPage: response.appointments.hasPrevPage || false
-          });
-        }
+  //       if (response.appointments) {
+  //         setPagination({
+  //           currentPage: response.appointments.currentPage || page,
+  //           totalPages: response.appointments.totalPages || 1,
+  //           totalItems: response.appointments.totalItems || transformedPayments.length,
+  //           itemsPerPage: response.appointments.itemsPerPage || 8,
+  //           hasNextPage: response.appointments.hasNextPage || false,
+  //           hasPrevPage: response.appointments.hasPrevPage || false
+  //         });
+  //       }
         
         
-        if (!summaryDataLoaded) {
-          if (response.appointments.summary) {
-            console.log('API.............. Response:', response);
+  //       if (!summaryDataLoaded) {
+  //         if (response.appointments.summary) {
+  //           console.log('API.............. Response:', response);
           
-            setTotalAdminWalletAmount(response.appointments.summary.totalAdminWalletAmount || 0);
-            setTotalRefundedAmount(response.result.appointments.totalRefundedAmount || 0);
-            setCancelledAppointmentsCount(response.appointments.summary.cancelledAppointmentsCount || 0);
-            setTotalTransactions(response.appointments.summary.totalTransactions || response.appointments.totalItems || transformedPayments.length);
-          } else {
+  //           setTotalAdminWalletAmount(response.appointments.summary.totalAdminWalletAmount || 0);
+  //           setTotalRefundedAmount(response.result.appointments.totalRefundedAmount || 0);
+  //           setCancelledAppointmentsCount(response.appointments.summary.cancelledAppointmentsCount || 0);
+  //           setTotalTransactions(response.appointments.summary.totalTransactions || response.appointments.totalItems || transformedPayments.length);
+  //         } else {
 
-            console.warn("No summary data available in API response, fetching all data to calculate totals");
-            await fetchAllDataForSummary();
-          }
-          setSummaryDataLoaded(true);
-        }
-      } else {
-        // If no appointments, set empty array
-        setPayments([]);
-        setPagination({
-          currentPage: 1,
-          totalPages: 1,
-          totalItems: 0,
-          itemsPerPage: 8,
-          hasNextPage: false,
-          hasPrevPage: false
-        });
+  //           console.warn("No summary data available in API response, fetching all data to calculate totals");
+  //           await fetchAllDataForSummary();
+  //         }
+  //         setSummaryDataLoaded(true);
+  //       }
+  //     } else {
+  //       // If no appointments, set empty array
+  //       setPayments([]);
+  //       setPagination({
+  //         currentPage: 1,
+  //         totalPages: 1,
+  //         totalItems: 0,
+  //         itemsPerPage: 8,
+  //         hasNextPage: false,
+  //         hasPrevPage: false
+  //       });
         
-        // Only reset summary values if this is the first load or a refresh
-        if (!summaryDataLoaded) {
-          setTotalAdminWalletAmount(0);
-          setTotalRefundedAmount(0);
-          setCancelledAppointmentsCount(0);
-          setTotalTransactions(0);
-          setSummaryDataLoaded(true);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching appointments:', error);
-      setError('Failed to load payment data. Please try again.');
-      setPayments([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  //       // Only reset summary values if this is the first load or a refresh
+  //       if (!summaryDataLoaded) {
+  //         setTotalAdminWalletAmount(0);
+  //         setTotalRefundedAmount(0);
+  //         setCancelledAppointmentsCount(0);
+  //         setTotalTransactions(0);
+  //         setSummaryDataLoaded(true);
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error('Error fetching appointments:', error);
+  //     setError('Failed to load payment data. Please try again.');
+  //     setPayments([]);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   // Function to fetch all data for summary calculation when API doesn't provide summary
+  
+  const fetchUserFullAppointments = async (page: number = 1) => {
+  try {
+    setLoading(true);
+    setError(null);
+    
+    const response = await FetchingAllUserAppointsMentsAdmin({ page, limit: 8 });
+    console.log('API Response:', response);
+    
+    if (response && response.appointments) {
+      const transformedPayments = response.appointments.map(transformAppointmentToPayment);
+      setPayments(transformedPayments);
+      
+      // Set pagination data
+      if (response.appointments) {
+        setPagination({
+          currentPage: response.appointments.currentPage || page,
+          totalPages: response.appointments.totalPages || 1,
+          totalItems: response.appointments.totalItems || transformedPayments.length,
+          itemsPerPage: response.appointments.itemsPerPage || 8,
+          hasNextPage: response.appointments.hasNextPage || false,
+          hasPrevPage: response.appointments.hasPrevPage || false
+        });
+      }
+      
+      // Handle summary data - FIXED THIS PART
+      if (!summaryDataLoaded) {
+        console.log('Raw API response for summary:', response);
+        
+        // Try different possible locations for summary data
+        let summaryData = null;
+        
+        // Check various possible locations in the response
+        if (response.summary) {
+          summaryData = response.summary;
+        } else if (response.appointments.summary) {
+          summaryData = response.appointments.summary;
+        } else if (response.result?.summary) {
+          summaryData = response.result.summary;
+        } else if (response.data?.summary) {
+          summaryData = response.data.summary;
+        }
+        
+        if (summaryData) {
+          console.log('Found summary data:', summaryData);
+          setTotalAdminWalletAmount(summaryData.totalAdminWalletAmount || 0);
+          setTotalRefundedAmount(summaryData.totalRefundedAmount || 0);
+          setCancelledAppointmentsCount(summaryData.cancelledAppointmentsCount || 0);
+          setTotalTransactions(summaryData.totalTransactions || response.appointments.totalItems || transformedPayments.length);
+        } else {
+          // If no summary data in API, calculate from current data as fallback
+          console.warn("No summary data available in API response, calculating from current page data");
+          calculateSummaryFromPayments(transformedPayments);
+        }
+        setSummaryDataLoaded(true);
+      }
+    } else {
+      // If no appointments, set empty array
+      setPayments([]);
+      setPagination({
+        currentPage: 1,
+        totalPages: 1,
+        totalItems: 0,
+        itemsPerPage: 8,
+        hasNextPage: false,
+        hasPrevPage: false
+      });
+      
+      // Only reset summary values if this is the first load or a refresh
+      if (!summaryDataLoaded) {
+        setTotalAdminWalletAmount(0);
+        setTotalRefundedAmount(0);
+        setCancelledAppointmentsCount(0);
+        setTotalTransactions(0);
+        setSummaryDataLoaded(true);
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching appointments:', error);
+    setError('Failed to load payment data. Please try again.');
+    setPayments([]);
+  } finally {
+    setLoading(false);
+  }
+};
+  
+
+const calculateSummaryFromPayments = (paymentsData: Payment[]) => {
+  let totalAdminAmount = 0;
+  let totalRefunded = 0;
+  let cancelledCount = 0;
+  
+  paymentsData.forEach(payment => {
+    // Only add admin amount if appointment is not cancelled
+    if (payment.appointmentStatus !== 'cancelled') {
+      totalAdminAmount += payment.adminAmount;
+    }
+    
+    if (payment.appointmentStatus === 'cancelled') {
+      cancelledCount++;
+      totalRefunded += payment.userRefoundAmount;
+    }
+  });
+  
+  setTotalAdminWalletAmount(totalAdminAmount);
+  setTotalRefundedAmount(totalRefunded);
+  setCancelledAppointmentsCount(cancelledCount);
+  setTotalTransactions(paymentsData.length);
+};
+// 
+// Also update your refresh function to recalculate summary
+const handleRefresh = () => {
+  setSummaryDataLoaded(false); // Reset flag to allow summary data to be updated
+  setCurrentPage(1); // Reset to first page
+  fetchUserFullAppointments(1);
+};
+
+
+
   const fetchAllDataForSummary = async () => {
     try {
       // Fetch first page to get total pages
@@ -409,11 +528,11 @@ const PaymentList: React.FC = () => {
   };
 
   // Modified refresh function to reset summary data
-  const handleRefresh = () => {
-    setSummaryDataLoaded(false); // Reset flag to allow summary data to be updated
-    setCurrentPage(1); // Reset to first page
-    fetchUserFullAppointments(1);
-  };
+  // const handleRefresh = () => {
+  //   setSummaryDataLoaded(false); // Reset flag to allow summary data to be updated
+  //   setCurrentPage(1); // Reset to first page
+  //   fetchUserFullAppointments(1);
+  // };
 
   // Pagination handlers
   const handlePageChange = (page: number) => {
