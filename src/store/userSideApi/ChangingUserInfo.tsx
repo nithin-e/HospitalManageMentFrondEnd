@@ -1,4 +1,5 @@
 import axiosInstance from "@/cors/axiousInstance";
+import { USER_ROUTES } from "@/routeConstant/routes.constant";
 
 export const ChangingUserInfo = async (userData: { 
   email: string, 
@@ -6,7 +7,7 @@ export const ChangingUserInfo = async (userData: {
   phoneNumber?: string 
 }) => {
   try {
-    const response = await axiosInstance.post("api/user/ChangingUserInfo", userData);
+    const response = await axiosInstance.post(USER_ROUTES.CHANGING_USER_INFO, userData);
     return response.data;
   } catch (error) {
     console.error("Error updating user info:", error);

@@ -1,9 +1,10 @@
 import axiosInstance from "@/cors/axiousInstance";
+import { USER_ROUTES } from "@/routeConstant/routes.constant";
 
 
 export const UserfetchingDoctors = async () => {
   try {
-    const response = await axiosInstance.get("/api/user/fecthAllDoctors", {
+    const response = await axiosInstance.get(USER_ROUTES.USER_FETCHING_DOCTORS, {
     });
    console.log('checkig tyme',response.data);
    

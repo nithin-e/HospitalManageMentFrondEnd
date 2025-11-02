@@ -1,4 +1,5 @@
 import axiosInstance from "@/cors/axiousInstance";
+import { USER_ROUTES } from "@/routeConstant/routes.constant";
 
 export const UserfetchingAppointMents = async (
   email: string, 
@@ -7,7 +8,7 @@ export const UserfetchingAppointMents = async (
 ) => {
   try {
     const response = await axiosInstance.post(
-      "/api/doctor/fectingAppointMent", 
+      USER_ROUTES.USER_FETCHING_APPOINTMENTS, 
       { 
         email: email,
         page: page,

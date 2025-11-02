@@ -1,9 +1,10 @@
 import axiosInstance from "@/cors/axiousInstance";
+import { USER_ROUTES } from "@/routeConstant/routes.constant";
 
 export const GetFetchNotifications = async (email: string) => {
   try {
     
-    const response = await axiosInstance.post("/api/notifiction/getNotifications", 
+    const response = await axiosInstance.post(USER_ROUTES.GET_NOTIFICATION_API, 
       { email }, 
     );
     

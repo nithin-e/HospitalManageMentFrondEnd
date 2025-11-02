@@ -1,4 +1,5 @@
 import axiosInstance from "@/cors/axiousInstance";
+import { DOCTOR_ROUTES } from "@/routeConstant/routes.constant";
 
 // Prescription interface
 interface Prescription {
@@ -13,7 +14,7 @@ interface Prescription {
 export const fetchingPrescription = async (prescription: Prescription): Promise<any> => {
   try {
     const response = await axiosInstance.post(
-      "/api/doctor/fetchingPrescription",
+      DOCTOR_ROUTES.FETCHING_PRESCRIPTION,
       prescription
     );
 

@@ -1,11 +1,12 @@
 import axiosInstance from "@/cors/axiousInstance";
+import { ADMIN_ROUTES } from "@/routeConstant/routes.constant";
 
-export const handlingAdminCancel = async (email:any,rejectionReasonTexts:any) => {
+export const handlingAdminCancel = async (email:string,rejectionReasonTexts:any) => {
     try {
       
       
       
-      const response = await axiosInstance.post("/api/notifiction/handleCanceldoctorApplication", 
+      const response = await axiosInstance.post(ADMIN_ROUTES.HANDLING_ADMIN_CANCEL, 
         { email,rejectionReasonTexts }, 
 
       );

@@ -1,8 +1,9 @@
 import axiosInstance from "@/cors/axiousInstance";
+import { ADMIN_ROUTES } from "@/routeConstant/routes.constant";
 
-export const storeNotificationData = async (email:any) => {
+export const storeNotificationData = async (email:string) => {
     try {      
-      const response = await axiosInstance.post("/api/notification/storeNotificationData", 
+      const response = await axiosInstance.post(ADMIN_ROUTES.NOTIFICATION_API, 
         { email }
       );
   

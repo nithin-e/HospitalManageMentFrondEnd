@@ -1,5 +1,6 @@
 // frontend/api/adminAppointments.ts
 import axiosInstance from "@/cors/axiousInstance";
+import { ADMIN_ROUTES } from "@/routeConstant/routes.constant";
 
 interface PaginationParams {
   page?: number;
@@ -13,7 +14,7 @@ export const FetchingAllUserAppointsMentsAdmin = async (
     const { page = 1, limit = 8 } = params;
 
     const response = await axiosInstance.post(
-      "/api/admin/FecthAppointMentForAdmin",
+      ADMIN_ROUTES.FETCHING_ALL_USER_APPOINTS_MENTS_ADMIN,
       { page, limit }
     );
 

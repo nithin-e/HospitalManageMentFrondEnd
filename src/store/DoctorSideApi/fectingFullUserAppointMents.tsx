@@ -1,5 +1,6 @@
 // api/doctorApi.ts
 import axiosInstance from "@/cors/axiousInstance";
+import { DOCTOR_ROUTES } from "@/routeConstant/routes.constant";
 
 
 
@@ -8,7 +9,7 @@ import axiosInstance from "@/cors/axiousInstance";
 export const fectingAllUserAppointMents = async (email: string, page: number = 1, limit: number = 3)=> {
   try {
     const response = await axiosInstance.post(
-      "/api/doctor/fectingAllUserAppointMents",
+      DOCTOR_ROUTES.FECTING_FULL_USER_APPOINTMENTS,
       {
         email,
         page,

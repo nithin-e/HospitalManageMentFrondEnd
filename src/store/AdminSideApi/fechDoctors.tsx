@@ -1,9 +1,10 @@
 import axiosInstance from "@/cors/axiousInstance";
+import { ADMIN_ROUTES } from "@/routeConstant/routes.constant";
 
 
 export const fetchDoctors = async () => {
   try {
-    const response = await axiosInstance.get("/api/admin/fecthAllDoctors", {
+    const response = await axiosInstance.get(ADMIN_ROUTES.FECH_DOCTORS, {
     });
    console.log('checkig tyme',response.data);
    

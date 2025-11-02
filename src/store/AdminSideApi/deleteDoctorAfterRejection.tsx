@@ -1,4 +1,5 @@
 import axiosInstance from "@/cors/axiousInstance";
+import { ADMIN_ROUTES } from "@/routeConstant/routes.constant";
 
 export const deleteDoctor = async (email) => {
   try {
@@ -7,7 +8,7 @@ export const deleteDoctor = async (email) => {
     
     
     const response = await axiosInstance.post(
-      "api/admin/deleteDoctorAfterReject", 
+      ADMIN_ROUTES.DELETE_DOCTOR_AFTER_REJECTION, 
       { email }, 
       
     );

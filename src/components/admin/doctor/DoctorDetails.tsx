@@ -21,7 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { storeNotificationData } from "@/store/AdminSideApi/NotificationApi";
 import { handlingAdminCancel } from "@/store/AdminSideApi/handlingAdminCancel";
-import { blockingDoctor } from "@/store/AdminSideApi/BlockUser";
+import { blockingDoctor } from "@/store/AdminSideApi/BlockDoctor";
 
 export const DoctorDetails = () => {
   const { id } = useParams<{ id: string }>();

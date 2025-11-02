@@ -1,13 +1,14 @@
 
 
 import axiosInstance from "@/cors/axiousInstance";
+import { USER_ROUTES } from "@/routeConstant/routes.constant";
 
 export const UserFectingAppointMentSlote = async (email: string) => {
   try {
    
 
     const response = await axiosInstance.post(
-      "/api/doctor/fectingAppointMentSlotes", 
+      USER_ROUTES.USER_FECTING_APPOINTMENT_SLOTE, 
       { email: email }, 
     );
 

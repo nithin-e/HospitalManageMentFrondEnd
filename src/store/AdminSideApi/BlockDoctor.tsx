@@ -1,4 +1,5 @@
 import axiosInstance from "@/cors/axiousInstance";
+import { ADMIN_ROUTES } from "@/routeConstant/routes.constant";
 
 
 
@@ -7,7 +8,7 @@ export const blockingDoctor = async (reason:string, email:string) => {
   try {
     
     const response = await axiosInstance.post(
-      "api/admin/blockingDoctor", 
+      ADMIN_ROUTES.BLOCK_DOCTOR, 
       { reason,email }, 
       
     );

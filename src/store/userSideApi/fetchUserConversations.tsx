@@ -1,5 +1,6 @@
 // Fixed API call function
 import axiosInstance from "@/cors/axiousInstance";
+import { USER_ROUTES } from "@/routeConstant/routes.constant";
 
 export const fetchUserConversations = async (
   userId: string,
@@ -7,7 +8,7 @@ export const fetchUserConversations = async (
 ) => {
   try {
     const response = await axiosInstance.post(
-      "/api/doctor/fetchUserConversations",
+      USER_ROUTES.FETCH_USER_CONVERSATIONS,
       {
         userId,
         doctorId,

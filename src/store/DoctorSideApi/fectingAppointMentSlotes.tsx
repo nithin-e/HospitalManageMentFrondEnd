@@ -1,6 +1,7 @@
 
 
 import axiosInstance from "@/cors/axiousInstance";
+import { DOCTOR_ROUTES } from "@/routeConstant/routes.constant";
 
 export const fectingAppointMentSlotes = async (email: string) => {
   try {
@@ -9,7 +10,7 @@ export const fectingAppointMentSlotes = async (email: string) => {
     console.log("Making backend API call to fetch doctor slotes data with email:", email);
     
     const response = await axiosInstance.post(
-      "/api/doctor/fectingAppointMentSlotes", 
+      DOCTOR_ROUTES.FECTING_APPOINTMENT_SLOTES, 
       { email: email }, 
     );
 
