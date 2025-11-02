@@ -597,6 +597,8 @@ const UserProfileComponent = () => {
             userIdd,
             appointment.doctorId
           );
+          console.log('chekc this user conversation......................',res);
+          
 
           if (res.success && res.result?.conversations?.length > 0) {
             newHasConversations[appointment.id] = true;
