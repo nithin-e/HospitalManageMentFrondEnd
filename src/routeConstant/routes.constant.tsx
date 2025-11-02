@@ -8,11 +8,11 @@ export const ADMIN_ROUTES = {
   EDIT_SERVICE: "/api/admin/editService",
   FECH_DOCTORS: "/api/admin/fechDoctors",
   FECTH_USERS: "/api/admin/fecthUsers",
-  FETCHING_ALL_USER_APPOINTS_MENTS_ADMIN: "/api/admin/fetchingAllUserAppointsMentsAdmin",
-  FETCH_SERVICES: "/api/doctor/fetchServices",
+  FETCHING_ALL_USER_APPOINTS_MENTS_ADMIN: "/api/admin/FecthAppointMentForAdmin",
+  FETCH_SERVICES: "/api/doctor/fetchService",
   HANDLING_ADMIN_CANCEL: "/api/notification/handlingAdminCancel",
   NOTIFICATION_API: "/api/notification/notificationApi",
-  PAGINATION_API: "/api/admin/paginationApi",
+  PAGINATION_API: "/api/admin/search",
 };
 
 export const USER_ROUTES = {
