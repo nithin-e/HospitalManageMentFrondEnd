@@ -181,16 +181,15 @@ const Login = () => {
 
         console.log("backendResponse after google login", backendResponse);
 
+
         const loginPayload = {
           user: {
-            _id: backendResponse.data._id || backendResponse.data.user?._id,
-            name: backendResponse.data.name || backendResponse.data.user?.name,
-            email:
-              backendResponse.data.email || backendResponse.data.user?.email,
-            role: backendResponse.data.role || backendResponse.data.user?.role,
+            _id: backendResponse.data.user.id,
+            name: backendResponse.data.user.name,
+            email: backendResponse.data.user.email,
+            role: backendResponse.data.user.role,
           },
-          accessToken:
-            backendResponse.data.access_token || backendResponse.data.token,
+          accessToken: backendResponse.data.access_token,
           refreshToken: backendResponse.data.refresh_token,
         };
 
