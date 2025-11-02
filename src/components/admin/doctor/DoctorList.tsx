@@ -8,7 +8,6 @@ import { doctorPaginationApi } from "@/store/AdminSideApi/doctorPaginationApi";
 import { deleteDoctor } from "@/store/AdminSideApi/deleteDoctorAfterRejection";
 import { cn } from "@/lib/utils";
 
-// Custom debounce hook
 const useDebounce = (value, delay) => {
   const [debouncedValue, setDebouncedValue] = useState(value);
 
@@ -35,7 +34,6 @@ export const DoctorsList = () => {
   const [sortDirection, setSortDirection] = useState("desc");
   const [statusFilter, setStatusFilter] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
-  const [isSearchMode, setIsSearchMode] = useState(false);
   const [totalDoctors, setTotalDoctors] = useState(0);
   const [approvedDoctors, setApprovedDoctors] = useState(0);
   const [pendingDoctors, setPendingDoctors] = useState(0);
@@ -48,25 +46,6 @@ export const DoctorsList = () => {
   const location = useLocation();
 
   const debouncedSearchTerm = useDebounce(searchQuery, 500);
-
-  useEffect(() => {
-    fetchDoctorData(true, currentPage);
-  }, [statusFilter, sortField, sortDirection]);
-
-  useEffect(() => {
-    if (debouncedSearchTerm !== searchQuery) {
-      setSearchLoading(true);
-    } else {
-      if (debouncedSearchTerm.trim()) {
-        setIsSearchMode(true);
-        handleSearch(currentPage);
-      } else {
-        setIsSearchMode(false);
-        fetchDoctorData(true, currentPage);
-      }
-      setSearchLoading(false);
-    }
-  }, [debouncedSearchTerm, currentPage]);
 
   // Handle rejected doctor state from navigation
   useEffect(() => {
@@ -87,67 +66,73 @@ export const DoctorsList = () => {
       console.log(`Doctor with email ${email} successfully removed`);
     } catch (error) {
       console.error("Error removing rejected doctor:", error);
-      fetchDoctorData(true, currentPage);
+      fetchDoctorData(currentPage);
     }
   };
 
-  const fetchDoctorData = async (showLoadingSpinner = false, page = 1) => {
+  // Main effect to fetch data when filters change
+  useEffect(() => {
+    setCurrentPage(1); // Reset to page 1 when filters change
+    fetchDoctorData(1);
+  }, [statusFilter, sortField, sortDirection]);
+
+  // Effect to handle debounced search
+  useEffect(() => {
+    // Show loading indicator while debouncing
+    if (searchQuery !== debouncedSearchTerm && searchQuery.trim()) {
+      setSearchLoading(true);
+    } else {
+      setSearchLoading(false);
+      // When debounced value changes, fetch data
+      fetchDoctorData(currentPage);
+    }
+  }, [debouncedSearchTerm, currentPage]);
+
+  const fetchDoctorData = async (page = 1) => {
     try {
-      if (showLoadingSpinner) {
+      // Only show full loading spinner on initial load or when explicitly refreshing
+      if (page === 1 && !searchLoading) {
         setLoading(true);
+      } else {
+        setSearchLoading(true);
       }
       
       setError(null);
 
       const params = new URLSearchParams();
       
+      // Use 'searchQuery' to match backend parameter name
+      if (debouncedSearchTerm.trim()) {
+        params.append('searchQuery', debouncedSearchTerm.trim());
+      }
+      
+      // Add status filter - map 'all' to empty and capitalize others
       if (statusFilter !== "all") {
-        params.append('status', statusFilter);
+        // Backend expects lowercase status values
+        params.append('status', statusFilter.toLowerCase());
       }
       
       params.append('sortBy', sortField);
       params.append('sortDirection', sortDirection);
-      params.append('page', page);
-      params.append('limit', doctorsPerPage);
+      params.append('page', page.toString());
+      params.append('limit', doctorsPerPage.toString());
 
       console.log("Fetching doctors with params:", params.toString());
       
       const response = await doctorPaginationApi(params);
-      console.log('Doctor data response:', response.data.data);
+      console.log('Doctor data response:', response.data);
       
-      // Process response based on your API structure
+      // Process response - backend returns data.data
       const responseData = response.data.data;
       
-      let doctorData = [];
-      let totalCount = 0;
-      let counts = { approved: 0, pending: 0, declined: 0 };
-      
-      if (responseData && responseData.success) {
-        if (responseData.doctors && Array.isArray(responseData.doctors)) {
-          doctorData = responseData.doctors;
-          totalCount = responseData.totalCount || responseData.doctors.length;
-          counts = {
-            approved: responseData.approvedCount || 0,
-            pending: responseData.pendingCount || 0,
-            declined: responseData.declinedCount || 0
-          };
-        } else {
-          // Handle non-paginated response
-          const possibleArrayKeys = ["doctors", "data", "items", "results"];
-          for (const key of possibleArrayKeys) {
-            if (Array.isArray(responseData[key])) {
-              doctorData = responseData[key];
-              totalCount = responseData[key].length;
-              break;
-            }
-          }
-        }
-      } else {
+      if (!responseData || !responseData.success) {
         throw new Error(responseData?.message || "Failed to fetch doctors");
       }
 
+      const { doctors: doctorData, totalCount, approvedCount, pendingCount, declinedCount } = responseData;
+
       // Transform data
-      doctorData = doctorData.map(doctor => ({
+      const transformedDoctors = doctorData.map(doctor => ({
         id: doctor.id,
         name: `${doctor.firstName} ${doctor.lastName}`,
         firstName: doctor.firstName,
@@ -160,34 +145,27 @@ export const DoctorsList = () => {
         medicalLicenseNumber: doctor.medicalLicenseNumber,
         medicalLicenseUrl: doctor.medicalLicenseUrl,
         profileImageUrl: doctor.profileImageUrl,
-        status: doctor.status || "Pending",
+        status: doctor.status.charAt(0).toUpperCase() + doctor.status.slice(1), // Capitalize status
         agreeTerms: doctor.agreeTerms,
         createdAt: doctor.createdAt,
         formattedDate: new Date(doctor.createdAt).toLocaleDateString(),
         isActive: doctor.isActive
       }));
 
-      // Calculate counts if not provided by API
-      if (!responseData.totalCount) {
-        counts = {
-          approved: doctorData.filter(d => d.status === 'Approved').length,
-          pending: doctorData.filter(d => d.status === 'Pending').length,
-          declined: doctorData.filter(d => d.status === 'Declined').length
-        };
-        totalCount = doctorData.length;
-      }
-
-      setDoctors(doctorData);
-      setTotalDoctors(totalCount);
-      setApprovedDoctors(counts.approved);
-      setPendingDoctors(counts.pending);
-      setDeclinedDoctors(counts.declined);
+      setDoctors(transformedDoctors);
+      setTotalDoctors(totalCount || 0);
+      setApprovedDoctors(approvedCount || 0);
+      setPendingDoctors(pendingCount || 0);
+      setDeclinedDoctors(declinedCount || 0);
       setCurrentPage(page);
-      setTotalPages(responseData.totalPages ? responseData.totalPages : Math.ceil(totalCount / doctorsPerPage) || 1);
+      
+      // Calculate total pages
+      const calculatedPages = Math.ceil((totalCount || 0) / doctorsPerPage);
+      setTotalPages(calculatedPages || 1);
 
     } catch (error) {
       console.error("Error fetching doctors:", error);
-      setError("Failed to load doctors. Please try again.");
+      setError(error.message || "Failed to load doctors. Please try again.");
       setDoctors([]);
       setTotalDoctors(0);
       setApprovedDoctors(0);
@@ -200,112 +178,6 @@ export const DoctorsList = () => {
     }
   };
 
-  const handleSearch = async (page = 1) => {
-    try {
-      setSearchLoading(true);
-      setError(null);
-
-      const params = new URLSearchParams();
-      
-      if (debouncedSearchTerm.trim()) {
-        params.append('search', debouncedSearchTerm);
-      }
-      
-      if (statusFilter !== "all") {
-        params.append('status', statusFilter);
-      }
-      
-      params.append('sortBy', sortField);
-      params.append('sortDirection', sortDirection);
-      params.append('page', page);
-      params.append('limit', doctorsPerPage);
-
-      console.log("Searching doctors with params:", params.toString());
-      
-      const response = await doctorPaginationApi(params);
-      console.log("Search API response:", response.data);
-
-      // Process response
-      const responseData = response.data;
-      
-      let doctorData = [];
-      let totalCount = 0;
-      let counts = { approved: 0, pending: 0, declined: 0 };
-      
-      if (responseData && responseData.success) {
-        if (responseData.doctors && Array.isArray(responseData.doctors)) {
-          doctorData = responseData.doctors;
-          totalCount = responseData.totalCount || responseData.doctors.length;
-          counts = {
-            approved: responseData.approvedCount || 0,
-            pending: responseData.pendingCount || 0,
-            declined: responseData.declinedCount || 0
-          };
-        } else {
-          const possibleArrayKeys = ["doctors", "data", "items", "results"];
-          for (const key of possibleArrayKeys) {
-            if (Array.isArray(responseData[key])) {
-              doctorData = responseData[key];
-              totalCount = responseData[key].length;
-              break;
-            }
-          }
-        }
-      } else {
-        throw new Error(responseData?.message || "Search failed");
-      }
-
-      doctorData = doctorData.map(doctor => ({
-        id: doctor.id,
-        name: `${doctor.firstName} ${doctor.lastName}`,
-        firstName: doctor.firstName,
-        lastName: doctor.lastName,
-        email: doctor.email,
-        phoneNumber: doctor.phoneNumber,
-        specialty: doctor.specialty || "General Practice",
-        qualifications: doctor.qualifications,
-        licenseNumber: doctor.licenseNumber,
-        medicalLicenseNumber: doctor.medicalLicenseNumber,
-        medicalLicenseUrl: doctor.medicalLicenseUrl,
-        profileImageUrl: doctor.profileImageUrl,
-        status: doctor.status || "Pending",
-        agreeTerms: doctor.agreeTerms,
-        createdAt: doctor.createdAt,
-        formattedDate: new Date(doctor.createdAt).toLocaleDateString(),
-        isActive: doctor.isActive
-      }));
-
-      if (!responseData.totalCount) {
-        counts = {
-          approved: doctorData.filter(d => d.status === 'Approved').length,
-          pending: doctorData.filter(d => d.status === 'Pending').length,
-          declined: doctorData.filter(d => d.status === 'Declined').length
-        };
-        totalCount = doctorData.length;
-      }
-
-      setDoctors(doctorData);
-      setTotalDoctors(totalCount);
-      setApprovedDoctors(counts.approved);
-      setPendingDoctors(counts.pending);
-      setDeclinedDoctors(counts.declined);
-      setCurrentPage(page);
-      setTotalPages(responseData.totalPages ? responseData.totalPages : Math.ceil(totalCount / doctorsPerPage) || 1);
-
-    } catch (error) {
-      console.error("Error searching doctors:", error);
-      setError(`Failed to search doctors: ${error.message}`);
-      setDoctors([]);
-      setTotalDoctors(0);
-      setApprovedDoctors(0);
-      setPendingDoctors(0);
-      setDeclinedDoctors(0);
-      setTotalPages(1);
-    } finally {
-      setSearchLoading(false);
-    }
-  };
-
   const toggleSort = (field) => {
     if (sortField === field) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -313,7 +185,6 @@ export const DoctorsList = () => {
       setSortField(field);
       setSortDirection("desc");
     }
-    setCurrentPage(1);
   };
 
   const handleSearchChange = (e) => {
@@ -323,39 +194,26 @@ export const DoctorsList = () => {
 
   const clearSearch = () => {
     setSearchQuery("");
-    setIsSearchMode(false);
-    setSearchLoading(false);
     setCurrentPage(1);
   };
 
   const handleStatusFilterChange = (newStatus) => {
     setStatusFilter(newStatus);
-    setCurrentPage(1);
   };
 
   const clearAllFilters = () => {
     setSearchQuery("");
     setStatusFilter("all");
-    setIsSearchMode(false);
-    setSearchLoading(false);
     setCurrentPage(1);
   };
 
   const handleRefresh = () => {
-    if (isSearchMode && debouncedSearchTerm.trim()) {
-      handleSearch(currentPage);
-    } else {
-      fetchDoctorData(true, currentPage);
-    }
+    fetchDoctorData(currentPage);
   };
 
   const handlePageChange = (page) => {
-    if (page >= 1 && page <= totalPages) {
-      if (isSearchMode) {
-        handleSearch(page);
-      } else {
-        fetchDoctorData(true, page);
-      }
+    if (page >= 1 && page <= totalPages && page !== currentPage) {
+      setCurrentPage(page);
     }
   };
 
@@ -416,7 +274,7 @@ export const DoctorsList = () => {
         <Button
           onClick={() => handlePageChange(currentPage - 1)}
           disabled={currentPage === 1 || loading || searchLoading}
-          className="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg"
+          className="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <ChevronLeft className="w-4 h-4 mr-1" />
           Previous
@@ -437,7 +295,7 @@ export const DoctorsList = () => {
         <Button
           onClick={() => handlePageChange(currentPage + 1)}
           disabled={currentPage === totalPages || loading || searchLoading}
-          className="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg"
+          className="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Next
           <ChevronRight className="w-4 h-4 ml-1" />
@@ -568,7 +426,7 @@ export const DoctorsList = () => {
       </div>
 
       {/* Search feedback */}
-      {(searchQuery || debouncedSearchTerm) && (
+      {debouncedSearchTerm && (
         <div className="mb-4 text-sm text-gray-600 bg-white px-4 py-2 rounded-lg border border-gray-200">
           {searchLoading ? (
             <span className="flex items-center gap-2">
@@ -578,7 +436,7 @@ export const DoctorsList = () => {
           ) : (
             <span>
               {doctors.length > 0 
-                ? `Found ${doctors.length} doctor(s) matching "${debouncedSearchTerm}"`
+                ? `Found ${totalDoctors} doctor(s) matching "${debouncedSearchTerm}"`
                 : `No doctors found for "${debouncedSearchTerm}"`
               }
             </span>
@@ -630,9 +488,7 @@ export const DoctorsList = () => {
             <div className="absolute top-0 w-full h-full border-4 border-blue-100 rounded-full"></div>
             <div className="absolute top-0 w-full h-full border-4 border-blue-500 rounded-full border-t-transparent animate-spin"></div>
           </div>
-          <p className="text-gray-600">
-            {isSearchMode ? "Searching doctors..." : "Loading doctor data..."}
-          </p>
+          <p className="text-gray-600">Loading doctor data...</p>
         </div>
       )}
 
@@ -778,7 +634,7 @@ export const DoctorsList = () => {
       {!loading && !error && doctors.length > 0 && (
         <div className="mt-4 text-center text-sm text-gray-500">
           Showing {((currentPage - 1) * doctorsPerPage) + 1} to {Math.min(currentPage * doctorsPerPage, totalDoctors)} of {totalDoctors} doctors
-          {isSearchMode && ` (filtered results)`}
+          {debouncedSearchTerm && ` (filtered results)`}
         </div>
       )}
     </div>
