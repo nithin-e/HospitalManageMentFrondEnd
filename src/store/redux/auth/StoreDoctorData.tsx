@@ -26,7 +26,7 @@ export const registerDoctorApi = async (doctorData: FormData) => {
 
     console.log("API response:", response.data);
     return response.data;
-  } catch (error: any) {
+  } catch (error) {
     console.error("API error:", {
       message: error.message,
       response: error.response?.data,

@@ -11,7 +11,7 @@ export const ADMIN_ROUTES = {
   FETCHING_ALL_USER_APPOINTS_MENTS_ADMIN: "/api/admin/FecthAppointMentForAdmin",
   FETCH_SERVICES: "/api/doctor/fetchService",
   HANDLING_ADMIN_CANCEL: "/api/notification/handlingAdminCancel",
-  NOTIFICATION_API: "/api/notification/notificationApi",
+  NOTIFICATION_API: "/api/notification/storeNotificationData",
   PAGINATION_API: "/api/admin/search",
 };
 

@@ -320,7 +320,7 @@ const Apply: React.FC = () => {
       
       const response = await registerDoctorApi(apiData);
 
-      console.log('check this responce------------------------',response);
+     
       
       
       if (response.data.success === true) {
