@@ -1,24 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { LogIn, Mail, Key, ArrowRight } from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
-import axiosInstance from '@/cors/axiousInstance';
-import { useDispatch } from 'react-redux';
-import { login } from '@/store/redux/slices/authSlice';
-import { useFormik } from 'formik';
-import * as Yup from 'yup';
-import { useGoogleLogin } from '@react-oauth/google';
+import React, { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { LogIn, Mail, Key, ArrowRight } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import axiosInstance from "@/cors/axiousInstance";
+import { useDispatch } from "react-redux";
+import { login } from "@/store/redux/slices/authSlice";
+import { useFormik } from "formik";
+import * as Yup from "yup";
+import { useGoogleLogin } from "@react-oauth/google";
 
 const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [showMessage, setShowMessage] = useState(false); 
-  const [showBlockedMessage, setShowBlockedMessage] = useState(false); 
+  const [showMessage, setShowMessage] = useState(false);
+  const [showBlockedMessage, setShowBlockedMessage] = useState(false);
 
   const location = useLocation();
   const passwordReset = location.state?.passwordReset;
@@ -52,35 +52,30 @@ const Login = () => {
     }
   }, [showBlockedMessage]);
 
- 
-
   const validationSchema = Yup.object({
     email: Yup.string()
-      .email('Invalid email address')
-      .required('Email is required'),
+      .email("Invalid email address")
+      .required("Email is required"),
     password: Yup.string()
-      .min(8, 'Password must be at least 8 characters')
-      .required('Password is required'),
+      .min(8, "Password must be at least 8 characters")
+      .required("Password is required"),
     rememberMe: Yup.boolean(),
   });
 
   const formik = useFormik({
     initialValues: {
-      email: '',
-      password: '',
+      email: "",
+      password: "",
       rememberMe: false,
     },
     validationSchema,
     onSubmit: async (values) => {
       setIsLoading(true);
       try {
-        const response = await axiosInstance.post(
-          "/api/user/loginUser",
-          {
-            email: values.email,
-            password: values.password,
-          },
-        );
+        const response = await axiosInstance.post("/api/user/loginUser", {
+          email: values.email,
+          password: values.password,
+        });
 
         if (!response.data || !response.data.user) {
           throw new Error("Incorrect Credentials");
@@ -91,50 +86,49 @@ const Login = () => {
           return;
         }
 
-        console.log('Login response:',response)
+        console.log("Login response:", response);
 
         const loginPayload = {
           user: {
-            _id: response.data._id || response.data.user?._id,
-            name: response.data.name || response.data.user?.name,
-            email: response.data.email || response.data.user?.email,
-            role: response.data.role || response.data.user?.role,
+            _id: response.data.user.id || response.data.user._id,
+            name: response.data.user.name,
+            email: response.data.user.email,
+            role: response.data.user.role,
           },
-          accessToken: response.data.access_token || response.data.token,
-
+          accessToken: response.data.access_token,
           refreshToken: response.data.refresh_token,
-
         };
-
-        console.log('Login payload:',response)
+        console.log("Login payload:", response);
 
         const result = await dispatch(login(loginPayload));
-        if ((result.payload as any).user.role === 'admin') {
-          navigate('/adminDash');
-        } else if ((result.payload as any).user.role === 'user') {
-          navigate('/');
-        }else if ((result.payload as any).user.role ==='doctor') {
-          
-           const email=result.payload.user?.email
-           console.log('dey dey check this payload first',result.payload.user.email);
-           
-           navigate('/DoctorDashboard',{ state: { email: email } });
+        if ((result.payload as any).user.role === "admin") {
+          navigate("/adminDash");
+        } else if ((result.payload as any).user.role === "user") {
+          navigate("/");
+        } else if ((result.payload as any).user.role === "doctor") {
+          const email = result.payload.user?.email;
+          console.log(
+            "dey dey check this payload first",
+            result.payload.user.email
+          );
+
+          navigate("/DoctorDashboard", { state: { email: email } });
           //  navigate('/DoctorDashboard');
         }
       } catch (error) {
         let errorMsg = "An error occurred during login";
 
-        if (error.code === 'auth/wrong-password') {
+        if (error.code === "auth/wrong-password") {
           errorMsg = "Incorrect password";
-        } else if (error.code === 'auth/user-not-found') {
+        } else if (error.code === "auth/user-not-found") {
           errorMsg = "No account found with this email";
-        } else if (error.code === 'auth/invalid-email') {
+        } else if (error.code === "auth/invalid-email") {
           errorMsg = "Invalid email format";
         } else if (error.message) {
           errorMsg = error.message;
         }
 
-        formik.setFieldError('password', errorMsg);
+        formik.setFieldError("password", errorMsg);
       } finally {
         setIsLoading(false);
       }
@@ -142,80 +136,82 @@ const Login = () => {
   });
 
   useEffect(() => {
-    const accessToken = localStorage.getItem('accessToken');
+    const accessToken = localStorage.getItem("accessToken");
     if (accessToken) {
-      navigate('/');
+      navigate("/");
     }
   }, [navigate]);
 
-
-
   const handleGoogleSignIn = useGoogleLogin({
-
     onSuccess: async (tokenResponse) => {
       setIsGoogleLoading(true);
       try {
         // Include the access token in the Authorization header
-        const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-          headers: {
-            'Authorization': `Bearer ${tokenResponse.access_token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-  
-  
-        if (!userInfoResponse.ok) {
-          throw new Error('Failed to fetch user info from Google');
-        }
-  
-        const userData = await userInfoResponse.json();
-        console.log('check this responce after thhe google login',userData)
+        const userInfoResponse = await fetch(
+          "https://www.googleapis.com/oauth2/v3/userinfo",
+          {
+            headers: {
+              Authorization: `Bearer ${tokenResponse.access_token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
 
-       
-  
-        const backendResponse = await axiosInstance.post("/api/user/loginUser", {
-          googleId: userData.sub,
-          email: userData.email,
-          name: userData.name,
-          accessToken: tokenResponse.access_token,
-        });
-  
+        if (!userInfoResponse.ok) {
+          throw new Error("Failed to fetch user info from Google");
+        }
+
+        const userData = await userInfoResponse.json();
+        console.log("check this responce after thhe google login", userData);
+
+        const backendResponse = await axiosInstance.post(
+          "/api/user/loginUser",
+          {
+            googleId: userData.sub,
+            email: userData.email,
+            name: userData.name,
+            accessToken: tokenResponse.access_token,
+          }
+        );
+
         if (backendResponse.data.user.isActive === false) {
           setShowBlockedMessage(true);
           return;
         }
 
-console.log('backendResponse after google login',backendResponse);
+        console.log("backendResponse after google login", backendResponse);
 
-                const loginPayload = {
+        const loginPayload = {
           user: {
             _id: backendResponse.data._id || backendResponse.data.user?._id,
             name: backendResponse.data.name || backendResponse.data.user?.name,
-            email: backendResponse.data.email || backendResponse.data.user?.email,
+            email:
+              backendResponse.data.email || backendResponse.data.user?.email,
             role: backendResponse.data.role || backendResponse.data.user?.role,
           },
-          accessToken: backendResponse.data.access_token || backendResponse.data.token,
+          accessToken:
+            backendResponse.data.access_token || backendResponse.data.token,
           refreshToken: backendResponse.data.refresh_token,
         };
 
-        console.log('------------------------------login payload-------------------------------------',loginPayload);
-        
+        console.log(
+          "------------------------------login payload-------------------------------------",
+          loginPayload
+        );
 
-            const result = await dispatch(login(loginPayload));
-        console.log('goofgle 000login result:',result);
-        
-  
-       
+        const result = await dispatch(login(loginPayload));
+        console.log("goofgle 000login result:", result);
 
-        
-  
-        if ((result.payload as any).user.role === 'admin') {
-          navigate('/adminDash');
-        } else if ((result.payload as any).user.role === 'user') {
-           navigate('/');
+        if ((result.payload as any).user.role === "admin") {
+          navigate("/adminDash");
+        } else if ((result.payload as any).user.role === "user") {
+          navigate("/");
         }
       } catch (error) {
-        formik.setFieldError('password', error.message || "Failed to sign in with Google");
+        formik.setFieldError(
+          "password",
+          error.message || "Failed to sign in with Google"
+        );
       } finally {
         setIsGoogleLoading(false);
       }
@@ -223,11 +219,13 @@ console.log('backendResponse after google login',backendResponse);
 
     onError: (error) => {
       setIsGoogleLoading(false);
-      formik.setFieldError('password', error.error_description || "Authentication error occurred");
+      formik.setFieldError(
+        "password",
+        error.error_description || "Authentication error occurred"
+      );
     },
-    scope: 'email profile openid',
+    scope: "email profile openid",
   });
-
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -363,12 +361,18 @@ console.log('backendResponse after google login',backendResponse);
             animate={{ y: [0, -5, 0] }}
             transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
           >
-            Welcome to <span className="text-brand-accent">HealNova</span> Healthcare
+            Welcome to <span className="text-brand-accent">HealNova</span>{" "}
+            Healthcare
           </motion.h2>
           <motion.p
             className="mt-3 text-lg text-white/80"
             animate={{ opacity: [0.8, 1, 0.8] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+            transition={{
+              duration: 4,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 1,
+            }}
           >
             Providing exceptional care with advanced technology
           </motion.p>
@@ -383,7 +387,10 @@ console.log('backendResponse after google login',backendResponse);
           variants={containerVariants}
         >
           <motion.div variants={itemVariants} className="mb-2">
-            <Link to="/" className="inline-flex items-center text-brand-blue hover:text-brand-accent transition-colors">
+            <Link
+              to="/"
+              className="inline-flex items-center text-brand-blue hover:text-brand-accent transition-colors"
+            >
               <ArrowRight className="mr-2 h-4 w-4 rotate-180" />
               Back to home
             </Link>
@@ -457,7 +464,8 @@ console.log('backendResponse after google login',backendResponse);
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
             >
-              Your account is blocked. Please try registering with another email.
+              Your account is blocked. Please try registering with another
+              email.
             </motion.p>
           )}
 
@@ -508,7 +516,9 @@ console.log('backendResponse after google login',backendResponse);
 
           <div className="mt-8 mb-8 flex items-center">
             <div className="h-px bg-gray-300 flex-1"></div>
-            <span className="px-4 text-sm text-gray-500">or continue with email</span>
+            <span className="px-4 text-sm text-gray-500">
+              or continue with email
+            </span>
             <div className="h-px bg-gray-300 flex-1"></div>
           </div>
 
@@ -522,7 +532,10 @@ console.log('backendResponse after google login',backendResponse);
               className="space-y-2"
               whileHover={{ scale: 1.01 }}
             >
-              <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+              <Label
+                htmlFor="email"
+                className="text-sm font-medium text-gray-700"
+              >
                 Email address
               </Label>
               <div className="relative">
@@ -531,12 +544,19 @@ console.log('backendResponse after google login',backendResponse);
                   id="email"
                   type="email"
                   placeholder="name@example.com"
-                  className={`pl-10 ${formik.touched.email && formik.errors.email ? 'border-red-500' : ''}`}
-                  {...formik.getFieldProps('email')}
+                  className={`pl-10 ${
+                    formik.touched.email && formik.errors.email
+                      ? "border-red-500"
+                      : ""
+                  }`}
+                  {...formik.getFieldProps("email")}
                 />
               </div>
               {formik.touched.email && formik.errors.email && (
-                <motion.p variants={itemVariants} className="text-sm text-red-500">
+                <motion.p
+                  variants={itemVariants}
+                  className="text-sm text-red-500"
+                >
                   {formik.errors.email}
                 </motion.p>
               )}
@@ -548,7 +568,10 @@ console.log('backendResponse after google login',backendResponse);
               whileHover={{ scale: 1.01 }}
             >
               <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+                <Label
+                  htmlFor="password"
+                  className="text-sm font-medium text-gray-700"
+                >
                   Password
                 </Label>
                 <Link
@@ -564,22 +587,34 @@ console.log('backendResponse after google login',backendResponse);
                   id="password"
                   type="password"
                   placeholder="••••••••"
-                  className={`pl-10 ${formik.touched.password && formik.errors.password ? 'border-red-500' : ''}`}
-                  {...formik.getFieldProps('password')}
+                  className={`pl-10 ${
+                    formik.touched.password && formik.errors.password
+                      ? "border-red-500"
+                      : ""
+                  }`}
+                  {...formik.getFieldProps("password")}
                 />
               </div>
               {formik.touched.password && formik.errors.password && (
-                <motion.p variants={itemVariants} className="text-sm text-red-500">
+                <motion.p
+                  variants={itemVariants}
+                  className="text-sm text-red-500"
+                >
                   {formik.errors.password}
                 </motion.p>
               )}
             </motion.div>
 
-            <motion.div variants={itemVariants} className="flex items-center space-x-2">
+            <motion.div
+              variants={itemVariants}
+              className="flex items-center space-x-2"
+            >
               <Checkbox
                 id="remember"
                 checked={formik.values.rememberMe}
-                onCheckedChange={(checked) => formik.setFieldValue('rememberMe', checked)}
+                onCheckedChange={(checked) =>
+                  formik.setFieldValue("rememberMe", checked)
+                }
               />
               <label
                 htmlFor="remember"
@@ -603,7 +638,11 @@ console.log('backendResponse after google login',backendResponse);
                 {isLoading ? (
                   <motion.div
                     animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    transition={{
+                      duration: 1,
+                      repeat: Infinity,
+                      ease: "linear",
+                    }}
                     className="mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"
                   />
                 ) : (
@@ -614,10 +653,7 @@ console.log('backendResponse after google login',backendResponse);
             </motion.div>
           </motion.form>
 
-          <motion.div
-            variants={itemVariants}
-            className="mt-6 text-center"
-          >
+          <motion.div variants={itemVariants} className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Don't have an account?{" "}
               <Link

@@ -90,7 +90,7 @@ interface Prescription {
   doctorEmail: string;
 }
 
-//hi hi
+
 const UserProfileComponent = () => {
 
   const [userData, setUserData] = useState<UserProfile | null>(null);
