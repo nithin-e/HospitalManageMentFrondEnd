@@ -15,6 +15,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
   // 🔒 Protect route logic
   if (!user || !token) {
+      localStorage.removeItem('AccessToken');
+      localStorage.removeItem('RefreshToken');
     console.warn("Unauthorized access: Redirecting to login...");
     return <Navigate to="/login" replace />;
   }

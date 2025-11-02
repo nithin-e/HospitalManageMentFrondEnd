@@ -15,7 +15,9 @@ const DoctorProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   console.log('Doctor Access Token:', token);
 
   // ✅ Protection logic
-  if (!doctor || !doctor.isActive || !token) {
+  if (!doctor && !doctor.isActive && !token) {
+      localStorage.removeItem('AccessToken');
+      localStorage.removeItem('RefreshToken');
     console.warn('Unauthorized access: Redirecting to login...');
     return <Navigate to="/login" replace />;
   }
