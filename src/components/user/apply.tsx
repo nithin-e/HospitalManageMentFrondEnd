@@ -66,6 +66,10 @@ const Apply: React.FC = () => {
 
   // Retrieve userId from Redux store
   const userId = useSelector((state: RootState) => state.user?.user._id || "");
+  const user = useSelector((state: RootState) => state.user|| "");
+
+  console.log('click meeee',user);
+  
 
   useEffect(() => {
     const fetchSpecialties = async () => {
