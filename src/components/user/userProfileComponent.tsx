@@ -92,7 +92,6 @@ interface Prescription {
 
 
 const UserProfileComponent = () => {
-  const navigate = useNavigate();
 
   const [userData, setUserData] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -156,7 +155,7 @@ const UserProfileComponent = () => {
 
   const user = useSelector((state: RootState) => state.user);
   const userDataa =
-    // user?.checkUserEmailAndPhone?.user ||
+ 
     user?.user ||
     user?.user || null;
 

@@ -20,7 +20,7 @@ export const USER_ROUTES = {
   CHANGING_USER_PASSWORD: "/api/user/changing_userPassword",
   CHANGING_USER_INFO: "/api/user/ChangingUserInfo",
   FETCH_USER_CONVERSATIONS: "/api/doctor/fetchUserConversations",
-  FETCH_USER_PROFILE: "/api/user/fetchUserProfile",
+  FETCH_USER_PROFILE: "/api/user/fectingUserProfileData",
   GET_NOTIFICATION_API: "/api/notification/getNotifications",
   USER_FECTING_APPOINTMENT_SLOTE: "/api/doctor/fectingAppointMentSlotes",
   USER_FETCHING_APPOINTMENTS: "/api/doctor/fectingAppointMent",
