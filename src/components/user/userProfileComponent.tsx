@@ -801,7 +801,7 @@ const UserProfileComponent = () => {
         type: message.type,
         text: message.text,
         sender: message.sender,
-        senderId: userData?.id || "",
+        senderId: userData?.id ||userIdd ,
         timestamp: message.timestamp,
         appointmentId: chatAppointment?.id || "",
         receverId: chatAppointment.doctorId,
