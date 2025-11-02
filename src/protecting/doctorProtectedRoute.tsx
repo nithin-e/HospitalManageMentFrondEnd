@@ -2,20 +2,25 @@ import { RootState } from '@/store/redux/store';
 import { useSelector } from 'react-redux';
 import { Navigate } from 'react-router-dom';
 
-const doctorProtectedRoute = ({ children }) => {
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+}
 
-
-
+const DoctorProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const doctor = useSelector((state: RootState) => state.doctor.data?.doctor);
-const doctorEmail = doctor?.email;
+  const doctorEmail = doctor?.email;
+  const token = localStorage.getItem('doctorAccessToken');
 
-console.log('check this doctor data inside the protected route',doctor)
+  console.log('Check doctor data inside protected route:', doctor);
+  console.log('Doctor Access Token:', token);
 
-  if (!doctor || !doctor.isActive) {
+  // ✅ Protection logic
+  if (!doctor || !doctor.isActive || !token) {
+    console.warn('Unauthorized access: Redirecting to login...');
     return <Navigate to="/login" replace />;
   }
 
-  return children;
+  return <>{children}</>;
 };
 
-export default doctorProtectedRoute;
+export default DoctorProtectedRoute;
