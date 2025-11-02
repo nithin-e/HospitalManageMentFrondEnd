@@ -79,6 +79,7 @@ interface Appointment {
   doctorEmail?: string;
   doctorId: string;
   Prescription: string;
+  userId:string;
 }
 
 interface Prescription {
@@ -801,7 +802,7 @@ const UserProfileComponent = () => {
         type: message.type,
         text: message.text,
         sender: message.sender,
-        senderId: userData?.id ||userIdd ,
+        senderId: chatAppointment.userId||"",
         timestamp: message.timestamp,
         appointmentId: chatAppointment?.id || "",
         receverId: chatAppointment.doctorId,
