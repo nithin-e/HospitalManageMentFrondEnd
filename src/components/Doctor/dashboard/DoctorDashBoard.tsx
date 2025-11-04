@@ -49,6 +49,8 @@ const DoctorDashBoard: React.FC = () => {
   const { socket, connected } = useSocket();
 
   const doctor = useSelector((state: RootState) => state.doctor.data?.doctor);
+  console.log('check this doctor dataa daaaaaaaaaaaaaaaaaaa',doctor);
+  
   const doctorEmail = doctor?.email;
 
 
