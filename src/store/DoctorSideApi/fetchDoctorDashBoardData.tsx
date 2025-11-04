@@ -1,5 +1,5 @@
 import axiosInstance from "@/cors/axiousInstance";
-import { DOCTOR_ROUTES, USER_ROUTES } from "@/routeConstant/routes.constant";
+import { DOCTOR_ROUTES } from "@/routeConstant/routes.constant";
 
 export const fetchDoctorDashBoardData = async (email: string) => {
   try {
@@ -8,7 +8,7 @@ export const fetchDoctorDashBoardData = async (email: string) => {
       { email: email }
     );
 
-    return response.data.data
+    return response.data
   } catch (error) {
     console.error("Error fetching doctor dashboard data:", error);
     throw error;

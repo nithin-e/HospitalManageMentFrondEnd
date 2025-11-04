@@ -4,7 +4,7 @@ import {
   AsyncThunk 
 } from "@reduxjs/toolkit";
 
-// Type for your state
+
 interface DoctorState {
   loading: boolean;
   error: string | null;
@@ -33,6 +33,8 @@ export const handleDoctorAsyncThunk = <ThunkArg, ThunkReturn>(
       const payload: any = action.payload;
 
       if (payload && typeof payload === "object" && "data" in payload) {
+        console.log('check the payload inside the asyncThank',payload);
+        
         state[stateKey] = payload.data;
       } else {
         state[stateKey] = payload;
