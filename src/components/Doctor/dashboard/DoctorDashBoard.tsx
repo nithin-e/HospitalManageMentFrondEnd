@@ -184,7 +184,7 @@ const DoctorDashBoard: React.FC = () => {
       if (res.success) {
         setIsPrescriptionModalOpen(false);
         setPrescriptionText("");
-        fetchUserFullAppointments(); // Refresh appointments
+        fetchUserFullAppointments(); 
       }
     } catch (error) {
       console.error("Failed to submit prescription:", error);

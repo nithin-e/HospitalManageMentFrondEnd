@@ -8,7 +8,7 @@ export const fetchDoctorDashBoardData = async (email: string) => {
       { email: email }
     );
 
-    return response.data;
+    return response.data.data
   } catch (error) {
     console.error("Error fetching doctor dashboard data:", error);
     throw error;

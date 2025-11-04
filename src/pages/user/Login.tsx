@@ -181,7 +181,6 @@ const Login = () => {
 
         console.log("backendResponse after google login", backendResponse);
 
-
         const loginPayload = {
           user: {
             _id: backendResponse.data.user.id,
@@ -192,11 +191,6 @@ const Login = () => {
           accessToken: backendResponse.data.access_token,
           refreshToken: backendResponse.data.refresh_token,
         };
-
-        console.log(
-          "------------------------------login payload-------------------------------------",
-          loginPayload
-        );
 
         const result = await dispatch(login(loginPayload));
         console.log("goofgle 000login result:", result);
