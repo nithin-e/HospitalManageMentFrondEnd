@@ -174,7 +174,7 @@ const ServicesAdmin: React.FC = () => {
         minute: '2-digit'
       });
     } catch (error) {
-      return dateString; // Return original if parsing fails
+      return dateString; 
     }
   };
 

@@ -21,17 +21,21 @@ export const useSocket = () => {
 };
 
 // Provider component
-export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [connected, setConnected] = useState(false);
-  const [userBlockStatus, setUserBlockStatus] = useState<Record<string, boolean>>({});
+  const [userBlockStatus, setUserBlockStatus] = useState<
+    Record<string, boolean>
+  >({});
 
   const selectUserAndDoctor = (state: RootState) => ({
     user: state.user?.user,
-    doctor: state.doctor.data?.doctor,
+    doctor: state.doctor.data,
   });
 
-  const doctors = useSelector((state: RootState) => state.doctor.data?.doctor);
+  const doctors = useSelector((state: RootState) => state.doctor.data);
 
   console.log("check this doctor data ---------", doctors);
 
@@ -41,23 +45,21 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   useEffect(() => {
     console.log("SocketProvider initializing...");
-const socketBase =
-  import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_BASE_URL || window.location.origin;
+    const socketBase =
+      import.meta.env.VITE_SOCKET_URL ||
+      import.meta.env.VITE_BASE_URL ||
+      window.location.origin;
 
-console.log("Socket connecting to:", socketBase, "env:", import.meta.env);
+    console.log("Socket connecting to:", socketBase, "env:", import.meta.env);
 
-const newSocket = io(socketBase, {
-  path: "/socket.io",
-  transports: ["websocket", "polling"],
-  withCredentials: true,
-  reconnectionAttempts: 5,
-  reconnectionDelay: 1000,
-  timeout: 20000,
-});
-   
-
-   
-
+    const newSocket = io(socketBase, {
+      path: "/socket.io",
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      timeout: 20000,
+    });
 
     newSocket.on("connect", () => {
       console.log("Socket connected successfully with ID:", newSocket.id);

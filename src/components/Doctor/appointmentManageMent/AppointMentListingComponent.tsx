@@ -65,7 +65,7 @@ const AppointMentListingComponent = () => {
 
 
 
-    const doctor = useSelector((state: RootState) => state.doctor.data?.doctor);
+    const doctor = useSelector((state: RootState) => state.doctor.data);
   const email = doctor?.email;
 
 

@@ -71,7 +71,7 @@ const PaymentList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Filter states
+ 
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<FilterOptions>({
     amountRange: { min: '', max: '' },
@@ -82,7 +82,7 @@ const PaymentList: React.FC = () => {
     searchTerm: ''
   });
   
-  // Pagination states
+ 
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState<PaginationInfo>({
     currentPage: 1,
@@ -93,26 +93,22 @@ const PaymentList: React.FC = () => {
     hasPrevPage: false
   });
 
-  // Summary states for all data (not just current page)
   const [totalAdminWalletAmount, setTotalAdminWalletAmount] = useState(0);
   const [totalRefundedAmount, setTotalRefundedAmount] = useState(0);
   const [cancelledAppointmentsCount, setCancelledAppointmentsCount] = useState(0);
   const [totalTransactions, setTotalTransactions] = useState(0);
   
-  // Flag to track if summary data has been loaded (to prevent overwriting on pagination)
   const [summaryDataLoaded, setSummaryDataLoaded] = useState(false);
   
   useEffect(() => {
     fetchUserFullAppointments(currentPage);
   }, [currentPage]);
 
-  // Apply filters whenever filters change or payments data changes
   useEffect(() => {
     applyFilters();
   }, [payments, filters]);
 
   const transformAppointmentToPayment = (appointment: Appointment): Payment => {
-    // Map payment status from API to our status type
     const getPaymentStatus = (status: string): Payment['status'] => {
       const normalizedStatus = status.toLowerCase();
       if (normalizedStatus === 'success' || normalizedStatus === 'suceess') return 'completed';
@@ -120,16 +116,14 @@ const PaymentList: React.FC = () => {
       return 'failed';
     };
 
-    // Map appointment status
     const getAppointmentStatus = (status: string): Payment['appointmentStatus'] => {
       const normalizedStatus = status.toLowerCase();
       if (normalizedStatus === 'cancelled') return 'cancelled';
       if (normalizedStatus === 'completed') return 'completed';
       if (normalizedStatus === 'rescheduled') return 'rescheduled';
-      return 'scheduled'; // default for active appointments
+      return 'scheduled';
     };
 
-    // Map payment method
     const getPaymentMethod = (method: string): Payment['method'] => {
       const normalizedMethod = method.toLowerCase();
       if (normalizedMethod === 'online') return 'online' as Payment['method'];
@@ -137,10 +131,10 @@ const PaymentList: React.FC = () => {
       if (normalizedMethod === 'bank') return 'bank';
       if (normalizedMethod === 'paypal') return 'paypal';
       if (normalizedMethod === 'crypto') return 'crypto';
-      return 'card'; // default
+      return 'card'; 
     };
 
-    // Generate cancellation note if appointment is cancelled
+    
     const getCancellationNote = (appointmentStatus: string): string | undefined => {
       if (appointmentStatus.toLowerCase() === 'cancelled') {
         return 'User cancelled the appointment slot, so the admin share will be refunded.';
@@ -155,10 +149,10 @@ const PaymentList: React.FC = () => {
       amount: parseFloat(appointment.amount || '0'),
       adminAmount: parseFloat(appointment.adminAmount || '0'),
       doctorAmount: parseFloat(appointment.doctorAmount || '0'),
-      userRefoundAmount: parseFloat(appointment.userRefoundAmount || '0'), // Convert string to number
-      currency: 'INR', // Changed to Indian Rupees
+      userRefoundAmount: parseFloat(appointment.userRefoundAmount || '0'), 
+      currency: 'INR', 
       description: `Medical Appointment - ${appointment.specialty}`,
-      date: appointment.appointmentDate, // Fixed: Use appointmentDate instead of date
+      date: appointment.appointmentDate, 
       status: getPaymentStatus(appointment.paymentStatus),
       appointmentStatus: appointmentStatus,
       method: getPaymentMethod(appointment.payment_method),
@@ -172,77 +166,7 @@ const PaymentList: React.FC = () => {
     };
   };
 
-  // const fetchUserFullAppointments = async (page: number = 1) => {
-  //   try {
-  //     setLoading(true);
-  //     setError(null);
-      
-  //     const response = await FetchingAllUserAppointsMentsAdmin({ page, limit: 8 });
-  //     console.log('check this response while the fecting payments',response);
-      
-  //     if (response.appointments) {
-  //       const transformedPayments = response.appointments.map(transformAppointmentToPayment);
-  //       setPayments(transformedPayments);
-        
-        
-  //       if (response.appointments) {
-  //         setPagination({
-  //           currentPage: response.appointments.currentPage || page,
-  //           totalPages: response.appointments.totalPages || 1,
-  //           totalItems: response.appointments.totalItems || transformedPayments.length,
-  //           itemsPerPage: response.appointments.itemsPerPage || 8,
-  //           hasNextPage: response.appointments.hasNextPage || false,
-  //           hasPrevPage: response.appointments.hasPrevPage || false
-  //         });
-  //       }
-        
-        
-  //       if (!summaryDataLoaded) {
-  //         if (response.appointments.summary) {
-  //           console.log('API.............. Response:', response);
-          
-  //           setTotalAdminWalletAmount(response.appointments.summary.totalAdminWalletAmount || 0);
-  //           setTotalRefundedAmount(response.result.appointments.totalRefundedAmount || 0);
-  //           setCancelledAppointmentsCount(response.appointments.summary.cancelledAppointmentsCount || 0);
-  //           setTotalTransactions(response.appointments.summary.totalTransactions || response.appointments.totalItems || transformedPayments.length);
-  //         } else {
-
-  //           console.warn("No summary data available in API response, fetching all data to calculate totals");
-  //           await fetchAllDataForSummary();
-  //         }
-  //         setSummaryDataLoaded(true);
-  //       }
-  //     } else {
-  //       // If no appointments, set empty array
-  //       setPayments([]);
-  //       setPagination({
-  //         currentPage: 1,
-  //         totalPages: 1,
-  //         totalItems: 0,
-  //         itemsPerPage: 8,
-  //         hasNextPage: false,
-  //         hasPrevPage: false
-  //       });
-        
-  //       // Only reset summary values if this is the first load or a refresh
-  //       if (!summaryDataLoaded) {
-  //         setTotalAdminWalletAmount(0);
-  //         setTotalRefundedAmount(0);
-  //         setCancelledAppointmentsCount(0);
-  //         setTotalTransactions(0);
-  //         setSummaryDataLoaded(true);
-  //       }
-  //     }
-  //   } catch (error) {
-  //     console.error('Error fetching appointments:', error);
-  //     setError('Failed to load payment data. Please try again.');
-  //     setPayments([]);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
-  // Function to fetch all data for summary calculation when API doesn't provide summary
+  
   
   const fetchUserFullAppointments = async (page: number = 1) => {
   try {
@@ -311,7 +235,6 @@ const PaymentList: React.FC = () => {
         hasPrevPage: false
       });
       
-      // Only reset summary values if this is the first load or a refresh
       if (!summaryDataLoaded) {
         setTotalAdminWalletAmount(0);
         setTotalRefundedAmount(0);
@@ -336,7 +259,6 @@ const calculateSummaryFromPayments = (paymentsData: Payment[]) => {
   let cancelledCount = 0;
   
   paymentsData.forEach(payment => {
-    // Only add admin amount if appointment is not cancelled
     if (payment.appointmentStatus !== 'cancelled') {
       totalAdminAmount += payment.adminAmount;
     }
@@ -353,10 +275,9 @@ const calculateSummaryFromPayments = (paymentsData: Payment[]) => {
   setTotalTransactions(paymentsData.length);
 };
 // 
-// Also update your refresh function to recalculate summary
 const handleRefresh = () => {
-  setSummaryDataLoaded(false); // Reset flag to allow summary data to be updated
-  setCurrentPage(1); // Reset to first page
+  setSummaryDataLoaded(false); 
+  setCurrentPage(1); 
   fetchUserFullAppointments(1);
 };
 
@@ -364,14 +285,13 @@ const handleRefresh = () => {
 
   const fetchAllDataForSummary = async () => {
     try {
-      // Fetch first page to get total pages
+    
       const firstPageResponse = await FetchingAllUserAppointsMentsAdmin({ page: 1, limit: 8 });
       
       if (firstPageResponse?.result) {
         const totalPages = firstPageResponse.result.totalPages || 1;
         const allAppointments: Appointment[] = [];
         
-        // Fetch all pages
         const fetchPromises = [];
         for (let i = 1; i <= totalPages; i++) {
           fetchPromises.push(FetchingAllUserAppointsMentsAdmin({ page: i, limit: 8 }));
@@ -379,14 +299,14 @@ const handleRefresh = () => {
         
         const allResponses = await Promise.all(fetchPromises);
         
-        // Collect all appointments
+        
         allResponses.forEach(response => {
           if (response?.result?.appointments) {
             allAppointments.push(...response.result.appointments);
           }
         });
         
-        // Calculate totals
+   
         let totalAdminAmount = 0;
         let totalRefunded = 0;
         let cancelledCount = 0;
@@ -396,7 +316,7 @@ const handleRefresh = () => {
           const userRefundAmount = parseFloat(appointment.userRefoundAmount || '0');
           const status = appointment.status.toLowerCase();
           
-          // Only add admin amount if appointment is not cancelled
+        
           if (status !== 'cancelled') {
             totalAdminAmount += adminAmount;
           }
@@ -407,7 +327,6 @@ const handleRefresh = () => {
           }
         });
         
-        // Update summary states
         setTotalAdminWalletAmount(totalAdminAmount);
         setTotalRefundedAmount(totalRefunded);
         setCancelledAppointmentsCount(cancelledCount);
@@ -415,7 +334,7 @@ const handleRefresh = () => {
       }
     } catch (error) {
       console.error('Error fetching all data for summary:', error);
-      // Fallback to current page data if fetching all fails
+     
       const currentPageAdminTotal = payments.reduce((sum, payment) => {
         return payment.appointmentStatus !== 'cancelled' ? sum + payment.adminAmount : sum;
       }, 0);
@@ -424,11 +343,10 @@ const handleRefresh = () => {
     }
   };
 
-  // Filter application function
   const applyFilters = () => {
     let filtered = [...payments];
 
-    // Amount range filter
+    
     if (filters.amountRange.min !== '' || filters.amountRange.max !== '') {
       filtered = filtered.filter(payment => {
         const amount = payment.amount;
@@ -438,31 +356,30 @@ const handleRefresh = () => {
       });
     }
 
-    // Payment status filter
+
     if (filters.paymentStatus.length > 0) {
       filtered = filtered.filter(payment => 
         filters.paymentStatus.includes(payment.status)
       );
     }
 
-    // Appointment status filter
+
     if (filters.appointmentStatus.length > 0) {
       filtered = filtered.filter(payment => 
         filters.appointmentStatus.includes(payment.appointmentStatus)
       );
     }
 
-    // Show refunded only filter
+
     if (filters.showRefundedOnly) {
       filtered = filtered.filter(payment => payment.userRefoundAmount > 0);
     }
 
-    // Show cancelled only filter
     if (filters.showCancelledOnly) {
       filtered = filtered.filter(payment => payment.appointmentStatus === 'cancelled');
     }
 
-    // Search term filter
+
     if (filters.searchTerm) {
       const searchTerm = filters.searchTerm.toLowerCase();
       filtered = filtered.filter(payment => 
@@ -476,7 +393,6 @@ const handleRefresh = () => {
     setFilteredPayments(filtered);
   };
 
-  // Filter update functions
   const updateAmountRange = (field: 'min' | 'max', value: string) => {
     setFilters(prev => ({
       ...prev,
@@ -527,14 +443,7 @@ const handleRefresh = () => {
     return count;
   };
 
-  // Modified refresh function to reset summary data
-  // const handleRefresh = () => {
-  //   setSummaryDataLoaded(false); // Reset flag to allow summary data to be updated
-  //   setCurrentPage(1); // Reset to first page
-  //   fetchUserFullAppointments(1);
-  // };
-
-  // Pagination handlers
+ 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= pagination.totalPages) {
       setCurrentPage(page);
@@ -561,7 +470,7 @@ const handleRefresh = () => {
     handlePageChange(pagination.totalPages);
   };
 
-  // Generate page numbers for pagination
+
   const generatePageNumbers = () => {
     const pages = [];
     const maxVisiblePages = 5;
@@ -613,7 +522,7 @@ const handleRefresh = () => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: currency,
-      maximumFractionDigits: 0 // Remove decimal places for Indian currency
+      maximumFractionDigits: 0 
     }).format(amount);
   };
 
@@ -626,11 +535,9 @@ const handleRefresh = () => {
   };
 
   const formatTime = (timeString: string) => {
-    // Handle time format that might come as "10:46 AM" from API
     if (timeString.includes('AM') || timeString.includes('PM')) {
       return timeString;
     }
-    // If it's in 24-hour format, convert it
     return new Date(`2000-01-01T${timeString}`).toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
@@ -638,7 +545,7 @@ const handleRefresh = () => {
     });
   };
 
-  // Loading state
+ 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 p-6">

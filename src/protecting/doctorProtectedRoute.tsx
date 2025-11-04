@@ -7,7 +7,7 @@ interface ProtectedRouteProps {
 }
 
 const DoctorProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const doctor = useSelector((state: RootState) => state.doctor.data?.doctor);
+  const doctor = useSelector((state: RootState) => state.doctor.data);
   const doctorEmail = doctor?.email;
   const token = localStorage.getItem('AccessToken');
 
