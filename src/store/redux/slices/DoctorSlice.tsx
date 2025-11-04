@@ -31,10 +31,9 @@ interface DoctorState {
   error: string | null;
   dashboardData: any;
   appointmentSlots: any;
-  data?: {
-    doctor?: Doctor;
-  };
+  data?: Doctor;
 }
+
 
 const initialState: DoctorState = {
   currentDoctor: null,
@@ -45,10 +44,9 @@ const initialState: DoctorState = {
   error: null,
   dashboardData: null,
   appointmentSlots: null,
-  data: {
-    doctor: undefined
-  }
+  data: undefined,
 };
+
 
 export interface AppointmentSettingsType {
   doctorEmail: string;
