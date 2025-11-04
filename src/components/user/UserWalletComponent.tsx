@@ -216,14 +216,14 @@ const UserWalletComponent: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      // Call API with limit of 2 per page
+    
       const res = await UserfetchingAppointMents(userEmail, page, 2);
-      console.log('Fetched appointments.................:', res);
+   
       
       if (res.success && res.appointments) {
         setAppointments(res.appointments);
         
-        // Update pagination info using backend response
+     
         setPaginationInfo({
           currentPage: res.currentPage || page,
           totalPages: res.totalPages || 1,

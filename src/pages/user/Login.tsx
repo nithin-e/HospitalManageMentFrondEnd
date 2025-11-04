@@ -113,7 +113,6 @@ const Login = () => {
           );
 
           navigate("/DoctorDashboard", { state: { email: email } });
-          //  navigate('/DoctorDashboard');
         }
       } catch (error) {
         let errorMsg = "An error occurred during login";
@@ -146,7 +145,6 @@ const Login = () => {
     onSuccess: async (tokenResponse) => {
       setIsGoogleLoading(true);
       try {
-        // Include the access token in the Authorization header
         const userInfoResponse = await fetch(
           "https://www.googleapis.com/oauth2/v3/userinfo",
           {
@@ -163,7 +161,6 @@ const Login = () => {
 
         const userData = await userInfoResponse.json();
         console.log("check this responce after thhe google login", userData);
-
         const backendResponse = await axiosInstance.post(
           "/api/user/loginUser",
           {
@@ -174,22 +171,30 @@ const Login = () => {
           }
         );
 
-        if (backendResponse.data.user.isActive === false) {
+        const { user, access_token, refresh_token } = backendResponse.data;
+
+       
+        if (!user.isActive) {
           setShowBlockedMessage(true);
           return;
         }
 
-        console.log("backendResponse after google login", backendResponse);
+        // Log response for debugging
+        console.log("backendResponse after google login", backendResponse.data);
 
+        // Create payload in consistent structure
         const loginPayload = {
           user: {
-            _id: backendResponse.data.user.id,
-            name: backendResponse.data.user.name,
-            email: backendResponse.data.user.email,
-            role: backendResponse.data.user.role,
+            _id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            googleId: user.google_id,
+            phoneNumber: user.phone_number,
+            createdAt: user.created_at,
           },
-          accessToken: backendResponse.data.access_token,
-          refreshToken: backendResponse.data.refresh_token,
+          accessToken: access_token,
+          refreshToken: refresh_token,
         };
 
         const result = await dispatch(login(loginPayload));
