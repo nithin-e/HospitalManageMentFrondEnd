@@ -100,7 +100,7 @@ const Register = () => {
         } else if (response.data.message === "user already have an account") {
           throw new Error("You are already registered with this email. Please log in instead.");
         }
-      } catch (error: any) {
+      } catch (error) {
         toast({
           title: "Registration Failed",
           description: error.message || "An error occurred. Please try again.",
@@ -132,7 +132,7 @@ const Register = () => {
         navigate('/login');
       }
       
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "OTP Verification Failed",
         description: error.message || "Invalid OTP",
@@ -193,7 +193,7 @@ const Register = () => {
       }
       
        
-      } catch (error: any) {
+      } catch (error) {
         toast({
           title: "Google Signup Failed",
           description: error.message || "Failed to sign up with Google",

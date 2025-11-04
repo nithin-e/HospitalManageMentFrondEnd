@@ -40,3 +40,5 @@ export const DOCTOR_ROUTES = {
   MAKING_APPOINTMENT:  "/api/auth/user/makingAppointMent",
   REFRESH_TOCKEN_API: "/api/user/refresh",
 };
+
+

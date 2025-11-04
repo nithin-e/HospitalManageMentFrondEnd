@@ -54,7 +54,7 @@ export default function DoctorAppointmentScheduler() {
 
   const dispatch = useDispatch<AppDispatch>();
   const doctorData = useSelector(
-    (state: RootState) => state.doctor.data.doctor
+    (state: RootState) => state.doctor.data
   );
   const savedAppointmentData = useSelector(
     (state: RootState) => state.doctor?.appointmentSlots

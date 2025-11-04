@@ -67,9 +67,9 @@ const DoctorPaymentList: React.FC = () => {
     hasPrev: false
   });
 
-  const doctorId = useSelector((state: RootState) => state.doctor.data.doctor);
-  const email = useSelector((state: RootState) => state.doctor.data.doctor.email);
-  const doctor = useSelector((state: RootState) => state.doctor?.data?.doctor);
+  const doctorId = useSelector((state: RootState) => state.doctor.data);
+  const email = useSelector((state: RootState) => state.doctor.data.email);
+  const doctor = useSelector((state: RootState) => state.doctor?.data);
   const doctorName = `${doctor?.firstName || ''} `.trim() || 'Doctor';
 
   useEffect(() => {

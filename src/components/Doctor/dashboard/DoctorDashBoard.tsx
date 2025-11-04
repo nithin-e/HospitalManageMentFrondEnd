@@ -49,12 +49,8 @@ const DoctorDashBoard: React.FC = () => {
   const { socket, connected } = useSocket();
 
   const doctor = useSelector((state: RootState) => state.doctor.data);
-  console.log('check this doctor dataa daaaaaaaaaaaaaaaaaaa',doctor);
 
-  
-  
   const doctorEmail = doctor?.email;
-
 
   const navigate = useNavigate();
 
@@ -188,7 +184,7 @@ const DoctorDashBoard: React.FC = () => {
       if (res.success) {
         setIsPrescriptionModalOpen(false);
         setPrescriptionText("");
-        fetchUserFullAppointments(); 
+        fetchUserFullAppointments();
       }
     } catch (error) {
       console.error("Failed to submit prescription:", error);
@@ -208,7 +204,6 @@ const DoctorDashBoard: React.FC = () => {
     try {
       setLoading(true);
       const res = await dispatch(fetchDoctorDashBoardDatas(email));
-      
 
       setAvailableTimes([
         {
