@@ -48,8 +48,10 @@ const DoctorDashBoard: React.FC = () => {
   const dispatch: AppDispatch = useDispatch();
   const { socket, connected } = useSocket();
 
-  const doctor = useSelector((state: RootState) => state.doctor.data?.doctor);
+  const doctor = useSelector((state: RootState) => state.doctor.data);
   console.log('check this doctor dataa daaaaaaaaaaaaaaaaaaa',doctor);
+
+  
   
   const doctorEmail = doctor?.email;
 
