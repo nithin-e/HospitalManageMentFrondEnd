@@ -463,15 +463,15 @@ const UserProfileComponent = () => {
       console.log('check this data after fecthing user profile',res);
       
 
-      if (res.user) {
+      if (res) {
         const profile = {
-          id: res.user.id,
-          name: res.user.name,
-          email: res.user.email,
-          phoneNumber: res.user.phoneNumber || "Not provided",
-          contactNumber: res.user.phoneNumber || "Not provided",
-          role: res.user.role,
-          isActive: res.user.isActive,
+          id: res.id,
+          name: res.name,
+          email: res.email,
+          phoneNumber: res.phoneNumber || "Not provided",
+          contactNumber: res.phoneNumber || "Not provided",
+          role: res.role,
+          isActive: res.isActive,
           age: 42,
           gender: "Not specified",
           bloodType: "Not specified",
