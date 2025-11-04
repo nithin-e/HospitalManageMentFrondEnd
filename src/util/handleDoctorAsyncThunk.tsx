@@ -35,7 +35,7 @@ export const handleDoctorAsyncThunk = <ThunkArg, ThunkReturn>(
       if (payload && typeof payload === "object" && "data" in payload) {
         console.log('check the payload inside the asyncThank',payload);
         
-        state[stateKey] = payload.data;
+        state[stateKey] = payload.data.data
       } else {
         state[stateKey] = payload;
       }
