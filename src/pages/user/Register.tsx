@@ -95,9 +95,10 @@ const Register = () => {
           phoneNumber: values.phoneNumber 
         });
 
-        if (response.data.message === 'user not registered') {
+        if (response.data.message ==="User not found or inactive") {
+
           await sendOtp(setOtpInput, auth, values.phoneNumber, setConfirmationResult);
-        } else if (response.data.message === "user already have an account") {
+        } else if (response.data.message === 'Email is already registered') {
           throw new Error("You are already registered with this email. Please log in instead.");
         }
       } catch (error) {
