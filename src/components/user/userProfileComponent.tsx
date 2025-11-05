@@ -441,15 +441,7 @@ const UserProfileComponent = () => {
     }
   };
 
-  // const rejectCall = () => {
-  //   if (socket && incomingCall) {
-  //     socket.emit("rejectConsultation", {
-  //       appointmentId: incomingCall.appointmentId,
-  //       doctorId: incomingCall.doctorId,
-  //     });
-  //     setShowCallModal(false);
-  //   }
-  // };
+ 
 
   useEffect(() => {
     fetchUserData();
@@ -468,8 +460,8 @@ const UserProfileComponent = () => {
           id: res.id,
           name: res.name,
           email: res.email,
-          phoneNumber: res.phoneNumber || "Not provided",
-          contactNumber: res.phoneNumber || "Not provided",
+          phoneNumber: res.phone_number || "Not provided",
+          contactNumber: res.phone_number || "Not provided",
           role: res.role,
           isActive: res.isActive,
           age: 42,
