@@ -95,6 +95,9 @@ const Register = () => {
           phoneNumber: values.phoneNumber 
         });
 
+        console.log('check this responce in check user',response);
+        
+
         if (response.data.message ==="User not found or inactive") {
 
           await sendOtp(setOtpInput, auth, values.phoneNumber, setConfirmationResult);
