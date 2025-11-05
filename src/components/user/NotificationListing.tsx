@@ -85,20 +85,17 @@ const NotificationList = () => {
     );
   };
 
-  // Handle marking all notifications as read
   const handleMarkAllAsRead = () => {
     setNotifications(prevNotifications => 
       prevNotifications.map(notification => ({ ...notification, isRead: true }))
     );
   };
 
-  // Handle notification click
   const handleNotificationClick = (notification: Notification) => {
     if (!notification.isRead) {
       handleMarkAsRead(notification.id);
     }
     
-    // Navigate to notification detail view
     navigate(`/NotificationDetails/${notification.id}`, { state: { notification } });
   };
 

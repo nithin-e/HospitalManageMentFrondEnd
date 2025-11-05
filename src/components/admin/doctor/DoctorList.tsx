@@ -70,27 +70,23 @@ export const DoctorsList = () => {
     }
   };
 
-  // Main effect to fetch data when filters change
   useEffect(() => {
-    setCurrentPage(1); // Reset to page 1 when filters change
+    setCurrentPage(1); 
     fetchDoctorData(1);
   }, [statusFilter, sortField, sortDirection]);
 
-  // Effect to handle debounced search
   useEffect(() => {
-    // Show loading indicator while debouncing
     if (searchQuery !== debouncedSearchTerm && searchQuery.trim()) {
       setSearchLoading(true);
     } else {
       setSearchLoading(false);
-      // When debounced value changes, fetch data
       fetchDoctorData(currentPage);
     }
   }, [debouncedSearchTerm, currentPage]);
 
   const fetchDoctorData = async (page = 1) => {
     try {
-      // Only show full loading spinner on initial load or when explicitly refreshing
+     
       if (page === 1 && !searchLoading) {
         setLoading(true);
       } else {
@@ -100,15 +96,14 @@ export const DoctorsList = () => {
       setError(null);
 
       const params = new URLSearchParams();
-      
-      // Use 'searchQuery' to match backend parameter name
+
       if (debouncedSearchTerm.trim()) {
         params.append('searchQuery', debouncedSearchTerm.trim());
       }
       
-      // Add status filter - map 'all' to empty and capitalize others
+   
       if (statusFilter !== "all") {
-        // Backend expects lowercase status values
+       
         params.append('status', statusFilter.toLowerCase());
       }
       
@@ -122,7 +117,6 @@ export const DoctorsList = () => {
       const response = await doctorPaginationApi(params);
       console.log('Doctor data response:', response.data);
       
-      // Process response - backend returns data.data
       const responseData = response.data.data;
       
       if (!responseData || !responseData.success) {
@@ -145,7 +139,7 @@ export const DoctorsList = () => {
         medicalLicenseNumber: doctor.medicalLicenseNumber,
         medicalLicenseUrl: doctor.medicalLicenseUrl,
         profileImageUrl: doctor.profileImageUrl,
-        status: doctor.status.charAt(0).toUpperCase() + doctor.status.slice(1), // Capitalize status
+        status: doctor.status.charAt(0).toUpperCase() + doctor.status.slice(1),
         agreeTerms: doctor.agreeTerms,
         createdAt: doctor.createdAt,
         formattedDate: new Date(doctor.createdAt).toLocaleDateString(),
@@ -159,7 +153,6 @@ export const DoctorsList = () => {
       setDeclinedDoctors(declinedCount || 0);
       setCurrentPage(page);
       
-      // Calculate total pages
       const calculatedPages = Math.ceil((totalCount || 0) / doctorsPerPage);
       setTotalPages(calculatedPages || 1);
 

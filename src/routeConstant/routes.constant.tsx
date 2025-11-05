@@ -27,6 +27,8 @@ export const USER_ROUTES = {
   USER_FETCHING_DOCTORS: "/api/user/fecthAllDoctors",
 };
 
+
+
 // FECTING_APPOINTMENT_SLOTES
 export const DOCTOR_ROUTES = {
   ADD_PRESCRIPTION: "/api/doctor/AddPrescription",

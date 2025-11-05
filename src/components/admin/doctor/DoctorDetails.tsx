@@ -1,21 +1,43 @@
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useState } from "react";
-import { ArrowLeft, Phone, Mail, MapPin, FileText, Award, Shield, CheckCheck, AlertTriangle, X, Check, Loader2 } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/docui/avatar";
+import {
+  ArrowLeft,
+  Phone,
+  Mail,
+  MapPin,
+  FileText,
+  Award,
+  Shield,
+  CheckCheck,
+  AlertTriangle,
+  X,
+  Check,
+  Loader2,
+} from "lucide-react";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/docui/avatar";
 import { Button } from "@/components/ui/docui/button";
 import { Badge } from "@/components/ui/docui/badge1";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/docui/card1";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/docui/card1";
 import { Separator } from "@/components/ui/docui/separator";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/docui/sheet";
-import { 
+import {
   AlertDialog,
-
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTitle
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
@@ -33,49 +55,49 @@ export const DoctorDetails = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
   const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
-  const [isRejectionSuccessDialogOpen, setIsRejectionSuccessDialogOpen] = useState(false);
+  const [isRejectionSuccessDialogOpen, setIsRejectionSuccessDialogOpen] =
+    useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedReason, setSelectedReason] = useState('');
+  const [selectedReason, setSelectedReason] = useState("");
 
-
-  console.log('plzz check this doctor details',doctor)
+  console.log("plzz check this doctor details", doctor);
 
   if (!doctor) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh]">
         <h2 className="text-2xl font-bold mb-4">Doctor not found</h2>
-        <Button onClick={() => navigate("/doctors")}>Back to Doctors List</Button>
+        <Button onClick={() => navigate("/doctors")}>
+          Back to Doctors List
+        </Button>
       </div>
     );
   }
 
-  // Mock fields not provided in the API response
   const contact = {
     phone: doctor.phoneNumber || "Not provided",
     email: doctor.email || "Not provided",
     address: "Not provided",
   };
 
-  // Mock license data based on API response
   const license = [
     {
       type: "Medical License",
-      status: doctor.status && doctor.status.toLowerCase() === "approved" ? "Active" : "Pending",
+      status:
+        doctor.status && doctor.status.toLowerCase() === "approved"
+          ? "Active"
+          : "Pending",
       year: new Date(doctor.createdAt).getFullYear().toString(),
       number: doctor.medicalLicenseNumber,
       url: doctor.medicalLicenseUrl,
     },
   ];
 
- 
-
-  
   const handleApprove = async () => {
     try {
       setIsSubmitting(true);
       await new Promise((resolve) => setTimeout(resolve, 1500));
       const result = await storeNotificationData(doctor.email);
-      
+
       if (result) {
         setIsApproveDialogOpen(false);
         setIsSuccessDialogOpen(true);
@@ -93,16 +115,29 @@ export const DoctorDetails = () => {
   // Predefined rejection reasons
   const rejectionReasons = [
     { id: "unclear_license", label: "Medical license photo is not clear" },
-    { id: "insufficient_experience", label: "Insufficient years of experience" },
+    {
+      id: "insufficient_experience",
+      label: "Insufficient years of experience",
+    },
     { id: "incomplete_profile", label: "Incomplete profile information" },
-    { id: "qualifications_mismatch", label: "Qualifications don't match our requirements" },
-    { id: "unavailable_schedule", label: "Schedule availability doesn't meet our needs" },
-    { id: "specialization_not_needed", label: "Specialization not currently needed" },
-    { id: "documentation_issues", label: "Issues with submitted documentation" },
-    { id: "unable_to_verify", label: "Unable to verify credentials" }
+    {
+      id: "qualifications_mismatch",
+      label: "Qualifications don't match our requirements",
+    },
+    {
+      id: "unavailable_schedule",
+      label: "Schedule availability doesn't meet our needs",
+    },
+    {
+      id: "specialization_not_needed",
+      label: "Specialization not currently needed",
+    },
+    {
+      id: "documentation_issues",
+      label: "Issues with submitted documentation",
+    },
+    { id: "unable_to_verify", label: "Unable to verify credentials" },
   ];
-
-
 
   const blockReasons = [
     { id: "misconduct", label: "Unprofessional behavior" },
@@ -112,39 +147,38 @@ export const DoctorDetails = () => {
     { id: "privacy_issue", label: "Shared private patient data" },
     { id: "rules_broken", label: "Broke platform rules" },
     { id: "spam", label: "Sending spam or ads" },
-    { id: "legal_issue", label: "Legal or police issue" }
+    { id: "legal_issue", label: "Legal or police issue" },
   ];
-  
 
   const handleReasonToggle = (reasonId: string) => {
-    setSelectedReasons(current => {
+    setSelectedReasons((current) => {
       if (current.includes(reasonId)) {
-        return current.filter(id => id !== reasonId);
+        return current.filter((id) => id !== reasonId);
       } else {
         return [...current, reasonId];
       }
     });
   };
 
-
   const handleReject = async () => {
     if (selectedReasons.length === 0) {
       toast.error("Please select at least one reason for rejection");
       return;
     }
-  
+
     setIsSubmitting(true);
-    
-    const rejectionReasonTexts = selectedReasons.map(
-      reasonId => rejectionReasons.find(r => r.id === reasonId)?.label
-    ).filter(Boolean);
-  
+
+    const rejectionReasonTexts = selectedReasons
+      .map((reasonId) => rejectionReasons.find((r) => r.id === reasonId)?.label)
+      .filter(Boolean);
+
     try {
-      
       await new Promise((resolve) => setTimeout(resolve, 2000));
-      const result = await handlingAdminCancel(doctor.email, rejectionReasonTexts);
-      
-      
+      const result = await handlingAdminCancel(
+        doctor.email,
+        rejectionReasonTexts
+      );
+
       if (result) {
         setIsRejectDialogOpen(false);
         setIsRejectionSuccessDialogOpen(true);
@@ -159,33 +193,25 @@ export const DoctorDetails = () => {
     }
   };
 
-
   const handleDenyClick = () => {
     setIsModalOpen(true);
   };
 
-
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setSelectedReason('');
+    setSelectedReason("");
   };
 
   const handleSubmitDeny = async () => {
     if (selectedReason) {
-    
-    
-      const reason=blockReasons.find(r => r.id === selectedReason)?.label
-          if(reason){
-           const  res=  await blockingDoctor(reason,doctor.email)
-           console.log('check the responce first then make the conditions',res)
-           if(res.data.success){
-           handleCloseModal();
-           }
-
-            }
-
-      
-  
+      const reason = blockReasons.find((r) => r.id === selectedReason)?.label;
+      if (reason) {
+        const res = await blockingDoctor(reason, doctor.email);
+        console.log("check the responce first then make the conditions", res);
+        if (res.data.success) {
+          handleCloseModal();
+        }
+      }
     }
   };
 
@@ -193,11 +219,23 @@ export const DoctorDetails = () => {
     if (!doctor.status) return null;
     switch (doctor.status.toLowerCase()) {
       case "approved":
-        return <Badge className="bg-emerald-500 text-white font-medium shadow-sm">Approved</Badge>;
+        return (
+          <Badge className="bg-emerald-500 text-white font-medium shadow-sm">
+            Approved
+          </Badge>
+        );
       case "pending":
-        return <Badge className="bg-amber-500 text-white font-medium shadow-sm">Pending</Badge>;
+        return (
+          <Badge className="bg-amber-500 text-white font-medium shadow-sm">
+            Pending
+          </Badge>
+        );
       case "declined":
-        return <Badge className="bg-rose-500 text-white font-medium shadow-sm">Declined</Badge>;
+        return (
+          <Badge className="bg-rose-500 text-white font-medium shadow-sm">
+            Declined
+          </Badge>
+        );
       default:
         return null;
     }
@@ -220,20 +258,34 @@ export const DoctorDetails = () => {
           <Card className="sticky top-6 animate-scale-in shadow-xl border-gray-200 rounded-xl overflow-hidden">
             <CardContent className="p-0">
               <div className="relative">
-                <div className="absolute top-4 right-4 z-10">{getStatusBadge()}</div>
+                <div className="absolute top-4 right-4 z-10">
+                  {getStatusBadge()}
+                </div>
                 <div className="h-40 bg-gradient-to-r from-blue-600 to-indigo-700 relative overflow-hidden">
                   <div className="absolute inset-0 opacity-30 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxkZWZzPjxwYXR0ZXJuIGlkPSJwYXR0ZXJuIiB4PSIwIiB5PSIwIiB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiIHBhdHRlcm5UcmFuc2Zvcm09InJvdGF0ZSgzMCkiPjxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSIxMCIgaGVpZ2h0PSIyMCIgZmlsbD0iI2ZmZmZmZiIgb3BhY2l0eT0iMC4yIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI3BhdHRlcm4pIiAvPjwvc3ZnPg==')]"></div>
                 </div>
                 <div className="flex flex-col items-center -mt-16 px-6 pb-6">
                   <Avatar className="h-32 w-32 border-4 border-white shadow-lg mb-4 hover:scale-105 transition-transform cursor-pointer">
-                    <AvatarImage src={doctor.profileImageUrl} alt={doctor.name} />
+                    <AvatarImage
+                      src={doctor.profileImageUrl}
+                      alt={doctor.name}
+                    />
                     <AvatarFallback className="bg-gradient-to-br from-blue-100 to-indigo-200 text-indigo-800 text-xl font-bold">
-                      {doctor.name.split(" ").map((n) => n[0]).join("")}
+                      {doctor.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")}
                     </AvatarFallback>
                   </Avatar>
-                  <h2 className="text-2xl font-bold text-center">{doctor.name}</h2>
-                  <p className="text-indigo-600 font-medium mt-1 text-center">{doctor.specialty}</p>
-                  <p className="text-gray-600 text-sm mt-1 text-center">{doctor.qualifications}</p>
+                  <h2 className="text-2xl font-bold text-center">
+                    {doctor.name}
+                  </h2>
+                  <p className="text-indigo-600 font-medium mt-1 text-center">
+                    {doctor.specialty}
+                  </p>
+                  <p className="text-gray-600 text-sm mt-1 text-center">
+                    {doctor.qualifications}
+                  </p>
 
                   <Separator className="my-6 bg-indigo-100" />
 
@@ -244,7 +296,9 @@ export const DoctorDetails = () => {
                       </div>
                       <div>
                         <p className="text-sm text-gray-500">Phone</p>
-                        <p className="text-indigo-600 font-medium">{contact.phone}</p>
+                        <p className="text-indigo-600 font-medium">
+                          {contact.phone}
+                        </p>
                       </div>
                     </div>
 
@@ -254,7 +308,9 @@ export const DoctorDetails = () => {
                       </div>
                       <div>
                         <p className="text-sm text-gray-500">Email</p>
-                        <p className="text-indigo-600 font-medium">{contact.email}</p>
+                        <p className="text-indigo-600 font-medium">
+                          {contact.email}
+                        </p>
                       </div>
                     </div>
 
@@ -270,8 +326,7 @@ export const DoctorDetails = () => {
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 w-full mt-6">
-
-                  {/* {doctor.isActive === 'true' && doctor.status !=='completed'? (
+                    {/* {doctor.isActive === 'true' && doctor.status !=='completed'? (
   <Button
     className="w-full bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-sm py-1 px-2 h-8 shadow-md"
     onClick={handleDenyClick}
@@ -284,149 +339,149 @@ export const DoctorDetails = () => {
   </div>
 )} */}
 
-
-
-{doctor.status && doctor.status.toLowerCase() === "completed" ? (
-  doctor.isActive === true ? (
-    <Button
-      className="w-full bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-sm py-1 px-2 h-8 shadow-md"
-      onClick={handleDenyClick}
-    >
-      Deny
-    </Button>
-  ) : (
-    <div className="w-full text-center py-2 px-4 bg-red-100 border border-red-300 rounded-md">
-      <p className="text-red-700 font-medium text-sm">Doctor Blocked</p>
-    </div>
-  )
-) : (
-  <div className="w-full text-center py-2 px-4 bg-red-100 border border-red-300 rounded-md">
-    <p className="text-red-700 font-medium text-sm">Complete the process</p>
-  </div>
-)}
-
-
+                    {doctor.status &&
+                    doctor.status.toLowerCase() === "completed" ? (
+                      doctor.isActive === true ? (
+                        <Button
+                          className="w-full bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-sm py-1 px-2 h-8 shadow-md"
+                          onClick={handleDenyClick}
+                        >
+                          Deny
+                        </Button>
+                      ) : (
+                        <div className="w-full text-center py-2 px-4 bg-red-100 border border-red-300 rounded-md">
+                          <p className="text-red-700 font-medium text-sm">
+                            Doctor Blocked
+                          </p>
+                        </div>
+                      )
+                    ) : (
+                      <div className="w-full text-center py-2 px-4 bg-red-100 border border-red-300 rounded-md">
+                        <p className="text-red-700 font-medium text-sm">
+                          Complete the process
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-
-
-
-
           {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[70vh] flex flex-col transform transition-all duration-300 animate-pulse-once">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-t-2xl">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                  <AlertTriangle className="w-5 h-5 text-white" />
-                </div>
-                <h2 className="text-xl font-bold">Deny Application</h2>
-              </div>
-              <button
-                onClick={handleCloseModal}
-                className="text-white hover:bg-white hover:bg-opacity-20 p-2 rounded-full transition-all duration-200"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Modal Content */}
-            <div className="flex-1 overflow-y-auto p-6">
-              <p className="text-gray-700 mb-6 text-center font-medium">
-                Select a reason for denying this application:
-              </p>
-
-              {/* Reason Selection */}
-              <div className="grid gap-3 mb-6 pr-2">
-                {blockReasons.map((reason, index) => (
-                  <label
-                    key={reason.id}
-                    className={`group relative flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-lg ${
-                      selectedReason === reason.id
-                        ? 'border-red-500 bg-red-50 shadow-md'
-                        : 'border-gray-200 hover:border-red-300 hover:bg-red-50'
-                    }`}
-                    style={{
-                      animationDelay: `${index * 50}ms`
-                    }}
-                  >
-                    <div className="relative">
-                      <input
-                        type="radio"
-                        name="blockReason"
-                        value={reason.id}
-                        checked={selectedReason === reason.id}
-                        onChange={(e) => setSelectedReason(e.target.value)}
-                        className="sr-only"
-                      />
-                      <div className={`w-5 h-5 rounded-full border-2 transition-all duration-200 ${
-                        selectedReason === reason.id
-                          ? 'border-red-500 bg-red-500'
-                          : 'border-gray-300 group-hover:border-red-400'
-                      }`}>
-                        {selectedReason === reason.id && (
-                          <div className="w-2 h-2 bg-white rounded-full absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
-                        )}
-                      </div>
+            <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+              <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[70vh] flex flex-col transform transition-all duration-300 animate-pulse-once">
+                {/* Modal Header */}
+                <div className="flex items-center justify-between p-6 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-t-2xl">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                      <AlertTriangle className="w-5 h-5 text-white" />
                     </div>
-                    <span className={`ml-4 font-medium transition-colors duration-200 ${
-                      selectedReason === reason.id ? 'text-red-700' : 'text-gray-700 group-hover:text-red-600'
-                    }`}>
-                      {reason.label}
-                    </span>
-                    {selectedReason === reason.id && (
-                      <div className="ml-auto">
-                        <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
-                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
+                    <h2 className="text-xl font-bold">Deny Application</h2>
+                  </div>
+                  <button
+                    onClick={handleCloseModal}
+                    className="text-white hover:bg-white hover:bg-opacity-20 p-2 rounded-full transition-all duration-200"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Modal Content */}
+                <div className="flex-1 overflow-y-auto p-6">
+                  <p className="text-gray-700 mb-6 text-center font-medium">
+                    Select a reason for denying this application:
+                  </p>
+
+                  {/* Reason Selection */}
+                  <div className="grid gap-3 mb-6 pr-2">
+                    {blockReasons.map((reason, index) => (
+                      <label
+                        key={reason.id}
+                        className={`group relative flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-lg ${
+                          selectedReason === reason.id
+                            ? "border-red-500 bg-red-50 shadow-md"
+                            : "border-gray-200 hover:border-red-300 hover:bg-red-50"
+                        }`}
+                        style={{
+                          animationDelay: `${index * 50}ms`,
+                        }}
+                      >
+                        <div className="relative">
+                          <input
+                            type="radio"
+                            name="blockReason"
+                            value={reason.id}
+                            checked={selectedReason === reason.id}
+                            onChange={(e) => setSelectedReason(e.target.value)}
+                            className="sr-only"
+                          />
+                          <div
+                            className={`w-5 h-5 rounded-full border-2 transition-all duration-200 ${
+                              selectedReason === reason.id
+                                ? "border-red-500 bg-red-500"
+                                : "border-gray-300 group-hover:border-red-400"
+                            }`}
+                          >
+                            {selectedReason === reason.id && (
+                              <div className="w-2 h-2 bg-white rounded-full absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </label>
-                ))}
+                        <span
+                          className={`ml-4 font-medium transition-colors duration-200 ${
+                            selectedReason === reason.id
+                              ? "text-red-700"
+                              : "text-gray-700 group-hover:text-red-600"
+                          }`}
+                        >
+                          {reason.label}
+                        </span>
+                        {selectedReason === reason.id && (
+                          <div className="ml-auto">
+                            <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                              <svg
+                                className="w-3 h-3 text-white"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                            </div>
+                          </div>
+                        )}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Modal Footer */}
+                <div className="flex-shrink-0 flex gap-4 p-6 bg-gray-50 rounded-b-2xl border-t border-gray-200">
+                  <button
+                    onClick={handleCloseModal}
+                    className="flex-1 px-6 py-3 text-sm font-semibold text-gray-600 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-100 hover:border-gray-400 hover:shadow-md transition-all duration-200 transform hover:scale-105"
+                  >
+                    ❌ Cancel
+                  </button>
+                  <button
+                    onClick={handleSubmitDeny}
+                    disabled={!selectedReason}
+                    className={`flex-1 px-6 py-3 text-sm font-bold text-white rounded-xl transition-all duration-200 transform ${
+                      selectedReason
+                        ? "bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 shadow-lg hover:scale-105 hover:shadow-xl"
+                        : "bg-gray-300 cursor-not-allowed"
+                    }`}
+                  >
+                    ✅ Submit
+                  </button>
+                </div>
               </div>
             </div>
-
-            {/* Modal Footer */}
-            <div className="flex-shrink-0 flex gap-4 p-6 bg-gray-50 rounded-b-2xl border-t border-gray-200">
-              <button
-                onClick={handleCloseModal}
-                className="flex-1 px-6 py-3 text-sm font-semibold text-gray-600 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-100 hover:border-gray-400 hover:shadow-md transition-all duration-200 transform hover:scale-105"
-              >
-                ❌ Cancel
-              </button>
-              <button
-                onClick={handleSubmitDeny}
-                disabled={!selectedReason}
-                className={`flex-1 px-6 py-3 text-sm font-bold text-white rounded-xl transition-all duration-200 transform ${
-                  selectedReason
-                    ? 'bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 shadow-lg hover:scale-105 hover:shadow-xl'
-                    : 'bg-gray-300 cursor-not-allowed'
-                }`}
-              >
-                ✅ Submit
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    
- 
-
-
-
-
-
-
-
-
-
+          )}
         </div>
 
         {/* Right column with sections */}
@@ -437,7 +492,9 @@ export const DoctorDetails = () => {
               <div className="bg-indigo-100 p-1 rounded-md mr-2">
                 <Shield className="h-5 w-5 text-indigo-600" />
               </div>
-              <h3 className="text-xl font-bold text-gray-800">License & Certification</h3>
+              <h3 className="text-xl font-bold text-gray-800">
+                License & Certification
+              </h3>
             </div>
 
             <Card className="shadow-xl overflow-hidden border-gray-200 rounded-xl bg-gradient-to-r from-blue-50/80 to-white">
@@ -460,19 +517,25 @@ export const DoctorDetails = () => {
                         <div className="flex justify-between items-start">
                           <div>
                             <div className="flex items-center gap-1">
-                              <h4 className="font-bold text-lg text-indigo-800">{lic.type}</h4>
+                              <h4 className="font-bold text-lg text-indigo-800">
+                                {lic.type}
+                              </h4>
                               {lic.status === "Active" && (
                                 <CheckCheck className="h-4 w-4 text-emerald-500" />
                               )}
                             </div>
                             <p
                               className={`text-sm ${
-                                lic.status === "Active" ? "text-emerald-500" : "text-amber-500"
+                                lic.status === "Active"
+                                  ? "text-emerald-500"
+                                  : "text-amber-500"
                               } font-medium`}
                             >
                               {lic.status}
                             </p>
-                            <p className="text-sm text-gray-500 mt-1">Number: {lic.number}</p>
+                            <p className="text-sm text-gray-500 mt-1">
+                              Number: {lic.number}
+                            </p>
                           </div>
                           <Badge
                             variant="outline"
@@ -491,7 +554,9 @@ export const DoctorDetails = () => {
                             <div className="bg-blue-50 p-1 rounded-full">
                               <FileText className="h-3.5 w-3.5 text-blue-600" />
                             </div>
-                            <span className="text-xs text-gray-500">Issued by State Medical Board</span>
+                            <span className="text-xs text-gray-500">
+                              Issued by State Medical Board
+                            </span>
                           </div>
 
                           <Sheet>
@@ -504,11 +569,18 @@ export const DoctorDetails = () => {
                                 View License
                               </Button>
                             </SheetTrigger>
-                            <SheetContent side="right" className="w-[400px] sm:w-[540px] p-0">
+                            <SheetContent
+                              side="right"
+                              className="w-[400px] sm:w-[540px] p-0"
+                            >
                               <div className="h-full">
                                 <div className="bg-gradient-to-r from-indigo-600 to-blue-700 p-6 text-white">
-                                  <h3 className="text-xl font-bold mb-1">{lic.type}</h3>
-                                  <p className="text-white/80 text-sm">License Certificate</p>
+                                  <h3 className="text-xl font-bold mb-1">
+                                    {lic.type}
+                                  </h3>
+                                  <p className="text-white/80 text-sm">
+                                    License Certificate
+                                  </p>
                                 </div>
                                 <div className="p-6">
                                   <div className="mt-2 border rounded-lg overflow-hidden shadow-lg">
@@ -517,7 +589,10 @@ export const DoctorDetails = () => {
                                       alt="License document"
                                       className="w-full h-auto"
                                       onError={(e) =>
-                                        console.error("Failed to load license image:", lic.url)
+                                        console.error(
+                                          "Failed to load license image:",
+                                          lic.url
+                                        )
                                       }
                                     />
                                   </div>
@@ -527,8 +602,12 @@ export const DoctorDetails = () => {
                                         <Award className="h-5 w-5 text-emerald-500" />
                                       </div>
                                       <div>
-                                        <p className="text-sm text-gray-500">Valid Until</p>
-                                        <p className="font-medium text-indigo-800">December 31, 2025</p>
+                                        <p className="text-sm text-gray-500">
+                                          Valid Until
+                                        </p>
+                                        <p className="font-medium text-indigo-800">
+                                          December 31, 2025
+                                        </p>
                                       </div>
                                     </div>
                                     <div className="flex items-center p-3 bg-blue-50 rounded-lg border border-blue-100 shadow-sm">
@@ -536,8 +615,12 @@ export const DoctorDetails = () => {
                                         <FileText className="h-5 w-5 text-blue-600" />
                                       </div>
                                       <div>
-                                        <p className="text-sm text-gray-500">Issued By</p>
-                                        <p className="font-medium text-indigo-800">State Medical Board</p>
+                                        <p className="text-sm text-gray-500">
+                                          Issued By
+                                        </p>
+                                        <p className="font-medium text-indigo-800">
+                                          State Medical Board
+                                        </p>
                                       </div>
                                     </div>
                                   </div>
@@ -554,8 +637,9 @@ export const DoctorDetails = () => {
 
                     <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg p-4 border border-indigo-100 shadow-sm">
                       <p className="text-sm text-indigo-700 italic">
-                        All medical professionals on our platform are verified for their credentials
-                        and must maintain active licensing status to continue providing services.
+                        All medical professionals on our platform are verified
+                        for their credentials and must maintain active licensing
+                        status to continue providing services.
                       </p>
                     </div>
                   </div>
@@ -571,14 +655,19 @@ export const DoctorDetails = () => {
                         alt="License document"
                         className="w-full h-auto object-cover hover:scale-105 transition-transform duration-300 cursor-zoom-in"
                         onError={(e) =>
-                          console.error("Failed to load license image:", license[0].url)
+                          console.error(
+                            "Failed to load license image:",
+                            license[0].url
+                          )
                         }
                       />
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
                         <div className="flex justify-between items-center">
                           <div className="flex items-center gap-2">
                             <Shield className="h-4 w-4 text-white" />
-                            <span className="text-white text-sm font-medium">Verified & Active</span>
+                            <span className="text-white text-sm font-medium">
+                              Verified & Active
+                            </span>
                           </div>
                           <Badge className="bg-emerald-500 text-white border-none shadow-md">
                             {license[0].year}
@@ -592,25 +681,35 @@ export const DoctorDetails = () => {
                         <div className="bg-emerald-100 p-1 rounded-full">
                           <CheckCheck className="h-4 w-4 text-emerald-500" />
                         </div>
-                        <h5 className="font-medium text-indigo-800">Verification Status</h5>
+                        <h5 className="font-medium text-indigo-800">
+                          Verification Status
+                        </h5>
                       </div>
 
                       <div className="grid grid-cols-2 gap-3 mt-3">
                         <div className="flex items-center gap-2 bg-gradient-to-r from-emerald-50 to-green-50 p-2 rounded-md border border-emerald-100">
                           <Shield className="h-3 w-3 text-emerald-500" />
-                          <span className="text-xs text-gray-600">Identity Verified</span>
+                          <span className="text-xs text-gray-600">
+                            Identity Verified
+                          </span>
                         </div>
                         <div className="flex items-center gap-2 bg-gradient-to-r from-emerald-50 to-green-50 p-2 rounded-md border border-emerald-100">
                           <FileText className="h-3 w-3 text-emerald-500" />
-                          <span className="text-xs text-gray-600">License Verified</span>
+                          <span className="text-xs text-gray-600">
+                            License Verified
+                          </span>
                         </div>
                         <div className="flex items-center gap-2 bg-gradient-to-r from-emerald-50 to-green-50 p-2 rounded-md border border-emerald-100">
                           <Award className="h-3 w-3 text-emerald-500" />
-                          <span className="text-xs text-gray-600">Credentials Valid</span>
+                          <span className="text-xs text-gray-600">
+                            Credentials Valid
+                          </span>
                         </div>
                         <div className="flex items-center gap-2 bg-gradient-to-r from-emerald-50 to-green-50 p-2 rounded-md border border-emerald-100">
                           <Shield className="h-3 w-3 text-emerald-500" />
-                          <span className="text-xs text-gray-600">Background Checked</span>
+                          <span className="text-xs text-gray-600">
+                            Background Checked
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -627,7 +726,9 @@ export const DoctorDetails = () => {
                 <div className="bg-amber-100 p-1 rounded-md mr-2">
                   <AlertTriangle className="h-5 w-5 text-amber-500" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-800">Application Review</h3>
+                <h3 className="text-xl font-bold text-gray-800">
+                  Application Review
+                </h3>
               </div>
 
               <Card className="shadow-xl overflow-hidden border-gray-200 rounded-xl">
@@ -641,8 +742,12 @@ export const DoctorDetails = () => {
                 <CardContent className="p-6">
                   <div className="bg-amber-50 p-4 rounded-lg border border-amber-200 mb-6 shadow-sm">
                     <p className="text-sm text-amber-800">
-                      This doctor application is currently <span className="font-medium text-amber-600">pending review</span>. 
-                      Please verify all documentation and credentials before making a decision.
+                      This doctor application is currently{" "}
+                      <span className="font-medium text-amber-600">
+                        pending review
+                      </span>
+                      . Please verify all documentation and credentials before
+                      making a decision.
                     </p>
                   </div>
 
@@ -652,19 +757,21 @@ export const DoctorDetails = () => {
                         <div className="bg-emerald-100 p-2 rounded-full">
                           <Check className="h-4 w-4 text-emerald-500" />
                         </div>
-                        <h4 className="font-medium text-emerald-800">Approval</h4>
+                        <h4 className="font-medium text-emerald-800">
+                          Approval
+                        </h4>
                       </div>
                       <p className="text-sm text-gray-600 mb-4">
-                        Approving this application will grant the doctor access to the platform and allow them to provide services.
+                        Approving this application will grant the doctor access
+                        to the platform and allow them to provide services.
                       </p>
-                      
-                      <Button 
-                        className="w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 shadow-md text-white" 
+
+                      <Button
+                        className="w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 shadow-md text-white"
                         onClick={() => setIsApproveDialogOpen(true)}
                       >
                         Approve Application
                       </Button>
-
                     </div>
 
                     <div className="bg-gradient-to-br from-white to-rose-50 rounded-lg p-4 border border-rose-100 shadow-md">
@@ -675,10 +782,11 @@ export const DoctorDetails = () => {
                         <h4 className="font-medium text-rose-800">Rejection</h4>
                       </div>
                       <p className="text-sm text-gray-600 mb-4">
-                        Rejecting this application will deny the doctor access to the platform. A reason must be provided.
+                        Rejecting this application will deny the doctor access
+                        to the platform. A reason must be provided.
                       </p>
-                      <Button 
-                        className="w-full bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 shadow-md text-white" 
+                      <Button
+                        className="w-full bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 shadow-md text-white"
                         onClick={() => setIsRejectDialogOpen(true)}
                       >
                         Reject Application
@@ -689,21 +797,33 @@ export const DoctorDetails = () => {
               </Card>
 
               {/* Approval confirmation dialog */}
-              <AlertDialog open={isApproveDialogOpen} onOpenChange={(open) => {
-                if (!isSubmitting) {
-                  setIsApproveDialogOpen(open);
-                }
-              }}>
+              <AlertDialog
+                open={isApproveDialogOpen}
+                onOpenChange={(open) => {
+                  if (!isSubmitting) {
+                    setIsApproveDialogOpen(open);
+                  }
+                }}
+              >
                 <AlertDialogContent className="border-emerald-100">
                   <AlertDialogHeader>
-                    <AlertDialogTitle className="text-emerald-800">Approve Doctor Application</AlertDialogTitle>
+                    <AlertDialogTitle className="text-emerald-800">
+                      Approve Doctor Application
+                    </AlertDialogTitle>
                     <AlertDialogDescription>
-                      You're about to approve {doctor.name}'s application. This will grant them access to the platform and allow them to provide services.
+                      You're about to approve {doctor.name}'s application. This
+                      will grant them access to the platform and allow them to
+                      provide services.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel disabled={isSubmitting} className="border-emerald-200 text-emerald-700 hover:bg-emerald-50">Cancel</AlertDialogCancel>
-                    <Button 
+                    <AlertDialogCancel
+                      disabled={isSubmitting}
+                      className="border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                    >
+                      Cancel
+                    </AlertDialogCancel>
+                    <Button
                       onClick={handleApprove}
                       disabled={isSubmitting}
                       className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 shadow-md text-white"
@@ -722,7 +842,10 @@ export const DoctorDetails = () => {
               </AlertDialog>
 
               {/* Success dialog */}
-              <AlertDialog open={isSuccessDialogOpen} onOpenChange={setIsSuccessDialogOpen}>
+              <AlertDialog
+                open={isSuccessDialogOpen}
+                onOpenChange={setIsSuccessDialogOpen}
+              >
                 <AlertDialogContent className="border-emerald-100">
                   <AlertDialogHeader>
                     <div className="flex justify-center mb-4">
@@ -730,13 +853,16 @@ export const DoctorDetails = () => {
                         <CheckCheck className="h-8 w-8 text-emerald-500" />
                       </div>
                     </div>
-                    <AlertDialogTitle className="text-emerald-800 text-center">Application Approved</AlertDialogTitle>
+                    <AlertDialogTitle className="text-emerald-800 text-center">
+                      Application Approved
+                    </AlertDialogTitle>
                     <AlertDialogDescription className="text-center">
-                      {doctor.name}'s application has been successfully approved!
+                      {doctor.name}'s application has been successfully
+                      approved!
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter className="flex justify-center">
-                    <Button 
+                    <Button
                       onClick={() => {
                         setIsSuccessDialogOpen(false);
                         navigate("/doctors");
@@ -749,69 +875,81 @@ export const DoctorDetails = () => {
                 </AlertDialogContent>
               </AlertDialog>
 
-{/* rejection succes */}
-<AlertDialog open={isRejectionSuccessDialogOpen} onOpenChange={setIsRejectionSuccessDialogOpen}>
-  <AlertDialogContent className="border-rose-100">
-    <AlertDialogHeader>
-      <div className="flex justify-center mb-4">
-        <div className="bg-rose-100 p-3 rounded-full">
-          <X className="h-8 w-8 text-rose-500" />
-        </div>
-      </div>
-      <AlertDialogTitle className="text-rose-800 text-center">Application Rejected</AlertDialogTitle>
-      <AlertDialogDescription className="text-center">
-        {doctor.name}'s application has been successfully rejected.
-      </AlertDialogDescription>
-    </AlertDialogHeader>
-    <AlertDialogFooter className="flex justify-center">
-      <Button 
-        onClick={() => {
-          setIsRejectionSuccessDialogOpen(false);
-          
-          navigate("/doctors", { 
-            state: { 
-              rejectedDoctor: true, 
-              rejectedDoctorEmail: doctor.email,
-              rejectionTimestamp: new Date().getTime()
-            } 
-          });
-        }}
-        className="bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 shadow-md text-white"
-      >
-        OK
-      </Button>
-    </AlertDialogFooter>
-  </AlertDialogContent>
-</AlertDialog>
+              {/* rejection succes */}
+              <AlertDialog
+                open={isRejectionSuccessDialogOpen}
+                onOpenChange={setIsRejectionSuccessDialogOpen}
+              >
+                <AlertDialogContent className="border-rose-100">
+                  <AlertDialogHeader>
+                    <div className="flex justify-center mb-4">
+                      <div className="bg-rose-100 p-3 rounded-full">
+                        <X className="h-8 w-8 text-rose-500" />
+                      </div>
+                    </div>
+                    <AlertDialogTitle className="text-rose-800 text-center">
+                      Application Rejected
+                    </AlertDialogTitle>
+                    <AlertDialogDescription className="text-center">
+                      {doctor.name}'s application has been successfully
+                      rejected.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter className="flex justify-center">
+                    <Button
+                      onClick={() => {
+                        setIsRejectionSuccessDialogOpen(false);
+
+                        navigate("/doctors", {
+                          state: {
+                            rejectedDoctor: true,
+                            rejectedDoctorEmail: doctor.email,
+                            rejectionTimestamp: new Date().getTime(),
+                          },
+                        });
+                      }}
+                      className="bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 shadow-md text-white"
+                    >
+                      OK
+                    </Button>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
 
               {/* Rejection confirmation dialog */}
-              <AlertDialog open={isRejectDialogOpen} onOpenChange={(open) => {
-                if (!isSubmitting) {
-                  setIsRejectDialogOpen(open);
-                }
-              }}>
+              <AlertDialog
+                open={isRejectDialogOpen}
+                onOpenChange={(open) => {
+                  if (!isSubmitting) {
+                    setIsRejectDialogOpen(open);
+                  }
+                }}
+              >
                 <AlertDialogContent className="max-w-md">
                   <AlertDialogHeader>
                     <AlertDialogTitle className="text-rose-600">
                       Reject Doctor Application
                     </AlertDialogTitle>
                     <AlertDialogDescription>
-                      You're about to reject {doctor?.name}'s application. 
+                      You're about to reject {doctor?.name}'s application.
                       Please select the reason(s) for rejection:
                     </AlertDialogDescription>
                   </AlertDialogHeader>
-                  
+
                   <div className="space-y-3 max-h-60 overflow-y-auto py-2">
                     {rejectionReasons.map((reason) => (
-                      <div key={reason.id} className="flex items-start space-x-2">
-                        <Checkbox 
+                      <div
+                        key={reason.id}
+                        className="flex items-start space-x-2"
+                      >
+                        <Checkbox
                           id={reason.id}
                           checked={selectedReasons.includes(reason.id)}
                           onCheckedChange={() => handleReasonToggle(reason.id)}
                           className="border-rose-300 text-rose-600 data-[state=checked]:bg-rose-600 data-[state=checked]:border-rose-600"
                         />
-                        <label 
-                          htmlFor={reason.id} 
+                        <label
+                          htmlFor={reason.id}
                           className="text-sm cursor-pointer"
                         >
                           {reason.label}
@@ -819,22 +957,21 @@ export const DoctorDetails = () => {
                       </div>
                     ))}
                   </div>
-                  
-                 
 
-
-               <AlertDialogFooter className="mt-4">
-                    <AlertDialogCancel 
-                      disabled={isSubmitting} 
+                  <AlertDialogFooter className="mt-4">
+                    <AlertDialogCancel
+                      disabled={isSubmitting}
                       className="border-rose-200 text-rose-700 hover:bg-rose-50"
                     >
                       Cancel
                     </AlertDialogCancel>
-                    <Button 
+                    <Button
                       onClick={handleReject}
                       disabled={isSubmitting || selectedReasons.length === 0}
                       className={`bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 shadow-md text-white ${
-                        selectedReasons.length === 0 ? "opacity-50 cursor-not-allowed" : ""
+                        selectedReasons.length === 0
+                          ? "opacity-50 cursor-not-allowed"
+                          : ""
                       }`}
                     >
                       {isSubmitting ? (
@@ -852,7 +989,6 @@ export const DoctorDetails = () => {
             </section>
           )}
         </div>
-        
       </div>
     </div>
   );
