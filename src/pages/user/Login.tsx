@@ -205,6 +205,8 @@ const Login = () => {
         } else if ((result.payload as any).user.role === "user") {
           navigate("/");
         }else if ((result.payload as any).user.role === "doctor") {
+          console.log('kerindoooooooooooooo...............');
+          
           navigate("/DoctorDashboard");
         }
       } catch (error) {
