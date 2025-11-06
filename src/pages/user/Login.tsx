@@ -204,6 +204,8 @@ const Login = () => {
           navigate("/adminDash");
         } else if ((result.payload as any).user.role === "user") {
           navigate("/");
+        }else if ((result.payload as any).user.role === "doctor") {
+          navigate("/DoctorDashboard");
         }
       } catch (error) {
         formik.setFieldError(
