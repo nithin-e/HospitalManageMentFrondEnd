@@ -1,0 +1,26 @@
+
+
+name: Node.js CI/CD
+
+on:
+  push:
+    branches: [ "master" ]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: /var/www/HospitalManageMentFrondEnd
+
+      - name: Build project
+        run: npm run build
+        working-directory: /var/www/HospitalManageMentFrondEnd
+
+      - name: Restart Nginx
+        run: sudo systemctl restart nginx
