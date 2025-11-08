@@ -205,7 +205,6 @@ const Login = () => {
         } else if ((result.payload as any).user.role === "user") {
           navigate("/");
         }else if ((result.payload as any).user.role === "doctor") {
-          console.log('kerindoooooooooooooo...............');
           
           navigate("/DoctorDashboard");
         }
@@ -376,7 +375,7 @@ const Login = () => {
               delay: 1,
             }}
           >
-            Providing exceptional care with advanced technology
+            Providing exceptional care with advanced technology----------------------------------
           </motion.p>
         </motion.div>
       </motion.div>
