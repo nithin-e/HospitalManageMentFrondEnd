@@ -19,7 +19,9 @@ jobs:
         working-directory: /var/www/HospitalManageMentFrondEnd
 
       - name: Build project
-        run: npm run build
+        run: |
+          export NODE_OPTIONS="--max_old_space_size=4096"
+          npm run build
         working-directory: /var/www/HospitalManageMentFrondEnd
 
       - name: Restart Nginx
