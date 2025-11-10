@@ -13,20 +13,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Deploy to live folder
-        run:  rsync -av --delete ./ /var/www/healnova/HospitalManageMentFrondEnd
+      # 🚀 Step 2: Sync files but keep .env safe
+      - name: Deploy to live folder (keep .env)
+        run: |
+          rsync -av --exclude='.env' --delete ./ /var/www/healnova/HospitalManageMentFrondEnd
 
-
+      # 🧩 Step 3: Install dependencies
       - name: Install dependencies
         run: npm install
         working-directory: /var/www/healnova/HospitalManageMentFrondEnd
 
-
-      # 🏗️ Step 3: Build the React project
+      # 🏗️ Step 4: Build the React project
       - name: Build project
         run: npm run build
         working-directory: /var/www/healnova/HospitalManageMentFrondEnd
 
-      # 🌐 Step 4: Restart Nginx to serve the latest build
+      # 🌐 Step 5: Restart Nginx
       - name: Restart Nginx
         run: sudo systemctl restart nginx
