@@ -13,10 +13,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      # 📦 Step 2: Install dependencies
+      - name: Deploy to live folder
+        run:  rsync -av --delete ./ /var/www/healnova/HospitalManageMentFrondEnd
+
+
       - name: Install dependencies
         run: npm install
         working-directory: /var/www/healnova/HospitalManageMentFrondEnd
+
 
       # 🏗️ Step 3: Build the React project
       - name: Build project
