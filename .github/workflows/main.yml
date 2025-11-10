@@ -14,13 +14,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Install dependencies
-        run: sudo npm install
-        working-directory: /var/www/healnova/HospitalManageMentFrondEnd
-
       - name: Build project
-        run: sudo npm run build
-        working-directory: /var/www/healnova/HospitalManageMentFrondEnd
+        run: |
+          npm install
+          npm run build
 
+      - name: Deploy to web directory
+        run: |
+          rsync -avz dist/ /var/www/healnova/HospitalManageMentFrondEnd/
+          
       - name: Restart Nginx
         run: sudo systemctl restart nginx
