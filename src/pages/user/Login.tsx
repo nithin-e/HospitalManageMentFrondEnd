@@ -375,7 +375,7 @@ const Login = () => {
               delay: 1,
             }}
           >
-            Providing exceptional care with advanced technology----------------------------------
+            Providing exceptional care with advanced technology
           </motion.p>
         </motion.div>
       </motion.div>
