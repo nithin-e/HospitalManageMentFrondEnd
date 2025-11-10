@@ -16,11 +16,11 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-        working-directory: /var/www/HospitalManageMentFrondEnd
+        working-directory: /var/www/healnova/HospitalManageMentFrondEnd
 
       - name: Build project
         run: npm run build
-        working-directory: /var/www/HospitalManageMentFrondEnd
+        working-directory: /var/www/healnova/HospitalManageMentFrondEnd
 
       - name: Restart Nginx
         run: sudo systemctl restart nginx
