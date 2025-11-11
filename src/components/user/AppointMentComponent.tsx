@@ -3,7 +3,6 @@ import {
   Calendar,
   Clock,
   User,
-  Mail,
   Phone,
   MessageSquare,
   Check,
@@ -45,7 +44,6 @@ const FloatingSymbol = ({ symbol, delay }) => {
   );
 };
 
-// Pulsing Circle Animation
 const PulsingCircle = ({ size, color, delay, top, left }) => (
   <div
     className="absolute rounded-full pulse-animation"
@@ -170,8 +168,7 @@ export default function AppointmentBooking() {
 
     const groupedDoctors = {};
 
-    // ✅ Correct access path
-    const doctors = response.data?.doctors || [];
+    const doctors = response.data|| [];
 
     if (doctors.length > 0) {
       console.log('Doctors found:', doctors.length);

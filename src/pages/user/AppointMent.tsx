@@ -1,5 +1,4 @@
 import AppointMentComponent from '@/components/user/AppointMentComponent'
-import React from 'react'
 
 const AppointMent = () => {
   return (
