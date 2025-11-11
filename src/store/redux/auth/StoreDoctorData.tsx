@@ -16,9 +16,7 @@ export interface ApplyDoctorProps {
 }
 
 export const registerDoctorApi = async (doctorData: FormData) => {
-  try {
-    console.log("Preparing to send doctor registration data");
-   
+  try {   
     const response = await axiosInstance.post(
       "/api/user/applyDoctor",
       doctorData

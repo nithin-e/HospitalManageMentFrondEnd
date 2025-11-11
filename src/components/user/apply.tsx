@@ -68,7 +68,6 @@ const Apply: React.FC = () => {
   const userId = useSelector((state: RootState) => state.user?.user._id || "");
   const user = useSelector((state: RootState) => state.user|| "");
 
-  console.log('click meeee',user);
   
 
   useEffect(() => {
@@ -76,7 +75,6 @@ const Apply: React.FC = () => {
       try {
         setLoadingSpecialties(true);
         const response = await fetchServicesApi();
-        console.log("fetch services response", response);
 
         if (response && response.data && Array.isArray(response.data)) {
           const specialtiesData = response.data.map(
@@ -84,7 +82,6 @@ const Apply: React.FC = () => {
           );
           setSpecialties(specialtiesData);
         } else {
-          console.error("No services found or invalid response format");
 
           setSpecialties([
             "Cardiology",
@@ -124,10 +121,7 @@ const Apply: React.FC = () => {
     fetchSpecialties();
   }, []);
 
-  console.log(
-    "this is component Apply.tsx so check the user id getting or not inside the redux",
-    userId
-  );
+
 
   useEffect(() => {
     const totalFields = 9;
@@ -315,7 +309,6 @@ const Apply: React.FC = () => {
     if (!validateForm()) {
       setSubmitMessage("");
 
-      // Find the first section with errors and scroll to it
       if (
         errors.firstName ||
         errors.lastName ||
@@ -344,7 +337,6 @@ const Apply: React.FC = () => {
     setIsSubmitting(true);
     setSubmitMessage("");
 
-    // Create FormData object
     const apiData = new FormData();
 
     // Append form data
