@@ -32,6 +32,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { Inputt } from "./reusable/Input";
 import { fetchServicesApi } from "@/store/AdminSideApi/fetchServices";
+import { compressImage } from "@/util/imageCompression";
 
 const Apply: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -258,27 +259,104 @@ const Apply: React.FC = () => {
     setFormData((prev) => ({ ...prev, agreeTerms: !prev.agreeTerms }));
   };
 
-  const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setProfileImage(file);
+  // const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   if (e.target.files && e.target.files[0]) {
+  //     const file = e.target.files[0];
+  //     setProfileImage(file);
 
-      // Create a preview URL
+  //     // Create a preview URL
+  //     const reader = new FileReader();
+  //     reader.onloadend = () => {
+  //       setProfileImagePreview(reader.result as string);
+  //     };
+  //     reader.readAsDataURL(file);
+  //   }
+  // };
+
+
+
+  const handleProfileImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  if (e.target.files && e.target.files[0]) {
+    const file = e.target.files[0];
+    
+    try {
+      // Show loading feedback
+      setErrors((prev) => ({ ...prev, profileImage: "Compressing image..." }));
+      
+      const compressedFile = await compressImage(file, 800, 800, 0.7);
+      
+    
+      
+      setProfileImage(compressedFile);
+
+     
       const reader = new FileReader();
       reader.onloadend = () => {
         setProfileImagePreview(reader.result as string);
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(compressedFile);
+      
+      
+      setErrors((prev) => {
+        const { profileImage, ...rest } = prev;
+        return rest;
+      });
+      
+    } catch (error) {
+      console.error("Image compression failed:", error);
+      setErrors((prev) => ({ 
+        ...prev, 
+        profileImage: "Failed to compress image. Please try another file." 
+      }));
     }
-  };
+  }
+};
 
-  const handleMedicalLicenseChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    if (e.target.files && e.target.files[0]) {
-      setMedicalLicense(e.target.files[0]);
+
+  // const handleMedicalLicenseChange = (
+  //   e: React.ChangeEvent<HTMLInputElement>
+  // ) => {
+  //   if (e.target.files && e.target.files[0]) {
+  //     setMedicalLicense(e.target.files[0]);
+  //   }
+  // };
+
+
+  const handleMedicalLicenseChange = async (
+  e: React.ChangeEvent<HTMLInputElement>
+) => {
+  if (e.target.files && e.target.files[0]) {
+    const file = e.target.files[0];
+    
+    try {
+  
+      if (file.type.startsWith('image/')) {
+        setErrors((prev) => ({ ...prev, medicalLicense: "Compressing image..." }));
+        
+      
+        const compressedFile = await compressImage(file, 1200, 1200, 0.8);
+        
+
+        
+        setMedicalLicense(compressedFile);
+      } else {
+        setMedicalLicense(file);
+      }
+      
+      setErrors((prev) => {
+        const { medicalLicense, ...rest } = prev;
+        return rest;
+      });
+      
+    } catch (error) {
+      console.error("File processing failed:", error);
+      setErrors((prev) => ({ 
+        ...prev, 
+        medicalLicense: "Failed to process file. Please try another file." 
+      }));
     }
-  };
+  }
+};
 
   const scrollToSection = (
     section: "personal" | "professional" | "documents"
