@@ -77,7 +77,7 @@ const Login = () => {
           password: values.password,
         });
 
-        if (!response.data || !response.data.user) {
+        if (!response.data || !response.data.user.role) {
           throw new Error("Incorrect Credentials");
         }
 
@@ -173,16 +173,12 @@ const Login = () => {
 
         const { user, access_token, refresh_token } = backendResponse.data;
 
-       
         if (!user.isActive) {
           setShowBlockedMessage(true);
           return;
         }
 
-        // Log response for debugging
-        console.log("backendResponse after google login", backendResponse.data);
 
-        // Create payload in consistent structure
         const loginPayload = {
           user: {
             _id: user.id,
@@ -204,8 +200,7 @@ const Login = () => {
           navigate("/adminDash");
         } else if ((result.payload as any).user.role === "user") {
           navigate("/");
-        }else if ((result.payload as any).user.role === "doctor") {
-          
+        } else if ((result.payload as any).user.role === "doctor") {
           navigate("/DoctorDashboard");
         }
       } catch (error) {
