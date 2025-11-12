@@ -417,7 +417,6 @@ const UserProfileComponent = () => {
     }
 
     if (callData) {
-      // Prepare data to send to backend
       const callInfo = {
         appointmentId: callData.appointmentId,
         doctorId: callData.doctorId,
@@ -793,7 +792,7 @@ const UserProfileComponent = () => {
         type: message.type,
         text: message.text,
         sender: message.sender,
-        senderId: chatAppointment.userId||"",
+        senderId: chatAppointment.userId|| userIdd,
         timestamp: message.timestamp,
         appointmentId: chatAppointment?.id || "",
         receverId: chatAppointment.doctorId,
