@@ -15,6 +15,7 @@ import * as Yup from 'yup';
 import { sendOtp } from '@/hooks/auth';
 import { forgetPassword } from '@/store/redux/auth/forgetPasswordApi';
 import { RecaptchaVerifier } from 'firebase/auth';
+import { fetchUserProfileData } from '@/store/userSideApi/fetchUserProfile';
 
 declare global {
   interface Window {
@@ -64,23 +65,22 @@ const ForgotPassword = () => {
     onSubmit: async (values) => {
       setIsLoading(true);
       try {
-        // Check if user exists
-        const response = await axiosInstance.post("/api/user/checkUser", { 
-          email: values.email 
-        });
+       
+
+              const response = await fetchUserProfileData(values.email );
+        
 
         console.log('Check user response:', response);
 
         if (response.data.message === "User not found or inactive") {
           throw new Error("No account found with this email address.");
         } else if (response.data.user && response.data.user.phoneNumber) {
-          // User exists, store phone number and send OTP
           setUserPhone(response.data.user.phoneNumber);
           await sendOtp(setOtpInput, auth, response.data.user.phoneNumber, setConfirmationResult);
         } else {
           throw new Error("Unable to retrieve user information. Please try again.");
         }
-      } catch (error: any) {
+      } catch (error) {
         toast({
           title: "Verification Failed",
           description: error.message || "An error occurred. Please try again.",
