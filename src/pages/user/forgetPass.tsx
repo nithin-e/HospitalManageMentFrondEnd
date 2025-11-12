@@ -1,10 +1,9 @@
-import {ResetPassword} from '@/components/user/forgetPassword'
-import React from 'react'
+import ForgotPassword from '@/components/user/forgetPassword'
 
 function forgetPass() {
   return (
     <div>
-        <ResetPassword/>
+        <ForgotPassword/>
     </div>
   )
 }
