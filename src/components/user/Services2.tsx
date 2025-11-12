@@ -91,9 +91,9 @@ const Services2: React.FC = () => {
 
         <div className="container mx-auto relative z-10">
           <div className="text-center mb-12 sm:mb-16 max-w-3xl mx-auto animate-fade-in">
-            <span className="inline-block bg-brand-accent/20 text-brand-blue px-3 sm:px-4 py-1 rounded-full text-xs sm:text-sm font-medium tracking-wide mb-3">
+            {/* <span className="inline-block bg-brand-accent/20 text-brand-blue px-3 sm:px-4 py-1 rounded-full text-xs sm:text-sm font-medium tracking-wide mb-3">
               OUR SPECIALTIES
-            </span>
+            </span> */}
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-brand-blue mb-4 sm:mb-6 px-2">
               Specialized Medical Services
             </h2>
