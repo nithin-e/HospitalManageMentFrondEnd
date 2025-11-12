@@ -6,7 +6,6 @@ import {
   Phone,
   MessageSquare,
   Check,
-
   Stethoscope,
 } from "lucide-react";
 import Navbar from "./Navbar";
@@ -116,7 +115,6 @@ export default function AppointmentBooking() {
   ];
 
   useEffect(() => {
- 
     const symbolChars = [
       "⚕️",
       "+",
@@ -160,74 +158,72 @@ export default function AppointmentBooking() {
     fetchDoctorData();
   }, []);
 
- const fetchDoctorData = async () => {
-  try {
-    setLoading(true);
-    const response = await UserfetchingDoctors();
-    console.log('Fetched doctors:', response);
+  const fetchDoctorData = async () => {
+    try {
+      setLoading(true);
+      const response = await UserfetchingDoctors();
+      console.log("Fetched doctors:", response);
 
-    const groupedDoctors = {};
+      const groupedDoctors = {};
 
-    const doctors = response.data|| [];
+      const doctors = response.data || [];
 
-    if (doctors.length > 0) {
-      console.log('Doctors found:', doctors.length);
+      if (doctors.length > 0) {
+        console.log("Doctors found:", doctors.length);
 
-      doctors.forEach((doctor) => {
-        if (doctor.status === "completed") {
-          console.log('check the id of doctor', doctor.id);
-          const doctorId = doctor.id || doctor._id;
-          const email = doctor.email;
-          const specialty = doctor.specialty;
-          const doctorName = `Dr. ${doctor.firstName} ${doctor.lastName}`;
+        doctors.forEach((doctor) => {
+          if (doctor.status === "completed") {
+            console.log("check the id of doctor", doctor.id);
+            const doctorId = doctor.id || doctor._id;
+            const email = doctor.email;
+            const specialty = doctor.specialty;
+            const doctorName = `Dr. ${doctor.firstName} ${doctor.lastName}`;
 
-          if (!groupedDoctors[specialty]) {
-            groupedDoctors[specialty] = [];
+            if (!groupedDoctors[specialty]) {
+              groupedDoctors[specialty] = [];
+            }
+
+            groupedDoctors[specialty].push({
+              name: doctorName,
+              email: email,
+              doctorId: doctorId,
+            });
           }
+        });
+      } else {
+        console.warn("No doctors found in response");
+      }
 
-          groupedDoctors[specialty].push({
-            name: doctorName,
-            email: email,
-            doctorId: doctorId,
-          });
-        }
+      console.log("Doctors grouped by specialty:", groupedDoctors);
+      setDoctorsBySpecialty(groupedDoctors);
+    } catch (error) {
+      console.error("Error fetching doctors:", error);
+
+      // ✅ Fallback data (in case of API failure)
+      const fallbackDoctors = {};
+      specialties.forEach((spec) => {
+        fallbackDoctors[spec.name] = [
+          {
+            name: `Dr. ${spec.name.substring(0, 3)} Smith`,
+            email: `smith@example.com`,
+          },
+          {
+            name: `Dr. ${spec.name.substring(0, 3)} Johnson`,
+            email: `johnson@example.com`,
+          },
+        ];
       });
-    } else {
-      console.warn("No doctors found in response");
+
+      setDoctorsBySpecialty(fallbackDoctors);
+    } finally {
+      setLoading(false);
     }
-
-    console.log("Doctors grouped by specialty:", groupedDoctors);
-    setDoctorsBySpecialty(groupedDoctors);
-  } catch (error) {
-    console.error("Error fetching doctors:", error);
-
-    // ✅ Fallback data (in case of API failure)
-    const fallbackDoctors = {};
-    specialties.forEach((spec) => {
-      fallbackDoctors[spec.name] = [
-        {
-          name: `Dr. ${spec.name.substring(0, 3)} Smith`,
-          email: `smith@example.com`,
-        },
-        {
-          name: `Dr. ${spec.name.substring(0, 3)} Johnson`,
-          email: `johnson@example.com`,
-        },
-      ];
-    });
-
-    setDoctorsBySpecialty(fallbackDoctors);
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
 
-    
     if (name === "date") {
       setFormData((prev) => ({ ...prev, [name]: value, time: "" }));
     }
@@ -260,8 +256,8 @@ export default function AppointmentBooking() {
   };
 
   const handleDoctorSelect = (doctor) => {
-    console.log('check this doctor are u getting the doctor id',doctor);
-    
+    console.log("check this doctor are u getting the doctor id", doctor);
+
     setFormData((prev) => ({
       ...prev,
       doctor: doctor.name,
@@ -280,19 +276,18 @@ export default function AppointmentBooking() {
       doctorId: formData.doctorId,
     };
 
-    console.log('bro plazzz check form data',formData);
-    
+    console.log("bro plazzz check form data", formData);
 
     try {
       const response = await axiosInstance.post(
         "/api/notification/create-checkout-session",
-        
+
         { appointmentData }
       );
 
       if (response.data.success) {
         console.log("Redirecting to Stripe checkout...");
-        window.location.href = response.data.checkout_url; 
+        window.location.href = response.data.checkout_url;
       } else {
         console.error("Checkout session creation failed");
       }
@@ -340,7 +335,6 @@ export default function AppointmentBooking() {
 
           console.log("Time slots set:", response.data.time_slots);
         } else {
-      
           setTimeSlots([]);
         }
 
@@ -365,11 +359,8 @@ export default function AppointmentBooking() {
     formData.name && formData.email && formData.phone
   );
 
-
-
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-50 via-white to-blue-50 relative">
-  
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         {symbols.map((sym) => (
           <FloatingSymbol key={sym.id} symbol={sym.symbol} delay={sym.delay} />
@@ -378,7 +369,6 @@ export default function AppointmentBooking() {
           <PulsingCircle key={circle.id} {...circle} />
         ))}
       </div>
-
 
       <div className="absolute inset-0 bg-grid-pattern opacity-5 pointer-events-none"></div>
 
@@ -398,7 +388,6 @@ export default function AppointmentBooking() {
           </div>
 
           <div className="flex flex-col md:flex-row gap-8">
-        
             <div className="w-full md:w-2/3">
               <div className="bg-white p-6 md:p-8 rounded-2xl shadow-xl border border-blue-100 transition-all duration-300 hover:shadow-blue-100">
                 <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
@@ -406,7 +395,6 @@ export default function AppointmentBooking() {
                   Book an Appointment
                 </h2>
 
-              
                 <div className="flex mb-10 justify-between relative">
                   <div className="absolute top-5 left-0 w-full h-1 bg-gray-200 -z-10"></div>
                   <div
@@ -471,7 +459,6 @@ export default function AppointmentBooking() {
                 </div>
 
                 <div>
-               
                   {step === 1 && (
                     <div className="space-y-6">
                       <div>
@@ -488,11 +475,11 @@ export default function AppointmentBooking() {
                               key={specialty.name}
                               onClick={() => selectSpecialty(specialty.name)}
                               className={`p-5 border rounded-xl cursor-pointer transition-all hover:shadow-md text-center transform hover:scale-105 duration-200
-                                ${
-                                  formData.specialty === specialty.name
-                                    ? "border-blue-500 bg-gradient-to-b from-blue-50 to-blue-100 shadow-md"
-                                    : "border-gray-200 hover:border-blue-200"
-                                }`}
+          ${
+            formData.specialty === specialty.name
+              ? "border-blue-500 bg-gradient-to-b from-blue-50 to-blue-100 shadow-md"
+              : "border-gray-200 hover:border-blue-200"
+          }`}
                             >
                               <div className="text-3xl mb-3">
                                 {specialty.icon}
@@ -507,16 +494,16 @@ export default function AppointmentBooking() {
                           ))}
                         </div>
 
-                        {formData.specialty &&
-                          doctorsBySpecialty[formData.specialty] && (
-                            <div className="mt-4 bg-blue-50 p-3 rounded-lg border border-blue-200">
-                              <label className="text-sm text-gray-700 mb-2 flex items-center">
-                                <User
-                                  size={16}
-                                  className="mr-1 text-blue-600"
-                                />
-                                Select Doctor
-                              </label>
+                        {formData.specialty && (
+                          <div className="mt-4 bg-blue-50 p-3 rounded-lg border border-blue-200">
+                            <label className="text-sm text-gray-700 mb-2 flex items-center">
+                              <User size={16} className="mr-1 text-blue-600" />
+                              Select Doctor
+                            </label>
+
+                            {doctorsBySpecialty[formData.specialty] &&
+                            doctorsBySpecialty[formData.specialty].length >
+                              0 ? (
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 {doctorsBySpecialty[formData.specialty].map(
                                   (doctor) => (
@@ -524,11 +511,11 @@ export default function AppointmentBooking() {
                                       key={doctor.email}
                                       onClick={() => handleDoctorSelect(doctor)}
                                       className={`p-2 border rounded-lg flex items-center cursor-pointer hover:bg-white
-                                    ${
-                                      formData.doctor === doctor.name
-                                        ? "border-blue-500 bg-white shadow-sm"
-                                        : "border-gray-200"
-                                    }`}
+                ${
+                  formData.doctor === doctor.name
+                    ? "border-blue-500 bg-white shadow-sm"
+                    : "border-gray-200"
+                }`}
                                     >
                                       <User
                                         size={16}
@@ -538,7 +525,6 @@ export default function AppointmentBooking() {
                                         <div className="text-sm font-medium">
                                           {doctor.name}
                                         </div>
-
                                         <div className="text-xs text-gray-500">
                                           {formData.specialty}
                                         </div>
@@ -547,8 +533,19 @@ export default function AppointmentBooking() {
                                   )
                                 )}
                               </div>
-                            </div>
-                          )}
+                            ) : (
+                              <div className="text-center py-4 text-gray-500">
+                                <p className="mb-2">
+                                  No doctors available for {formData.specialty}
+                                </p>
+                                <p className="text-sm">
+                                  Please select another specialty or check back
+                                  later.
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       <div className="pt-6 flex justify-end">
