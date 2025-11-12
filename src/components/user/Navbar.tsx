@@ -84,7 +84,6 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
     }
   };
 
-  // Prevent body scroll when mobile menu is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -122,12 +121,12 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
           >
             {/* Header with gradient */}
-            <div className="flex justify-between items-center p-6 bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg">
+            <div className="flex justify-between items-center p-6 bg-gradient-to-r rgb(0, 59, 115) rgb(0, 59, 115)-600 shadow-lg">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-white/20 rounded-lg">
                   <Heart size={24} className="text-white" />
                 </div>
-                <span className="text-xl font-bold text-white">MediCare</span>
+                <span className="text-xl font-bold text-white">HealNova</span>
               </div>
               <button
                 onClick={onItemClick}
@@ -187,11 +186,11 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                   <motion.a
                     key={index}
                     href={item.href}
-                    className="flex items-center space-x-4 p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-blue-100 text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:shadow-md transition-all duration-200 active:scale-95 shadow-sm"
+                    className="flex items-center space-x-4 p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-blue-100 text-gray-700 hover:bg-blue-50 rgb(0, 59, 115) hover:shadow-md transition-all duration-200 active:scale-95 shadow-sm"
                     onClick={onItemClick}
                     whileTap={{ scale: 0.95 }}
                   >
-                    <div className="p-2 bg-blue-100 rounded-xl text-blue-600">
+                    <div className="p-2 bg-blue-100 rounded-xl rgb(0, 59, 115)">
                       {item.icon}
                     </div>
                     <span className="text-base font-semibold">{item.name}</span>
@@ -380,7 +379,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
             {/* Footer */}
             <div className="p-4 border-t border-blue-100 bg-white/80 backdrop-blur-sm">
               <p className="text-center text-sm text-gray-500">
-                © 2024 MediCare. All rights reserved.
+                © 2025 HealNova. All rights reserved.
               </p>
             </div>
           </motion.div>
