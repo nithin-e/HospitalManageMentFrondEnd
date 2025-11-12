@@ -271,7 +271,11 @@ const AppointMentListingComponent = () => {
   };
 
   const fetchUserConversation = async (userId: string, doctorId: string) => {
+
     try {
+
+      console.log('check the both ids user and doctor',userId,doctorId);
+      
       const res = await fetchUserConversations(userId, doctorId);
 
       console.log('check this fetchUserConversations',res);
