@@ -371,11 +371,10 @@ const ForgotPassword = () => {
                     {passwordFormik.touched.confirmPassword && passwordFormik.errors.confirmPassword && (
                       <p className="text-sm text-red-600">{passwordFormik.errors.confirmPassword}</p>
                     )}
+                    {otpError && (
+                      <p className="text-sm text-red-600">{otpError}</p>
+                    )}
                   </div>
-
-                  {otpError && (
-                    <p className="text-sm text-red-600">{otpError}</p>
-                  )}
 
                   <Button
                     type="button"
