@@ -8,10 +8,11 @@ import { useSocket } from "@/context/socketContext";
 const VideoCallPage = () => {
   const selectUserAndDoctor = (state: RootState) => ({
     user: state.user?.user,
-    doctor: state.doctor.data?.doctor,
+    doctor: state.doctor.data,
   });
 
-  const doctors = useSelector((state: RootState) => state.doctor.data?.doctor);
+    const doctors = useSelector((state: RootState) => state.doctor.data);
+  
 
   console.log("check this doctor data ---------", doctors);
 

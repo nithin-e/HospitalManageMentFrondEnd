@@ -1,5 +1,3 @@
-// Add this utility function to compress images
-// You can create a new file: utils/imageCompression.ts
 
 export const compressImage = (
   file: File,
@@ -18,7 +16,6 @@ export const compressImage = (
         let width = img.width;
         let height = img.height;
 
-        // Calculate new dimensions while maintaining aspect ratio
         if (width > height) {
           if (width > maxWidth) {
             height = (height * maxWidth) / width;
@@ -40,7 +37,6 @@ export const compressImage = (
           return;
         }
 
-        // Draw and compress the image
         ctx.drawImage(img, 0, 0, width, height);
 
         canvas.toBlob(
@@ -50,7 +46,7 @@ export const compressImage = (
               return;
             }
 
-            // Create a new File object from the blob
+         
             const compressedFile = new File([blob], file.name, {
               type: 'image/jpeg',
               lastModified: Date.now(),
@@ -78,7 +74,6 @@ export const compressImage = (
   });
 };
 
-// Compress PDF by validating size only (PDFs can't be compressed client-side easily)
 export const validateFileSize = (file: File, maxSizeMB: number = 10): boolean => {
   const maxSizeBytes = maxSizeMB * 1024 * 1024;
   return file.size <= maxSizeBytes;
