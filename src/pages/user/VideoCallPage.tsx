@@ -11,18 +11,11 @@ const VideoCallPage = () => {
     doctor: state.doctor.data,
   });
 
-    const doctors = useSelector((state: RootState) => state.doctor.data);
-  
+  const doctors = useSelector((state: RootState) => state.doctor.data);
 
   console.log("check this doctor data ---------", doctors);
 
   const { user, doctor } = useSelector(selectUserAndDoctor);
-
-  console.log(
-    "check this datas getting or not while consultation tyme",
-    user,
-    doctor
-  );
 
   const email = user?.email || doctor?.email;
   const { roomId } = useParams();

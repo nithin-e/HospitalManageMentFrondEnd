@@ -1,13 +1,9 @@
-import AppointMentListingComponent from '@/components/Doctor/appointmentManageMent/AppointMentListingComponent'
-import React from 'react'
+import AppointMentListingComponent from "@/components/Doctor/appointmentManageMent/AppointMentListingComponent";
 
 export default function AppointMentMangemant() {
   return (
     <div>
-      <AppointMentListingComponent/>
+      <AppointMentListingComponent />
     </div>
-  )
+  );
 }
-
-
-

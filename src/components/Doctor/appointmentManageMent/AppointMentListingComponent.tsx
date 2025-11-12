@@ -274,6 +274,9 @@ const AppointMentListingComponent = () => {
     try {
       const res = await fetchUserConversations(userId, doctorId);
 
+      console.log('check this fetchUserConversations',res);
+      
+
       if (res.success) {
         const messages = res.conversations[0].messages.map((msg) => {
           const isImage =
