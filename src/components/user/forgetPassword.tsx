@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
 import { Mail, Key, ArrowRight, Phone } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from "@/store/redux/store";
@@ -28,10 +29,9 @@ const ForgotPassword = () => {
   const [otpInput, setOtpInput] = useState(false);
   const [otp, setOtp] = useState('');
   const [counter, setCounter] = useState(40);
-  const [confirmationResult, setConfirmationResult] = useState(null);
+  const [confirmationResult, setConfirmationResult] = useState<any>(null);
   const [userPhone, setUserPhone] = useState('');
-  const [apiError, setApiError] = useState('');
-  const [otpError, setOtpError] = useState('');
+  const { toast } = useToast();
   const navigate = useNavigate();
 
   // Step 1: Email validation schema
@@ -64,22 +64,28 @@ const ForgotPassword = () => {
     validationSchema: emailValidationSchema,
     onSubmit: async (values) => {
       setIsLoading(true);
-      setApiError('');
       try {
-        const response = await fetchUserProfileData(values.email);
+       
+
+              const response = await fetchUserProfileData(values.email );
+        
+
         console.log('Check user response:', response);
 
         if (!response) {
-          setApiError("No account found with this email address.");
+          throw new Error("No account found with this email address.");
         } else if (response.phone_number) {
           setUserPhone(response.phone_number);
           await sendOtp(setOtpInput, auth, response.phone_number, setConfirmationResult);
-          setApiError('');
         } else {
-          setApiError("Unable to retrieve user information. Please try again.");
+          throw new Error("Unable to retrieve user information. Please try again.");
         }
       } catch (error) {
-        setApiError(error.message || "An error occurred. Please try again.");
+        toast({
+          title: "Verification Failed",
+          description: error.message || "An error occurred. Please try again.",
+          variant: "destructive"
+        });
       } finally {
         setIsLoading(false);
       }
@@ -107,36 +113,51 @@ const ForgotPassword = () => {
 
   // OTP verification and password reset
   const verifyOtpAndResetPassword = async () => {
-    setOtpError('');
-    
     if (!confirmationResult) {
-      setOtpError("No OTP confirmation result available");
+      toast({
+        title: "Error",
+        description: "No OTP confirmation result available",
+        variant: "destructive"
+      });
       return;
     }
 
     if (!passwordFormik.isValid) {
-      setOtpError("Please ensure your password meets all requirements");
-      return;
-    }
-
-    if (!otp || otp.length !== 6) {
-      setOtpError("Please enter a valid 6-digit OTP");
+      toast({
+        title: "Invalid Password",
+        description: "Please ensure your password meets all requirements",
+        variant: "destructive"
+      });
       return;
     }
 
     setIsLoading(true);
     try {
       await confirmationResult.confirm(otp);
+      
       const response = await forgetPassword(emailFormik.values.email, passwordFormik.values.password);
+      
       console.log('Password reset response:', response);
-
+      
       if (response.success === true) {
+        toast({
+          title: "Success",
+          description: "Password reset successfully. Please login with your new password.",
+        });
         navigate('/login', { state: { passwordReset: true } });
       } else if (response.success === false) {
-        setOtpError("Failed to reset password. Please check your email.");
+        toast({
+          title: "Reset Failed",
+          description: "Failed to reset password. Please check your email.",
+          variant: "destructive"
+        });
       }
     } catch (error) {
-      setOtpError(error.message || "Invalid OTP or password reset failed");
+      toast({
+        title: "Reset Failed",
+        description: error.message || "Invalid OTP or password reset failed",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
@@ -146,11 +167,9 @@ const ForgotPassword = () => {
     try {
       setCounter(40);
       setOtp('');
-      setOtpError('');
       await sendOtp(setOtpInput, auth, userPhone, setConfirmationResult);
     } catch (error) {
       console.error("Failed to resend OTP:", error);
-      setOtpError("Failed to resend OTP. Please try again.");
     }
   };
 
@@ -177,229 +196,261 @@ const ForgotPassword = () => {
     visible: {
       y: 0,
       opacity: 1,
-      transition: {
-        type: "spring",
-        stiffness: 300,
-        damping: 24
-      }
+      transition: { type: "spring", stiffness: 300, damping: 24 }
     }
   };
 
   const backgroundVariants = {
     hidden: { opacity: 0 },
-    visible: {
+    visible: { 
       opacity: [0.3, 0.5, 0.3],
-      transition: {
-        duration: 15,
-        repeat: Infinity,
-        ease: "easeInOut"
+      transition: { 
+        duration: 15, 
+        repeat: Infinity, 
+        ease: "easeInOut" 
       }
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <motion.div
-        variants={backgroundVariants}
+    <div className="min-h-[85vh] w-full flex flex-col md:flex-row-reverse overflow-hidden relative">
+      <motion.div 
+        className="fixed -right-1/4 -bottom-1/3 w-1/3 h-1/3 bg-gradient-to-tl from-brand-accent/20 to-brand-accent/5 rounded-full blur-3xl -z-10"
         initial="hidden"
         animate="visible"
-        className="absolute inset-0 bg-gradient-to-br from-blue-400/20 via-purple-400/20 to-pink-400/20"
+        variants={backgroundVariants}
       />
-
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
+      
+      <motion.div 
+        className="fixed -left-1/4 -top-1/4 w-1/3 h-1/3 bg-gradient-to-br from-brand-blue/20 to-brand-blue/5 rounded-full blur-3xl -z-10"
+        initial="hidden"
+        animate="visible"
+        variants={backgroundVariants}
+      />
+      
+      <motion.div 
+        className="hidden md:flex md:w-1/2 bg-healthcare-pink items-center justify-center p-6 relative"
+        initial={{ x: 100, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="relative w-full max-w-md mx-4"
       >
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl p-8 border border-white/20">
-          <div className="text-center mb-8">
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 200, damping: 15 }}
-              className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 mb-4"
-            >
-              <Key className="w-8 h-8 text-white" />
-            </motion.div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
-              Reset Your Password
-            </h1>
-            <p className="text-gray-600">Secure access to HealNova</p>
-            <Link 
-              to="/login" 
-              className="inline-flex items-center text-sm text-blue-600 hover:text-blue-700 mt-2"
-            >
-              <ArrowRight className="w-4 h-4 mr-1 rotate-180" />
+        <motion.div className="relative max-w-sm">
+          <motion.img 
+            src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
+            alt="Healthcare professional" 
+            className="rounded-xl shadow-lg w-full max-w-sm"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.4 }}
+          />
+          <motion.div 
+            className="absolute bottom-8 left-8 text-white"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+          >
+            <h2 className="text-2xl font-bold">Reset Your Password</h2>
+            <p className="mt-1 text-sm text-white/80">Secure access to <span className="text-brand-accent">HealNova</span></p>
+          </motion.div>
+        </motion.div>
+      </motion.div>
+
+      <div className="w-full md:w-1/2 flex items-center justify-center px-4 py-8 md:p-12">
+        <motion.div 
+          className="w-full max-w-md"
+          initial="hidden"
+          animate="visible"
+          variants={containerVariants}
+        >
+          <motion.div variants={itemVariants} className="mb-1">
+            <Link to="/login" className="inline-flex items-center text-brand-blue hover:text-brand-accent text-sm">
+              <ArrowRight className="mr-1 h-3 w-3 rotate-180" />
               Back to login
             </Link>
-          </div>
+          </motion.div>
 
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="space-y-6"
-          >
-            <motion.div variants={itemVariants} className="text-center mb-6">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full text-sm font-medium">
-                <Phone className="w-4 h-4" />
+          <motion.div variants={itemVariants} className="mb-4">
+            <div className="flex items-center">
+              <motion.div className="w-10 h-10 bg-brand-blue/10 rounded-full flex items-center justify-center mr-2">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 8V12M12 16H12.01M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" 
+                    stroke="#003B73" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </motion.div>
+              <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-brand-blue to-brand-accent">
                 HealNova
-              </div>
-            </motion.div>
+              </span>
+            </div>
+          </motion.div>
 
-            <motion.div variants={itemVariants}>
-              <h2 className="text-xl font-semibold text-gray-800 mb-2">
-                Forgot Password
-              </h2>
-              <p className="text-sm text-gray-600 mb-6">
-                {!otpInput ? "Enter your email to receive an OTP" : "Verify OTP and set new password"}
-              </p>
+          <motion.div variants={itemVariants}>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Forgot Password</h1>
+            <p className="mt-1 text-sm text-gray-600">
+              {!otpInput ? "Enter your email to receive an OTP" : "Verify OTP and set new password"}
+            </p>
+          </motion.div>
 
-              {!otpInput ? (
-                // Step 1: Email Input
-                <form onSubmit={emailFormik.handleSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-                      Email address
-                    </Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        placeholder="your.email@example.com"
-                        className="pl-10 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                        value={emailFormik.values.email}
-                        onChange={emailFormik.handleChange}
-                        onBlur={emailFormik.handleBlur}
-                        disabled={isLoading}
-                      />
-                    </div>
-                    {emailFormik.touched.email && emailFormik.errors.email && (
-                      <p className="text-sm text-red-600">{emailFormik.errors.email}</p>
-                    )}
-                    {apiError && (
-                      <p className="text-sm text-red-600">{apiError}</p>
-                    )}
+          <motion.div variants={containerVariants} className="mt-6 space-y-4">
+            {!otpInput ? (
+              // Step 1: Email Input
+              <motion.form 
+                variants={containerVariants}
+                className="space-y-4"
+                onSubmit={emailFormik.handleSubmit}
+              >
+                <motion.div variants={itemVariants} className="space-y-1">
+                  <Label htmlFor="email" className="text-xs font-medium text-gray-700">
+                    Email address
+                  </Label>
+                  <div className="relative">
+                    <Mail className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      placeholder="name@example.com"
+                      className={`pl-8 h-9 text-sm ${emailFormik.touched.email && emailFormik.errors.email ? 'border-red-500' : ''}`}
+                      {...emailFormik.getFieldProps('email')}
+                    />
                   </div>
+                  {emailFormik.touched.email && emailFormik.errors.email && (
+                    <motion.p variants={itemVariants} className="text-xs text-red-500">
+                      {emailFormik.errors.email}
+                    </motion.p>
+                  )}
+                </motion.div>
 
+                <motion.div variants={itemVariants}>
                   <Button
                     type="submit"
-                    disabled={isLoading}
-                    className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
+                    className="w-full bg-brand-blue hover:bg-brand-blue/90 h-9"
+                    disabled={isLoading || !emailFormik.isValid || !emailFormik.dirty}
                   >
                     {isLoading ? (
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        className="mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"
+                      />
                     ) : (
-                      <ArrowRight className="w-5 h-5" />
+                      <Mail className="mr-2 h-4 w-4" />
                     )}
                     {isLoading ? "Verifying..." : "Send OTP"}
                   </Button>
-                </form>
-              ) : (
-                // Step 2: OTP + Password Input
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="otp" className="text-sm font-medium text-gray-700">
-                      Enter OTP
-                    </Label>
+                </motion.div>
+              </motion.form>
+            ) : (
+              // Step 2: OTP + Password Input
+              <motion.div variants={containerVariants} className="space-y-4">
+                <motion.div variants={itemVariants} className="space-y-1">
+                  <Label htmlFor="otp" className="text-xs font-medium text-gray-700">
+                    Enter OTP
+                  </Label>
+                  <Input
+                    id="otp"
+                    type="text"
+                    placeholder="Enter 6-digit OTP"
+                    className="h-9 text-sm"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    maxLength={6}
+                  />
+                </motion.div>
+
+                <motion.div variants={itemVariants} className="text-xs text-gray-600">
+                  {counter > 0 ? (
+                    <span>Resend OTP in {counter} seconds</span>
+                  ) : (
+                    <Button
+                      variant="link"
+                      className="p-0 h-auto text-brand-blue hover:text-brand-accent text-xs"
+                      onClick={handleResendOtp}
+                    >
+                      Resend OTP
+                    </Button>
+                  )}
+                </motion.div>
+
+                <motion.div variants={itemVariants} className="space-y-1">
+                  <Label htmlFor="password" className="text-xs font-medium text-gray-700">
+                    New Password
+                  </Label>
+                  <div className="relative">
+                    <Key className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
                     <Input
-                      id="otp"
-                      type="text"
-                      placeholder="Enter 6-digit OTP"
-                      className="h-12 text-center text-lg tracking-widest border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value)}
-                      maxLength={6}
+                      id="password"
+                      name="password"
+                      type="password"
+                      placeholder="••••••••"
+                      className={`pl-8 h-9 text-sm ${passwordFormik.touched.password && passwordFormik.errors.password ? 'border-red-500' : ''}`}
+                      {...passwordFormik.getFieldProps('password')}
                     />
-                    {counter > 0 ? (
-                      <p className="text-sm text-gray-600 text-center">
-                        Resend OTP in {counter} seconds
-                      </p>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={handleResendOtp}
-                        className="text-sm text-blue-600 hover:text-blue-700 font-medium w-full text-center"
-                      >
-                        Resend OTP
-                      </button>
-                    )}
                   </div>
+                  {passwordFormik.touched.password && passwordFormik.errors.password && (
+                    <motion.p variants={itemVariants} className="text-xs text-red-500">
+                      {passwordFormik.errors.password}
+                    </motion.p>
+                  )}
+                </motion.div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="password" className="text-sm font-medium text-gray-700">
-                      New Password
-                    </Label>
-                    <div className="relative">
-                      <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                      <Input
-                        id="password"
-                        name="password"
-                        type="password"
-                        placeholder="Enter new password"
-                        className="pl-10 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                        value={passwordFormik.values.password}
-                        onChange={passwordFormik.handleChange}
-                        onBlur={passwordFormik.handleBlur}
-                      />
-                    </div>
-                    {passwordFormik.touched.password && passwordFormik.errors.password && (
-                      <p className="text-sm text-red-600">{passwordFormik.errors.password}</p>
-                    )}
+                <motion.div variants={itemVariants} className="space-y-1">
+                  <Label htmlFor="confirmPassword" className="text-xs font-medium text-gray-700">
+                    Confirm New Password
+                  </Label>
+                  <div className="relative">
+                    <Key className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type="password"
+                      placeholder="••••••••"
+                      className={`pl-8 h-9 text-sm ${passwordFormik.touched.confirmPassword && passwordFormik.errors.confirmPassword ? 'border-red-500' : ''}`}
+                      {...passwordFormik.getFieldProps('confirmPassword')}
+                    />
                   </div>
+                  {passwordFormik.touched.confirmPassword && passwordFormik.errors.confirmPassword && (
+                    <motion.p variants={itemVariants} className="text-xs text-red-500">
+                      {passwordFormik.errors.confirmPassword}
+                    </motion.p>
+                  )}
+                </motion.div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">
-                      Confirm New Password
-                    </Label>
-                    <div className="relative">
-                      <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                      <Input
-                        id="confirmPassword"
-                        name="confirmPassword"
-                        type="password"
-                        placeholder="Confirm new password"
-                        className="pl-10 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                        value={passwordFormik.values.confirmPassword}
-                        onChange={passwordFormik.handleChange}
-                        onBlur={passwordFormik.handleBlur}
-                      />
-                    </div>
-                    {passwordFormik.touched.confirmPassword && passwordFormik.errors.confirmPassword && (
-                      <p className="text-sm text-red-600">{passwordFormik.errors.confirmPassword}</p>
-                    )}
-                    {otpError && (
-                      <p className="text-sm text-red-600">{otpError}</p>
-                    )}
-                  </div>
-
+                <motion.div variants={itemVariants}>
                   <Button
-                    type="button"
                     onClick={verifyOtpAndResetPassword}
-                    disabled={isLoading}
-                    className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
+                    className="w-full bg-brand-blue hover:bg-brand-blue/90 h-9"
+                    disabled={
+                      isLoading || 
+                      otp.length !== 6 || 
+                      !passwordFormik.isValid || 
+                      !passwordFormik.dirty
+                    }
                   >
                     {isLoading ? (
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        className="mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"
+                      />
                     ) : null}
                     {isLoading ? "Resetting..." : "Reset Password"}
                   </Button>
-                </div>
-              )}
-            </motion.div>
+                </motion.div>
+              </motion.div>
+            )}
+          </motion.div>
 
-            <motion.div variants={itemVariants} className="text-center text-sm text-gray-600 pt-4">
+          <motion.div variants={itemVariants} className="mt-4 text-center">
+            <p className="text-xs text-gray-600">
               Remember your password?{" "}
-              <Link to="/login" className="text-blue-600 hover:text-blue-700 font-medium">
+              <Link to="/login" className="text-brand-blue hover:text-brand-accent">
                 Sign in
               </Link>
-            </motion.div>
+            </p>
           </motion.div>
-        </div>
-      </motion.div>
+        </motion.div>
+        <div id="recaptcha-container" className="mt-4"></div>
+      </div>
     </div>
   );
 };
