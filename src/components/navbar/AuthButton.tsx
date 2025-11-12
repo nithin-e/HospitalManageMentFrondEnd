@@ -8,6 +8,8 @@ interface AuthButtonsProps {
   isMobile?: boolean;
   isLoggedIn?: boolean;
   onLogoutClick?: () => void;
+   onItemClick?: () => void; 
+
 }
 
 const AuthButtons: React.FC<AuthButtonsProps> = ({ isMobile = false, isLoggedIn = false, onLogoutClick }) => {
