@@ -74,9 +74,9 @@ const ForgotPassword = () => {
 
         if (!response) {
           throw new Error("No account found with this email address.");
-        } else if (response && response.phoneNumber) {
-          setUserPhone(response.phoneNumber);
-          await sendOtp(setOtpInput, auth, response.phoneNumber, setConfirmationResult);
+        } else if (response.phone_number) {
+          setUserPhone(response.phone_number);
+          await sendOtp(setOtpInput, auth, response.phone_number, setConfirmationResult);
         } else {
           throw new Error("Unable to retrieve user information. Please try again.");
         }
