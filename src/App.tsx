@@ -38,6 +38,7 @@ import DoctorProtectedRoute from './protecting/doctorProtectedRoute';
 import ProtectedRoute from './protecting/ProctedRoute';
 import { BlockStatusChecker } from './protecting/BlockStatusChecker';
 import AdminAddService from './pages/admin/AdminAddService';
+import HistoryComponent from './pages/user/History';
 
 const queryClient = new QueryClient();
 
@@ -64,6 +65,7 @@ const App = () => {
                   <Route path="/register" element={<Register />} />
                   <Route path="*" element={<NotFound />} />
                   <Route path="/" element={<Index />} />
+                  <Route path="/history" element={<HistoryComponent />} />
                  <Route path="/AppointMent"  element={<ProtectedRoute><AppointMent /></ProtectedRoute>} />
 
                   {/* Protected routes */}
