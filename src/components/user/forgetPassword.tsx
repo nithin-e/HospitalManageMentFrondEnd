@@ -72,11 +72,11 @@ const ForgotPassword = () => {
 
         console.log('Check user response:', response);
 
-        if (response.data.message === "User not found or inactive") {
+        if (!response) {
           throw new Error("No account found with this email address.");
-        } else if (response.data.user && response.data.user.phoneNumber) {
-          setUserPhone(response.data.user.phoneNumber);
-          await sendOtp(setOtpInput, auth, response.data.user.phoneNumber, setConfirmationResult);
+        } else if (response && response.phoneNumber) {
+          setUserPhone(response.phoneNumber);
+          await sendOtp(setOtpInput, auth, response.phoneNumber, setConfirmationResult);
         } else {
           throw new Error("Unable to retrieve user information. Please try again.");
         }
