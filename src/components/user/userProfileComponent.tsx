@@ -29,7 +29,6 @@ import {
   Camera,
   Send,
   Download,
-  Menu,
 } from "lucide-react";
 import Navbar from "./Navbar";
 import { RootState } from "@/store/redux/store";
@@ -143,9 +142,6 @@ const UserProfileComponent = () => {
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
   const [prescriptionData, setPrescriptionData] = useState<Prescription | null>(null);
   const [prescriptionLoading, setPrescriptionLoading] = useState(false);
-
-  // Mobile menu state
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   const appointmentsPerPage = 1;
 
@@ -809,14 +805,14 @@ const UserProfileComponent = () => {
   if (!userData) {
     return (
       <div className="flex items-center justify-center h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="text-center bg-white p-8 rounded-xl shadow-lg max-w-md w-full mx-4">
+        <div className="text-center bg-white p-6 md:p-8 rounded-xl shadow-lg max-w-md w-full mx-4">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-8 h-8 text-red-500" />
           </div>
           <h2 className="text-xl font-semibold text-gray-800 mb-2">Profile Unavailable</h2>
           <p className="text-gray-600 mb-6">We're unable to load your medical profile at this time.</p>
           <button
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md"
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md w-full md:w-auto"
             onClick={() => window.location.reload()}
           >
             Retry
@@ -833,957 +829,884 @@ const UserProfileComponent = () => {
       <Navbar />
 
       <div className="max-w-6xl mx-auto p-4 sm:p-6 mt-[70px] sm:mt-[90px] relative z-10">
-        {/* Mobile Menu Button */}
-        <div className="lg:hidden mb-4">
-          <button
-            onClick={() => setShowMobileMenu(!showMobileMenu)}
-            className="w-full bg-white rounded-lg p-3 shadow-md flex items-center justify-between border border-blue-100"
-          >
-            <span className="font-medium text-gray-700">Profile Sections</span>
-            <Menu className="w-5 h-5 text-gray-500" />
-          </button>
+        {/* Profile Header Card */}
+        <div className="bg-white rounded-xl shadow-lg mb-6 overflow-hidden border border-blue-100">
+          <div className="bg-gradient-to-r from-blue-700 to-blue-800 p-4 sm:p-6 text-white relative">
+            <div className="absolute top-0 right-0 bg-white text-blue-800 text-xs font-bold px-3 py-1 rounded-bl-lg shadow-md">
+              MEDICAL ID
+            </div>
+
+            <div className="flex flex-col md:flex-row items-center md:items-start">
+              <div className="relative">
+                {userData.profileImage ? (
+                  <img
+                    src={userData.profileImage}
+                    alt={userData.name}
+                    className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full border-4 border-white object-cover shadow-lg"
+                  />
+                ) : (
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 bg-white rounded-full flex items-center justify-center shadow-lg">
+                    <User size={44} className="text-blue-600 sm:w-12 sm:h-12 md:w-14 md:h-14" />
+                  </div>
+                )}
+                <div className="absolute -bottom-1 -right-1 sm:-bottom-2 sm:-right-2 bg-blue-600 p-1 rounded-full shadow-md">
+                  <Check className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-white" />
+                </div>
+              </div>
+
+              <div className="mt-4 md:mt-0 md:ml-6 lg:ml-8 text-center md:text-left flex-1">
+                <h1 className="text-2xl sm:text-3xl font-bold">{userData.name}</h1>
+                <div className="flex flex-wrap gap-2 sm:gap-3 mt-3 text-xs justify-center md:justify-start">
+                  <div className="flex items-center bg-white bg-opacity-20 rounded-full px-2 sm:px-3 py-1 backdrop-blur-sm">
+                    <Clipboard className="w-3 h-3 mr-1" />
+                    <span>ID: {userData.id.substring(0, 8)}</span>
+                  </div>
+                  <div className="flex items-center bg-white bg-opacity-20 rounded-full px-2 sm:px-3 py-1 backdrop-blur-sm">
+                    <Calendar className="w-3 h-3 mr-1" />
+                    <span>Age: {userData.age || "N/A"}</span>
+                  </div>
+                  <div className="flex items-center bg-white bg-opacity-20 rounded-full px-2 sm:px-3 py-1 backdrop-blur-sm">
+                    <User className="w-3 h-3 mr-1" />
+                    <span>{userData.gender || "Not specified"}</span>
+                  </div>
+                  <div className="flex items-center bg-white bg-opacity-20 rounded-full px-2 sm:px-3 py-1 backdrop-blur-sm">
+                    <Heart className="w-3 h-3 mr-1" />
+                    <span>Blood: {userData.bloodType || "Not specified"}</span>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-2 justify-center md:justify-start">
+                  <button className="flex items-center bg-white bg-opacity-20 hover:bg-opacity-30 text-white text-xs px-2 sm:px-3 py-1 rounded-full transition-all border border-white border-opacity-30">
+                    <ClipboardCheck className="w-3 h-3 mr-1" />
+                    Request Records
+                  </button>
+                  <button className="flex items-center bg-white bg-opacity-20 hover:bg-opacity-30 text-white text-xs px-2 sm:px-3 py-1 rounded-full transition-all border border-white border-opacity-30">
+                    <Phone className="w-3 h-3 mr-1" />
+                    Contact Doctor
+                  </button>
+                  <button
+                    className="flex items-center bg-white bg-opacity-20 hover:bg-opacity-30 text-white text-xs px-2 sm:px-3 py-1 rounded-full transition-all border border-white border-opacity-30"
+                    onClick={handleEditClick}
+                  >
+                    <Pill className="w-3 h-3 mr-1" />
+                    Edit
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* Mobile Menu */}
-          {showMobileMenu && (
-            <div className="lg:hidden bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 mb-4">
-              <div className="flex flex-col">
-                <button
-                  className={`px-4 py-3 font-medium text-sm flex items-center border-l-4 ${
-                    activeTab === "personal"
-                      ? "border-blue-600 text-blue-600 bg-blue-50"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-                  }`}
-                  onClick={() => {
-                    setActiveTab("personal");
-                    setShowMobileMenu(false);
-                  }}
-                >
-                  <User className="w-4 h-4 mr-3" />
-                  Personal
-                </button>
-                <button
-                  className={`px-4 py-3 font-medium text-sm flex items-center border-l-4 ${
-                    activeTab === "medical"
-                      ? "border-blue-600 text-blue-600 bg-blue-50"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-                  }`}
-                  onClick={() => {
-                    setActiveTab("medical");
-                    setShowMobileMenu(false);
-                  }}
-                >
-                  <FileText className="w-4 h-4 mr-3" />
-                  Medical History
-                </button>
-                <button
-                  className={`px-4 py-3 font-medium text-sm flex items-center border-l-4 ${
-                    activeTab === "appointments"
-                      ? "border-blue-600 text-blue-600 bg-blue-50"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-                  }`}
-                  onClick={() => {
-                    setActiveTab("appointments");
-                    setShowMobileMenu(false);
-                  }}
-                >
-                  <Calendar className="w-4 h-4 mr-3" />
-                  Appointments
-                </button>
-                <button
-                  className={`px-4 py-3 font-medium text-sm flex items-center border-l-4 ${
-                    activeTab === "security"
-                      ? "border-blue-600 text-blue-600 bg-blue-50"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-                  }`}
-                  onClick={() => {
-                    setActiveTab("security");
-                    setShowMobileMenu(false);
-                  }}
-                >
-                  <Lock className="w-4 h-4 mr-3" />
-                  Security
-                </button>
+        {/* Edit Modal */}
+        {showEditModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-4 sm:p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-800">Edit Profile Information</h3>
+                  <button
+                    onClick={() => setShowEditModal(false)}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <X className="w-5 h-5 sm:w-6 sm:h-6" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleEditSubmit}>
+                  <div className="space-y-4">
+                    <div>
+                      <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                        Full Name
+                      </label>
+                      <input
+                        type="text"
+                        id="name"
+                        name="name"
+                        value={editFormData.name}
+                        onChange={handleEditFormChange}
+                        className={`w-full px-3 sm:px-4 py-2 border ${
+                          editFormErrors.name ? "border-red-500" : "border-gray-300"
+                        } rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-sm sm:text-base`}
+                        placeholder="Enter your full name"
+                      />
+                      {editFormErrors.name && (
+                        <p className="mt-1 text-sm text-red-600">{editFormErrors.name}</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                        Phone Number
+                      </label>
+                      <input
+                        type="tel"
+                        id="phoneNumber"
+                        name="phoneNumber"
+                        value={editFormData.phoneNumber}
+                        onChange={handleEditFormChange}
+                        className={`w-full px-3 sm:px-4 py-2 border ${
+                          editFormErrors.phoneNumber ? "border-red-500" : "border-gray-300"
+                        } rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-sm sm:text-base`}
+                        placeholder="Enter your phone number"
+                      />
+                      {editFormErrors.phoneNumber && (
+                        <p className="mt-1 text-sm text-red-600">{editFormErrors.phoneNumber}</p>
+                      )}
+                    </div>
+
+                    {editSuccess && (
+                      <div className="p-3 bg-green-50 text-green-700 rounded-lg text-sm border border-green-100">
+                        <div className="flex items-center">
+                          <Check className="w-4 h-4 mr-2" />
+                          Profile updated successfully!
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="pt-2 flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-3">
+                      <button
+                        type="button"
+                        onClick={() => setShowEditModal(false)}
+                        className="px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors w-full sm:w-auto order-2 sm:order-1"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-md w-full sm:w-auto order-1 sm:order-2"
+                      >
+                        Save Changes
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showSuccessMessage && (
+          <div className="fixed top-4 right-4 left-4 sm:left-auto z-50 animate-slide-in-right">
+            <div className="bg-blue-600 text-white px-4 sm:px-6 py-4 rounded-lg shadow-lg flex items-center max-w-sm w-full mx-auto sm:mx-0">
+              <div className="flex items-center flex-1">
+                <svg className="w-5 h-5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span className="text-sm font-medium truncate">{successMessage}</span>
+              </div>
+              <button
+                onClick={() => setShowSuccessMessage(false)}
+                className="ml-3 text-white hover:text-gray-200 transition-colors flex-shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Tabs Navigation */}
+        <div className="mb-6 bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
+          <div className="flex overflow-x-auto scrollbar-hide">
+            <button
+              className={`px-3 sm:px-5 py-3 font-medium text-sm flex-shrink-0 border-b-2 transition-all flex items-center ${
+                activeTab === "personal"
+                  ? "border-blue-600 text-blue-600 bg-blue-50"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+              }`}
+              onClick={() => setActiveTab("personal")}
+            >
+              <User className="w-4 h-4 mr-2" />
+              Personal
+            </button>
+            <button
+              className={`px-3 sm:px-5 py-3 font-medium text-sm flex-shrink-0 border-b-2 transition-all flex items-center ${
+                activeTab === "medical"
+                  ? "border-blue-600 text-blue-600 bg-blue-50"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+              }`}
+              onClick={() => setActiveTab("medical")}
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Medical
+            </button>
+            <button
+              className={`px-3 sm:px-5 py-3 font-medium text-sm flex-shrink-0 border-b-2 transition-all flex items-center ${
+                activeTab === "appointments"
+                  ? "border-blue-600 text-blue-600 bg-blue-50"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+              }`}
+              onClick={() => setActiveTab("appointments")}
+            >
+              <Calendar className="w-4 h-4 mr-2" />
+              Appointments
+            </button>
+            <button
+              className={`px-3 sm:px-5 py-3 font-medium text-sm flex-shrink-0 border-b-2 transition-all flex items-center ${
+                activeTab === "security"
+                  ? "border-blue-600 text-blue-600 bg-blue-50"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+              }`}
+              onClick={() => setActiveTab("security")}
+            >
+              <Lock className="w-4 h-4 mr-2" />
+              Security
+            </button>
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-200">
+          {activeTab === "personal" && (
+            <div>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-800 flex items-center">
+                  <User className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-blue-600" />
+                  Personal Information
+                </h2>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                <div className="space-y-4">
+                  <div className="bg-blue-50 p-3 sm:p-4 rounded-lg border border-blue-100">
+                    <div className="flex items-center text-gray-600 mb-2">
+                      <User className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-blue-600" />
+                      <span className="text-sm font-medium">Full Name</span>
+                    </div>
+                    <p className="text-gray-900 font-medium text-sm sm:text-base">
+                      {userData.name || "Not provided"}
+                    </p>
+                  </div>
+
+                  <div className="bg-blue-50 p-3 sm:p-4 rounded-lg border border-blue-100">
+                    <div className="flex items-center text-gray-600 mb-2">
+                      <Phone className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-blue-600" />
+                      <span className="text-sm font-medium">Contact Number</span>
+                    </div>
+                    <p className="text-gray-900 font-medium text-sm sm:text-base">
+                      {userData.phoneNumber || "Not provided"}
+                    </p>
+                  </div>
+
+                  <div className="bg-blue-50 p-3 sm:p-4 rounded-lg border border-blue-100">
+                    <div className="flex items-center text-gray-600 mb-2">
+                      <Mail className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-blue-600" />
+                      <span className="text-sm font-medium">Email Address</span>
+                    </div>
+                    <p className="text-gray-900 font-medium text-sm sm:text-base break-all">
+                      {userData.email || "Not provided"}
+                    </p>
+                  </div>
+
+                  <div className="bg-blue-50 p-3 sm:p-4 rounded-lg border border-blue-100">
+                    <div className="flex items-center text-gray-600 mb-2">
+                      <MapPin className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-blue-600" />
+                      <span className="text-sm font-medium">Address</span>
+                    </div>
+                    <p className="text-gray-900 font-medium text-sm sm:text-base">
+                      {userData.address || "Not provided"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="bg-blue-50 p-3 sm:p-4 rounded-lg border border-blue-100">
+                    <div className="flex items-center text-gray-600 mb-2">
+                      <Phone className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-blue-600" />
+                      <span className="text-sm font-medium">Emergency Contact</span>
+                    </div>
+                    <p className="text-gray-900 font-medium text-sm sm:text-base">
+                      {userData.emergencyContact || "Not provided"}
+                    </p>
+                  </div>
+
+                  <div className="bg-blue-50 p-3 sm:p-4 rounded-lg border border-blue-100">
+                    <div className="flex items-center text-gray-600 mb-2">
+                      <Calendar className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-blue-600" />
+                      <span className="text-sm font-medium">Registration Date</span>
+                    </div>
+                    <p className="text-gray-900 font-medium text-sm sm:text-base">
+                      {userData.registrationDate || "Not provided"}
+                    </p>
+                  </div>
+
+                  <div className="bg-blue-50 p-3 sm:p-4 rounded-lg border border-blue-100">
+                    <div className="flex items-center text-gray-600 mb-2">
+                      <User className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-blue-600" />
+                      <span className="text-sm font-medium">User Role</span>
+                    </div>
+                    <p className="text-gray-900 font-medium text-sm sm:text-base capitalize">
+                      {userData.role || "Not specified"}
+                    </p>
+                  </div>
+
+                  <div className="bg-blue-50 p-3 sm:p-4 rounded-lg border border-blue-100">
+                    <div className="flex items-center text-gray-600 mb-2">
+                      <div
+                        className={`w-3 h-3 rounded-full mr-2 ${
+                          userData.isActive ? "bg-green-500" : "bg-red-500"
+                        }`}
+                      ></div>
+                      <span className="text-sm font-medium">Account Status</span>
+                    </div>
+                    <p className="text-gray-900 font-medium text-sm sm:text-base">
+                      {userData.isActive ? "Active" : "Inactive"}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           )}
 
-          {/* Desktop Sidebar */}
-          <div className="hidden lg:block w-64 flex-shrink-0">
-            <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 sticky top-24">
-              <div className="flex flex-col">
-                <button
-                  className={`px-5 py-3 font-medium text-sm flex items-center border-l-4 ${
-                    activeTab === "personal"
-                      ? "border-blue-600 text-blue-600 bg-blue-50"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-                  }`}
-                  onClick={() => setActiveTab("personal")}
-                >
-                  <User className="w-4 h-4 mr-3" />
-                  Personal
-                </button>
-                <button
-                  className={`px-5 py-3 font-medium text-sm flex items-center border-l-4 ${
-                    activeTab === "medical"
-                      ? "border-blue-600 text-blue-600 bg-blue-50"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-                  }`}
-                  onClick={() => setActiveTab("medical")}
-                >
-                  <FileText className="w-4 h-4 mr-3" />
+          {activeTab === "medical" && (
+            <div>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-800 flex items-center">
+                  <FileText className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-blue-600" />
                   Medical History
-                </button>
-                <button
-                  className={`px-5 py-3 font-medium text-sm flex items-center border-l-4 ${
-                    activeTab === "appointments"
-                      ? "border-blue-600 text-blue-600 bg-blue-50"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-                  }`}
-                  onClick={() => setActiveTab("appointments")}
-                >
-                  <Calendar className="w-4 h-4 mr-3" />
-                  Appointments
-                </button>
-                <button
-                  className={`px-5 py-3 font-medium text-sm flex items-center border-l-4 ${
-                    activeTab === "security"
-                      ? "border-blue-600 text-blue-600 bg-blue-50"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-                  }`}
-                  onClick={() => setActiveTab("security")}
-                >
-                  <Lock className="w-4 h-4 mr-3" />
-                  Security
+                </h2>
+                <button className="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-4 py-2 rounded-lg transition-colors shadow-sm w-full sm:w-auto justify-center">
+                  <FileText className="w-4 h-4 mr-2" />
+                  Download Records
                 </button>
               </div>
-            </div>
-          </div>
 
-          {/* Main Content */}
-          <div className="flex-1">
-            <div className="bg-white rounded-xl shadow-lg mb-6 overflow-hidden border border-blue-100">
-              <div className="bg-gradient-to-r from-blue-700 to-blue-800 p-4 sm:p-6 text-white relative">
-                <div className="absolute top-0 right-0 bg-white text-blue-800 text-xs font-bold px-3 py-1 rounded-bl-lg shadow-md">
-                  MEDICAL ID
-                </div>
+              <div className="bg-blue-50 rounded-lg p-4 sm:p-5 border border-blue-100">
+                <h3 className="font-medium text-gray-700 mb-4 flex items-center">
+                  <ClipboardCheck className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-blue-600" />
+                  Medical Conditions & History
+                </h3>
 
-                <div className="flex flex-col sm:flex-row items-center sm:items-start">
-                  <div className="relative">
-                    {userData.profileImage ? (
-                      <img
-                        src={userData.profileImage}
-                        alt={userData.name}
-                        className="w-20 h-20 sm:w-28 sm:h-28 rounded-full border-4 border-white object-cover shadow-lg"
-                      />
-                    ) : (
-                      <div className="w-20 h-20 sm:w-28 sm:h-28 bg-white rounded-full flex items-center justify-center shadow-lg">
-                        <User size={40} className="sm:w-14 sm:h-14 text-blue-600" />
-                      </div>
-                    )}
-                    <div className="absolute -bottom-2 -right-2 bg-blue-600 p-1 rounded-full shadow-md">
-                      <Check className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                    </div>
-                  </div>
-
-                  <div className="mt-4 sm:mt-0 sm:ml-6 text-center sm:text-left flex-1">
-                    <h1 className="text-2xl sm:text-3xl font-bold">{userData.name}</h1>
-                    <div className="flex flex-wrap gap-2 mt-3 text-xs justify-center sm:justify-start">
-                      <div className="flex items-center bg-white bg-opacity-20 rounded-full px-3 py-1 backdrop-blur-sm">
-                        <Clipboard className="w-3 h-3 mr-1" />
-                        <span>ID: {userData.id.substring(0, 8)}</span>
-                      </div>
-                      <div className="flex items-center bg-white bg-opacity-20 rounded-full px-3 py-1 backdrop-blur-sm">
-                        <Calendar className="w-3 h-3 mr-1" />
-                        <span>Age: {userData.age || "N/A"}</span>
-                      </div>
-                      <div className="flex items-center bg-white bg-opacity-20 rounded-full px-3 py-1 backdrop-blur-sm">
-                        <User className="w-3 h-3 mr-1" />
-                        <span>{userData.gender || "Not specified"}</span>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 flex flex-wrap gap-2 justify-center sm:justify-start">
-                      <button className="flex items-center bg-white bg-opacity-20 hover:bg-opacity-30 text-white text-xs px-3 py-1 rounded-full transition-all border border-white border-opacity-30">
-                        <ClipboardCheck className="w-3 h-3 mr-1" />
-                        Request Records
-                      </button>
-                      <button className="flex items-center bg-white bg-opacity-20 hover:bg-opacity-30 text-white text-xs px-3 py-1 rounded-full transition-all border border-white border-opacity-30">
-                        <Phone className="w-3 h-3 mr-1" />
-                        Contact Doctor
-                      </button>
-                      <button
-                        className="flex items-center bg-white bg-opacity-20 hover:bg-opacity-30 text-white text-xs px-3 py-1 rounded-full transition-all border border-white border-opacity-30"
-                        onClick={handleEditClick}
+                <ul className="space-y-3">
+                  {userData.medicalHistory && userData.medicalHistory.length > 0 ? (
+                    userData.medicalHistory.map((item, index) => (
+                      <li
+                        key={index}
+                        className="flex items-start bg-white p-3 rounded-lg border border-blue-100 hover:shadow-sm transition-shadow"
                       >
-                        <Pill className="w-3 h-3 mr-1" />
-                        Edit
-                      </button>
+                        <div className="mt-1 mr-3 bg-blue-100 rounded-full p-2 flex-shrink-0">
+                          {item.toLowerCase().includes("allerg") ? (
+                            <AlertCircle className="w-4 h-4 text-red-500" />
+                          ) : (
+                            <FileText className="w-4 h-4 text-blue-600" />
+                          )}
+                        </div>
+                        <span className="text-gray-800 text-sm sm:text-base">{item}</span>
+                      </li>
+                    ))
+                  ) : (
+                    <li className="flex items-center justify-center p-4 text-gray-500 text-sm sm:text-base">
+                      No medical history records available
+                    </li>
+                  )}
+                </ul>
+
+                <div className="mt-6 bg-blue-100 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-start">
+                    <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 mt-1 mr-3 flex-shrink-0" />
+                    <div>
+                      <h4 className="font-medium text-blue-800 text-sm sm:text-base">Medical Records Notice</h4>
+                      <p className="mt-1 text-blue-700 text-xs sm:text-sm">
+                        To add or update your medical history records, please visit the hospital or contact your physician.
+                      </p>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
+          )}
 
-            {/* Edit Modal */}
-            {showEditModal && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-                  <div className="p-6">
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-xl font-bold text-gray-800">Edit Profile Information</h3>
-                      <button
-                        onClick={() => setShowEditModal(false)}
-                        className="text-gray-500 hover:text-gray-700"
-                      >
-                        <X className="w-6 h-6" />
-                      </button>
-                    </div>
-
-                    <form onSubmit={handleEditSubmit}>
-                      <div className="space-y-4">
-                        <div>
-                          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                            Full Name
-                          </label>
-                          <input
-                            type="text"
-                            id="name"
-                            name="name"
-                            value={editFormData.name}
-                            onChange={handleEditFormChange}
-                            className={`w-full px-4 py-2 border ${
-                              editFormErrors.name ? "border-red-500" : "border-gray-300"
-                            } rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm`}
-                            placeholder="Enter your full name"
-                          />
-                          {editFormErrors.name && (
-                            <p className="mt-1 text-sm text-red-600">{editFormErrors.name}</p>
-                          )}
-                        </div>
-
-                        <div>
-                          <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
-                            Phone Number
-                          </label>
-                          <input
-                            type="tel"
-                            id="phoneNumber"
-                            name="phoneNumber"
-                            value={editFormData.phoneNumber}
-                            onChange={handleEditFormChange}
-                            className={`w-full px-4 py-2 border ${
-                              editFormErrors.phoneNumber ? "border-red-500" : "border-gray-300"
-                            } rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm`}
-                            placeholder="Enter your phone number"
-                          />
-                          {editFormErrors.phoneNumber && (
-                            <p className="mt-1 text-sm text-red-600">{editFormErrors.phoneNumber}</p>
-                          )}
-                        </div>
-
-                        {editSuccess && (
-                          <div className="p-3 bg-green-50 text-green-700 rounded-lg text-sm border border-green-100">
-                            <div className="flex items-center">
-                              <Check className="w-4 h-4 mr-2" />
-                              Profile updated successfully!
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="pt-2 flex justify-end space-x-3">
-                          <button
-                            type="button"
-                            onClick={() => setShowEditModal(false)}
-                            className="px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            type="submit"
-                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-md"
-                          >
-                            Save Changes
-                          </button>
-                        </div>
-                      </div>
-                    </form>
-                  </div>
-                </div>
+          {activeTab === "appointments" && (
+            <div>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-800 flex items-center">
+                  <Calendar className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-blue-600" />
+                  Upcoming Appointments
+                </h2>
+                <button className="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-4 py-2 rounded-lg transition-colors shadow-sm w-full sm:w-auto justify-center">
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Schedule New
+                </button>
               </div>
-            )}
 
-            {showSuccessMessage && (
-              <div className="fixed top-4 right-4 left-4 sm:left-auto z-50 animate-slide-in-right">
-                <div className="bg-blue-600 text-white px-4 sm:px-6 py-4 rounded-lg shadow-lg flex items-center max-w-sm mx-auto sm:mx-0 sm:max-w-sm">
-                  <div className="flex items-center flex-1">
-                    <svg className="w-5 h-5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path
-                        fillRule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    <span className="text-sm font-medium">{successMessage}</span>
-                  </div>
-                  <button
-                    onClick={() => setShowSuccessMessage(false)}
-                    className="ml-3 text-white hover:text-gray-200 transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            )}
+              {/* Completed Appointments */}
+              {currentAppointments.some((a) => a.status === "completed") && (
+                <div className="mb-8">
+                  <h3 className="text-lg font-semibold text-gray-700 mb-4">Completed Appointments</h3>
+                  <div className="space-y-4">
+                    {currentAppointments
+                      .filter((appointment) => appointment.status === "completed")
+                      .map((appointment) => (
+                        <div key={appointment.id} className="border border-gray-200 bg-green-50 rounded-xl p-4 sm:p-5">
+                          <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+                            <div className="flex-1">
+                              <h3 className="font-bold text-lg text-gray-700">{appointment.purpose}</h3>
+                              <p className="text-gray-600 mt-1">
+                                <span className="text-green-700 font-medium">{appointment.doctor}</span> •{" "}
+                                {appointment.department}
+                              </p>
 
-            {/* Content Sections */}
-            <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-200">
-              {activeTab === "personal" && (
-                <div>
-                  <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl sm:text-2xl font-bold text-gray-800 flex items-center">
-                      <User className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-blue-600" />
-                      Personal Information
-                    </h2>
-                  </div>
+                              {appointment.message && (
+                                <p className="text-sm text-gray-500 mt-2 italic">📝 {appointment.message}</p>
+                              )}
 
-                  <div className="grid grid-cols-1 gap-4 sm:gap-6">
-                    <div className="space-y-4">
-                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                        <div className="flex items-center text-gray-600 mb-2">
-                          <User className="w-5 h-5 mr-2 text-blue-600" />
-                          <span className="text-sm font-medium">Full Name</span>
-                        </div>
-                        <p className="text-gray-900 font-medium">{userData.name || "Not provided"}</p>
-                      </div>
-
-                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                        <div className="flex items-center text-gray-600 mb-2">
-                          <Phone className="w-5 h-5 mr-2 text-blue-600" />
-                          <span className="text-sm font-medium">Contact Number</span>
-                        </div>
-                        <p className="text-gray-900 font-medium">{userData.phoneNumber || "Not provided"}</p>
-                      </div>
-
-                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                        <div className="flex items-center text-gray-600 mb-2">
-                          <Mail className="w-5 h-5 mr-2 text-blue-600" />
-                          <span className="text-sm font-medium">Email Address</span>
-                        </div>
-                        <p className="text-gray-900 font-medium">{userData.email || "Not provided"}</p>
-                      </div>
-
-                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                        <div className="flex items-center text-gray-600 mb-2">
-                          <MapPin className="w-5 h-5 mr-2 text-blue-600" />
-                          <span className="text-sm font-medium">Address</span>
-                        </div>
-                        <p className="text-gray-900 font-medium">{userData.address || "Not provided"}</p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                        <div className="flex items-center text-gray-600 mb-2">
-                          <Phone className="w-5 h-5 mr-2 text-blue-600" />
-                          <span className="text-sm font-medium">Emergency Contact</span>
-                        </div>
-                        <p className="text-gray-900 font-medium">{userData.emergencyContact || "Not provided"}</p>
-                      </div>
-
-                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                        <div className="flex items-center text-gray-600 mb-2">
-                          <Calendar className="w-5 h-5 mr-2 text-blue-600" />
-                          <span className="text-sm font-medium">Registration Date</span>
-                        </div>
-                        <p className="text-gray-900 font-medium">{userData.registrationDate || "Not provided"}</p>
-                      </div>
-
-                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                        <div className="flex items-center text-gray-600 mb-2">
-                          <User className="w-5 h-5 mr-2 text-blue-600" />
-                          <span className="text-sm font-medium">User Role</span>
-                        </div>
-                        <p className="text-gray-900 font-medium capitalize">{userData.role || "Not specified"}</p>
-                      </div>
-
-                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                        <div className="flex items-center text-gray-600 mb-2">
-                          <div
-                            className={`w-3 h-3 rounded-full mr-2 ${
-                              userData.isActive ? "bg-green-500" : "bg-red-500"
-                            }`}
-                          ></div>
-                          <span className="text-sm font-medium">Account Status</span>
-                        </div>
-                        <p className="text-gray-900 font-medium">{userData.isActive ? "Active" : "Inactive"}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === "medical" && (
-                <div>
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                    <h2 className="text-xl sm:text-2xl font-bold text-gray-800 flex items-center">
-                      <FileText className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-blue-600" />
-                      Medical History
-                    </h2>
-                    <button className="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors shadow-sm w-full sm:w-auto justify-center">
-                      <FileText className="w-4 h-4 mr-2" />
-                      Download Records
-                    </button>
-                  </div>
-
-                  <div className="bg-blue-50 rounded-lg p-4 sm:p-5 border border-blue-100">
-                    <h3 className="font-medium text-gray-700 mb-4 flex items-center">
-                      <ClipboardCheck className="w-5 h-5 mr-2 text-blue-600" />
-                      Medical Conditions & History
-                    </h3>
-
-                    <ul className="space-y-3">
-                      {userData.medicalHistory && userData.medicalHistory.length > 0 ? (
-                        userData.medicalHistory.map((item, index) => (
-                          <li
-                            key={index}
-                            className="flex items-start bg-white p-3 rounded-lg border border-blue-100 hover:shadow-sm transition-shadow"
-                          >
-                            <div className="mt-1 mr-3 bg-blue-100 rounded-full p-2 flex-shrink-0">
-                              {item.toLowerCase().includes("allerg") ? (
-                                <AlertCircle className="w-4 h-4 text-red-500" />
-                              ) : (
-                                <FileText className="w-4 h-4 text-blue-600" />
+                              {appointment?.Prescription === "done" && (
+                                <div className="mt-2 inline-flex items-center bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-medium">
+                                  <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                  Prescription Ready
+                                </div>
                               )}
                             </div>
-                            <span className="text-gray-800">{item}</span>
-                          </li>
-                        ))
-                      ) : (
-                        <li className="flex items-center justify-center p-4 text-gray-500">
-                          No medical history records available
-                        </li>
-                      )}
-                    </ul>
-
-                    <div className="mt-6 bg-blue-100 border border-blue-200 rounded-lg p-4">
-                      <div className="flex items-start">
-                        <AlertCircle className="w-5 h-5 text-blue-600 mt-1 mr-3 flex-shrink-0" />
-                        <div>
-                          <h4 className="font-medium text-blue-800">Medical Records Notice</h4>
-                          <p className="mt-1 text-blue-700 text-sm">
-                            To add or update your medical history records, please visit the hospital or contact your
-                            physician.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === "appointments" && (
-                <div>
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                    <h2 className="text-xl sm:text-2xl font-bold text-gray-800 flex items-center">
-                      <Calendar className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-blue-600" />
-                      Upcoming Appointments
-                    </h2>
-                    <button className="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors shadow-sm w-full sm:w-auto justify-center">
-                      <Calendar className="w-4 h-4 mr-2" />
-                      Schedule New
-                    </button>
-                  </div>
-
-                  {/* Completed Appointments */}
-                  {currentAppointments.some((a) => a.status === "completed") && (
-                    <div className="mb-8">
-                      <h3 className="text-lg font-semibold text-gray-700 mb-4">Completed Appointments</h3>
-                      <div className="space-y-4">
-                        {currentAppointments
-                          .filter((appointment) => appointment.status === "completed")
-                          .map((appointment) => (
-                            <div key={appointment.id} className="border border-gray-200 bg-green-50 rounded-xl p-4 sm:p-5">
-                              <div className="flex flex-col justify-between items-start">
-                                <div className="w-full">
-                                  <h3 className="font-bold text-lg text-gray-700">{appointment.purpose}</h3>
-                                  <p className="text-gray-600 mt-1">
-                                    <span className="text-green-700 font-medium">{appointment.doctor}</span> •{" "}
-                                    {appointment.department}
-                                  </p>
-
-                                  {appointment.message && (
-                                    <p className="text-sm text-gray-500 mt-2 italic">📝 {appointment.message}</p>
-                                  )}
-
-                                  {appointment?.Prescription === "done" && (
-                                    <div className="mt-2 inline-flex items-center bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-medium">
-                                      <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                                      Prescription Ready
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="mt-3 w-full sm:w-auto sm:text-right">
-                                  <div className="inline-flex items-center bg-white border border-green-200 text-gray-600 rounded-lg px-4 py-2 font-medium w-full sm:w-auto justify-center">
-                                    <Clock className="w-4 h-4 mr-2 text-gray-500" />
-                                    <span className="line-through">{appointment.time}</span>
-                                  </div>
-                                </div>
+                            <div className="mt-3 md:mt-0 md:text-right">
+                              <div className="inline-flex items-center bg-white border border-green-200 text-gray-600 rounded-lg px-3 sm:px-4 py-2 font-medium">
+                                <Clock className="w-4 h-4 mr-2 text-gray-500" />
+                                <span className="line-through">{appointment.time}</span>
                               </div>
-
-                              <div className="mt-4 flex items-center text-gray-600 bg-white p-3 rounded-lg border border-green-100">
-                                <Calendar className="w-5 h-5 mr-2 text-green-600" />
-                                <span className="font-medium">{appointment.date}</span>
-                                <span className="ml-4 px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-                                  Completed
-                                </span>
-                              </div>
-
-                              <div className="mt-4 flex flex-wrap gap-2">
-                                <button
-                                  onClick={() => handleChatWithDoctor(appointment)}
-                                  className="text-sm font-medium px-4 py-2 bg-white text-blue-600 hover:bg-blue-50 border border-blue-200 rounded-lg transition-colors shadow-sm flex items-center justify-center flex-1 min-w-[140px]"
-                                >
-                                  <MessageCircle className="w-4 h-4 mr-1" />
-                                  Chat with Doctor
-                                </button>
-
-                                {appointment?.Prescription === "done" && (
-                                  <>
-                                    <button
-                                      onClick={() => handleDownloadPrescription(appointment)}
-                                      className="text-sm font-medium px-4 py-2 bg-green-600 hover:bg-green-700 text-white border border-green-600 rounded-lg transition-colors shadow-sm flex items-center justify-center flex-1 min-w-[140px]"
-                                    >
-                                      <Download className="w-4 h-4 mr-1" />
-                                      Download Prescription
-                                    </button>
-                                    <button
-                                      onClick={() => handleViewPrescription(appointment)}
-                                      className="text-sm font-medium px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white border border-blue-600 rounded-lg transition-colors shadow-sm flex items-center justify-center flex-1 min-w-[140px]"
-                                    >
-                                      <Eye className="w-4 h-4 mr-1" />
-                                      View
-                                    </button>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Cancelled Appointments */}
-                  {currentAppointments.some((a) => a.status === "cancelled") && (
-                    <div className="mb-8">
-                      <h3 className="text-lg font-semibold text-gray-700 mb-4">Cancelled Appointments</h3>
-                      <div className="space-y-4">
-                        {currentAppointments
-                          .filter((appointment) => appointment.status === "cancelled")
-                          .map((appointment) => (
-                            <div key={appointment.id} className="border border-gray-200 bg-gray-50 rounded-xl p-4 sm:p-5">
-                              <div className="flex flex-col justify-between items-start">
-                                <div className="w-full">
-                                  <h3 className="font-bold text-lg text-gray-600 line-through">{appointment.purpose}</h3>
-                                  <p className="text-gray-500 mt-1">
-                                    <span className="text-gray-600 font-medium">{appointment.doctor}</span> •{" "}
-                                    {appointment.department}
-                                  </p>
-
-                                  {appointment.message && (
-                                    <p className="text-sm text-gray-500 mt-2 italic">📝 {appointment.message}</p>
-                                  )}
-                                </div>
-                                <div className="mt-3 w-full sm:w-auto sm:text-right">
-                                  <div className="inline-flex items-center bg-gray-100 border border-gray-200 text-gray-600 rounded-lg px-4 py-2 font-medium w-full sm:w-auto justify-center">
-                                    <Clock className="w-4 h-4 mr-2 text-gray-500" />
-                                    <span className="line-through">{appointment.time}</span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="mt-4 flex items-center text-gray-500 bg-gray-100 p-3 rounded-lg border border-gray-200">
-                                <Calendar className="w-5 h-5 mr-2 text-gray-500" />
-                                <span className="font-medium">{appointment.date}</span>
-                                <span className="ml-4 px-3 py-1 bg-red-100 text-red-800 text-xs font-medium rounded-full">
-                                  Cancelled
-                                </span>
-                              </div>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Active Appointments */}
-                  <div className="space-y-5">
-                    {currentAppointments.filter(
-                      (a) => a.status !== "cancelled" && a.status !== "completed"
-                    ).length > 0 ? (
-                      currentAppointments
-                        .filter((appointment) => appointment.status !== "cancelled" && appointment.status !== "completed")
-                        .map((appointment) => (
-                          <div
-                            key={appointment.id}
-                            className="border border-blue-200 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-4 sm:p-5 hover:shadow-md transition-all"
-                          >
-                            <div className="flex flex-col justify-between items-start">
-                              <div className="w-full">
-                                <h3 className="font-bold text-lg text-gray-800">{appointment.purpose}</h3>
-                                <p className="text-gray-600 mt-1">
-                                  <span className="text-blue-700 font-medium">{appointment.doctor}</span> •{" "}
-                                  {appointment.department}
-                                </p>
-                                {appointment.message && (
-                                  <p className="text-sm text-gray-500 mt-2 italic">📝 {appointment.message}</p>
-                                )}
-                              </div>
-                              <div className="mt-3 w-full sm:w-auto sm:text-right">
-                                <div className="inline-flex items-center bg-white border border-blue-200 text-blue-800 rounded-lg px-4 py-2 font-medium shadow-sm w-full sm:w-auto justify-center">
-                                  <Clock className="w-4 h-4 mr-2 text-blue-600" />
-                                  {appointment.time}
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="mt-4 flex items-center text-gray-700 bg-white p-3 rounded-lg border border-blue-100">
-                              <Calendar className="w-5 h-5 mr-2 text-blue-600" />
-                              <span className="font-medium">{appointment.date}</span>
-                              {appointment.status === "confirmed" && (
-                                <span className="ml-4 px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-                                  Confirmed
-                                </span>
-                              )}
-                            </div>
-
-                            <div className="mt-4 flex flex-wrap gap-2">
-                              <button
-                                onClick={() => handleCancelClick(appointment)}
-                                className="text-sm font-medium px-4 py-2 bg-white text-red-600 hover:bg-red-50 border border-red-200 rounded-lg transition-colors shadow-sm flex-1 min-w-[120px]"
-                              >
-                                Cancel
-                              </button>
-                              <button
-                                onClick={() => handleChatWithDoctor(appointment)}
-                                className="text-sm font-medium px-4 py-2 bg-white text-blue-600 hover:bg-blue-50 border border-blue-200 rounded-lg transition-colors shadow-sm flex-1 min-w-[120px] flex items-center justify-center"
-                              >
-                                <MessageCircle className="w-4 h-4 mr-1" />
-                                Chat with Doctor
-                              </button>
-                            </div>
-                          </div>
-                        ))
-                    ) : (
-                      !currentAppointments.some((a) => a.status === "cancelled" || a.status === "completed") && (
-                        <div className="text-center p-6 sm:p-8 bg-blue-50 rounded-lg border border-blue-100">
-                          <Calendar className="w-12 h-12 text-blue-300 mx-auto mb-3" />
-                          <h3 className="text-lg font-medium text-gray-700 mb-2">No Upcoming Appointments</h3>
-                          <p className="text-gray-500 mb-4">
-                            You don't have any scheduled appointments at this time.
-                          </p>
-                          <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm w-full sm:w-auto">
-                            Schedule Your First Appointment
-                          </button>
-                        </div>
-                      )
-                    )}
-                  </div>
-
-                  {/* Pagination */}
-                  {totalPages > 1 && (
-                    <div className="flex justify-center mt-6">
-                      <nav className="inline-flex rounded-md shadow-sm -space-x-px">
-                        <button
-                          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                          disabled={currentPage === 1}
-                          className={`px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
-                            currentPage === 1
-                              ? "text-gray-400 cursor-not-allowed"
-                              : "text-gray-700 hover:bg-gray-50"
-                          }`}
-                        >
-                          Previous
-                        </button>
-
-                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
-                          <button
-                            key={number}
-                            onClick={() => setCurrentPage(number)}
-                            className={`px-3 py-2 border-t border-b border-gray-300 text-sm font-medium ${
-                              currentPage === number
-                                ? "bg-blue-600 text-white"
-                                : "bg-white text-gray-700 hover:bg-gray-50"
-                            }`}
-                          >
-                            {number}
-                          </button>
-                        ))}
-
-                        <button
-                          onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                          disabled={currentPage === totalPages}
-                          className={`px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
-                            currentPage === totalPages
-                              ? "text-gray-400 cursor-not-allowed"
-                              : "text-gray-700 hover:bg-gray-50"
-                          }`}
-                        >
-                          Next
-                        </button>
-                      </nav>
-                    </div>
-                  )}
-
-                  <div className="mt-6 sm:mt-8 bg-blue-50 rounded-lg p-4 border border-blue-100">
-                    <h3 className="font-medium text-gray-700 mb-2 flex items-center">
-                      <Clock className="w-5 h-5 mr-2 text-blue-600" />
-                      Appointment Instructions
-                    </h3>
-                    <p className="text-gray-600 text-sm">
-                      Please arrive 15 minutes before your scheduled time. Bring your insurance card, photo ID, and any
-                      relevant medical records. Fasting may be required for some tests.
-                    </p>
-                  </div>
-
-                  {/* Cancel Confirmation Modal */}
-                  {showCancelModal && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                      <div className="bg-white rounded-lg p-4 sm:p-6 max-w-md w-full mx-4 shadow-xl">
-                        <div className="flex justify-between items-center mb-4">
-                          <h3 className="text-lg font-semibold text-gray-800">Cancel Appointment</h3>
-                          <button
-                            onClick={() => setShowCancelModal(false)}
-                            className="text-gray-400 hover:text-gray-600 transition-colors"
-                          >
-                            <X className="w-5 h-5" />
-                          </button>
-                        </div>
-
-                        {appointmentToCancel && (
-                          <div className="mb-6">
-                            <p className="text-gray-600 mb-4">Are you sure you want to cancel your appointment?</p>
-                            <div className="bg-gray-50 rounded-lg p-4 border">
-                              <p className="font-medium text-gray-800">{appointmentToCancel.purpose}</p>
-                              <p className="text-gray-600 text-sm mt-1">
-                                <span className="font-medium">{appointmentToCancel.doctor}</span> •{" "}
-                                {appointmentToCancel.department}
-                              </p>
-                              <p className="text-gray-600 text-sm mt-2">
-                                📅 {appointmentToCancel.date} at {appointmentToCancel.time}
-                              </p>
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="flex flex-col sm:flex-row gap-3 justify-end">
-                          <button
-                            onClick={() => setShowCancelModal(false)}
-                            className="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors order-2 sm:order-1"
-                          >
-                            Keep Appointment
-                          </button>
-                          <button
-                            onClick={() =>
-                              cancelAppointment(
-                                appointmentToCancel.time,
-                                appointmentToCancel.date,
-                                appointmentToCancel.doctorEmail || appointmentToCancel.doctor
-                              )
-                            }
-                            className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors order-1 sm:order-2"
-                          >
-                            Yes, Cancel
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {activeTab === "security" && (
-                <div>
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                    <h2 className="text-xl sm:text-2xl font-bold text-gray-800 flex items-center">
-                      <Lock className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-blue-600" />
-                      Account Security
-                    </h2>
-                    <button
-                      className="flex items-center text-blue-600 hover:text-blue-800 transition-colors w-full sm:w-auto justify-center sm:justify-start"
-                      onClick={() => setShowChangePassword(!showChangePassword)}
-                    >
-                      <Lock className="w-4 h-4 mr-1" />
-                      {showChangePassword ? "Cancel" : "Change Password"}
-                    </button>
-                  </div>
-
-                  {showChangePassword ? (
-                    <div className="bg-blue-50 rounded-xl p-4 sm:p-6 border border-blue-100">
-                      <form onSubmit={handlePasswordChange}>
-                        <div className="space-y-4">
-                          <div>
-                            <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                              Current Password
-                            </label>
-                            <div className="relative">
-                              <input
-                                type={passwordVisible.current ? "text" : "password"}
-                                id="currentPassword"
-                                value={passwordData.currentPassword}
-                                onChange={(e) =>
-                                  setPasswordData({
-                                    ...passwordData,
-                                    currentPassword: e.target.value,
-                                  })
-                                }
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm"
-                                placeholder="Enter current password"
-                              />
-                              <button
-                                type="button"
-                                className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                                onClick={() => togglePasswordVisibility("current")}
-                              >
-                                {passwordVisible.current ? (
-                                  <EyeOff className="w-5 h-5 text-gray-500" />
-                                ) : (
-                                  <Eye className="w-5 h-5 text-gray-500" />
-                                )}
-                              </button>
                             </div>
                           </div>
 
-                          <div>
-                            <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                              New Password
-                            </label>
-                            <div className="relative">
-                              <input
-                                type={passwordVisible.new ? "text" : "password"}
-                                id="newPassword"
-                                value={passwordData.newPassword}
-                                onChange={(e) =>
-                                  setPasswordData({
-                                    ...passwordData,
-                                    newPassword: e.target.value,
-                                  })
-                                }
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm"
-                                placeholder="Enter new password"
-                              />
-                              <button
-                                type="button"
-                                className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                                onClick={() => togglePasswordVisibility("new")}
-                              >
-                                {passwordVisible.new ? (
-                                  <EyeOff className="w-5 h-5 text-gray-500" />
-                                ) : (
-                                  <Eye className="w-5 h-5 text-gray-500" />
-                                )}
-                              </button>
-                            </div>
+                          <div className="mt-4 flex items-center text-gray-600 bg-white p-3 rounded-lg border border-green-100">
+                            <Calendar className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-green-600" />
+                            <span className="font-medium text-sm sm:text-base">{appointment.date}</span>
+                            <span className="ml-4 px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                              Completed
+                            </span>
                           </div>
 
-                          <div>
-                            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                              Confirm New Password
-                            </label>
-                            <div className="relative">
-                              <input
-                                type={passwordVisible.confirm ? "text" : "password"}
-                                id="confirmPassword"
-                                value={passwordData.confirmPassword}
-                                onChange={(e) =>
-                                  setPasswordData({
-                                    ...passwordData,
-                                    confirmPassword: e.target.value,
-                                  })
-                                }
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm"
-                                placeholder="Confirm new password"
-                              />
-                              <button
-                                type="button"
-                                className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                                onClick={() => togglePasswordVisibility("confirm")}
-                              >
-                                {passwordVisible.confirm ? (
-                                  <EyeOff className="w-5 h-5 text-gray-500" />
-                                ) : (
-                                  <Eye className="w-5 h-5 text-gray-500" />
-                                )}
-                              </button>
-                            </div>
-                          </div>
-
-                          {passwordError && (
-                            <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm border border-red-100">
-                              <div className="flex items-center">
-                                <AlertCircle className="w-4 h-4 mr-2" />
-                                {passwordError}
-                              </div>
-                            </div>
-                          )}
-
-                          {passwordSuccess && (
-                            <div className="p-3 bg-green-50 text-green-700 rounded-lg text-sm border border-green-100">
-                              <div className="flex items-center">
-                                <Check className="w-4 h-4 mr-2" />
-                                Password changed successfully!
-                              </div>
-                            </div>
-                          )}
-
-                          <div className="pt-2">
+                          <div className="mt-4 flex flex-wrap gap-2">
                             <button
-                              type="submit"
-                              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors shadow-md"
+                              onClick={() => handleChatWithDoctor(appointment)}
+                              className="text-sm font-medium px-3 sm:px-4 py-2 bg-white text-blue-600 hover:bg-blue-50 border border-blue-200 rounded-lg transition-colors shadow-sm flex items-center w-full sm:w-auto justify-center"
                             >
-                              Update Password
+                              <MessageCircle className="w-4 h-4 mr-1" />
+                              Chat with Doctor
+                            </button>
+
+                            {appointment?.Prescription === "done" && (
+                              <>
+                                <button
+                                  onClick={() => handleDownloadPrescription(appointment)}
+                                  className="text-sm font-medium px-3 sm:px-4 py-2 bg-green-600 hover:bg-green-700 text-white border border-green-600 rounded-lg transition-colors shadow-sm flex items-center w-full sm:w-auto justify-center mt-2 sm:mt-0"
+                                >
+                                  <Download className="w-4 h-4 mr-1" />
+                                  Download Prescription
+                                </button>
+                                <button
+                                  onClick={() => handleViewPrescription(appointment)}
+                                  className="text-sm font-medium px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white border border-blue-600 rounded-lg transition-colors shadow-sm flex items-center w-full sm:w-auto justify-center mt-2 sm:mt-0"
+                                >
+                                  <Eye className="w-4 h-4 mr-1" />
+                                  View
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Cancelled Appointments */}
+              {currentAppointments.some((a) => a.status === "cancelled") && (
+                <div className="mb-8">
+                  <h3 className="text-lg font-semibold text-gray-700 mb-4">Cancelled Appointments</h3>
+                  <div className="space-y-4">
+                    {currentAppointments
+                      .filter((appointment) => appointment.status === "cancelled")
+                      .map((appointment) => (
+                        <div key={appointment.id} className="border border-gray-200 bg-gray-50 rounded-xl p-4 sm:p-5">
+                          <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+                            <div className="flex-1">
+                              <h3 className="font-bold text-lg text-gray-600 line-through">{appointment.purpose}</h3>
+                              <p className="text-gray-500 mt-1">
+                                <span className="text-gray-600 font-medium">{appointment.doctor}</span> •{" "}
+                                {appointment.department}
+                              </p>
+
+                              {appointment.message && (
+                                <p className="text-sm text-gray-500 mt-2 italic">📝 {appointment.message}</p>
+                              )}
+                            </div>
+                            <div className="mt-3 md:mt-0 md:text-right">
+                              <div className="inline-flex items-center bg-gray-100 border border-gray-200 text-gray-600 rounded-lg px-3 sm:px-4 py-2 font-medium">
+                                <Clock className="w-4 h-4 mr-2 text-gray-500" />
+                                <span className="line-through">{appointment.time}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 flex items-center text-gray-500 bg-gray-100 p-3 rounded-lg border border-gray-200">
+                            <Calendar className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-gray-500" />
+                            <span className="font-medium text-sm sm:text-base">{appointment.date}</span>
+                            <span className="ml-4 px-3 py-1 bg-red-100 text-red-800 text-xs font-medium rounded-full">
+                              Cancelled
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Active Appointments Section */}
+              <div className="space-y-5">
+                {currentAppointments.filter((a) => a.status !== "cancelled" && a.status !== "completed").length > 0
+                  ? currentAppointments
+                      .filter((appointment) => appointment.status !== "cancelled" && appointment.status !== "completed")
+                      .map((appointment) => (
+                        <div
+                          key={appointment.id}
+                          className="border border-blue-200 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-4 sm:p-5 hover:shadow-md transition-all"
+                        >
+                          <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+                            <div className="flex-1">
+                              <h3 className="font-bold text-lg text-gray-800">{appointment.purpose}</h3>
+                              <p className="text-gray-600 mt-1">
+                                <span className="text-blue-700 font-medium">{appointment.doctor}</span> •{" "}
+                                {appointment.department}
+                              </p>
+                              {appointment.message && (
+                                <p className="text-sm text-gray-500 mt-2 italic">📝 {appointment.message}</p>
+                              )}
+                            </div>
+                            <div className="mt-3 md:mt-0 md:text-right">
+                              <div className="inline-flex items-center bg-white border border-blue-200 text-blue-800 rounded-lg px-3 sm:px-4 py-2 font-medium shadow-sm">
+                                <Clock className="w-4 h-4 mr-2 text-blue-600" />
+                                {appointment.time}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 flex items-center text-gray-700 bg-white p-3 rounded-lg border border-blue-100">
+                            <Calendar className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-blue-600" />
+                            <span className="font-medium text-sm sm:text-base">{appointment.date}</span>
+                            {appointment.status === "confirmed" && (
+                              <span className="ml-4 px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                                Confirmed
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            <button
+                              onClick={() => handleCancelClick(appointment)}
+                              className="text-sm font-medium px-3 sm:px-4 py-2 bg-white text-red-600 hover:bg-red-50 border border-red-200 rounded-lg transition-colors shadow-sm w-full sm:w-auto"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={() => handleChatWithDoctor(appointment)}
+                              className="text-sm font-medium px-3 sm:px-4 py-2 bg-white text-blue-600 hover:bg-blue-50 border border-blue-200 rounded-lg transition-colors shadow-sm flex items-center w-full sm:w-auto justify-center mt-2 sm:mt-0"
+                            >
+                              <MessageCircle className="w-4 h-4 mr-1" />
+                              Chat with Doctor
                             </button>
                           </div>
                         </div>
-                      </form>
+                      ))
+                  : !currentAppointments.some((a) => a.status === "cancelled" || a.status === "completed") && (
+                      <div className="text-center p-6 sm:p-8 bg-blue-50 rounded-lg border border-blue-100">
+                        <Calendar className="w-10 h-10 sm:w-12 sm:h-12 text-blue-300 mx-auto mb-3" />
+                        <h3 className="text-lg font-medium text-gray-700 mb-2">No Upcoming Appointments</h3>
+                        <p className="text-gray-500 mb-4 text-sm sm:text-base">
+                          You don't have any scheduled appointments at this time.
+                        </p>
+                        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm w-full sm:w-auto">
+                          Schedule Your First Appointment
+                        </button>
+                      </div>
+                    )}
+              </div>
+
+              {totalPages > 1 && (
+                <div className="flex justify-center mt-6">
+                  <nav className="inline-flex rounded-md shadow-sm -space-x-px">
+                    <button
+                      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className={`px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
+                        currentPage === 1 ? "text-gray-400 cursor-not-allowed" : "text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      Previous
+                    </button>
+
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
+                      <button
+                        key={number}
+                        onClick={() => setCurrentPage(number)}
+                        className={`px-3 py-2 border-t border-b border-gray-300 text-sm font-medium ${
+                          currentPage === number ? "bg-blue-600 text-white" : "bg-white text-gray-700 hover:bg-gray-50"
+                        }`}
+                      >
+                        {number}
+                      </button>
+                    ))}
+
+                    <button
+                      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className={`px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
+                        currentPage === totalPages ? "text-gray-400 cursor-not-allowed" : "text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      Next
+                    </button>
+                  </nav>
+                </div>
+              )}
+
+              <div className="mt-8 bg-blue-50 rounded-lg p-4 border border-blue-100">
+                <h3 className="font-medium text-gray-700 mb-2 flex items-center">
+                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-blue-600" />
+                  Appointment Instructions
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  Please arrive 15 minutes before your scheduled time. Bring your insurance card, photo ID, and any
+                  relevant medical records. Fasting may be required for some tests.
+                </p>
+              </div>
+
+              {/* Cancel Confirmation Modal */}
+              {showCancelModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                  <div className="bg-white rounded-lg p-4 sm:p-6 max-w-md w-full mx-4 shadow-xl">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-semibold text-gray-800">Cancel Appointment</h3>
+                      <button
+                        onClick={() => setShowCancelModal(false)}
+                        className="text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
                     </div>
-                  ) : (
-                    <div className="bg-blue-50 rounded-xl p-4 sm:p-6 border border-blue-100">
-                      <div className="flex flex-col sm:flex-row items-start">
-                        <div className="p-3 bg-white rounded-lg border border-blue-200 shadow-sm mr-0 sm:mr-4 mb-4 sm:mb-0">
-                          <Shield className="w-6 h-6 text-blue-600" />
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-medium text-gray-800">Account Security Status</h3>
-                          <p className="mt-1 text-gray-600">
-                            Your account is secured with industry-standard encryption. For optimal security, we recommend
-                            changing your password every 90 days and enabling two-factor authentication.
+
+                    {appointmentToCancel && (
+                      <div className="mb-6">
+                        <p className="text-gray-600 mb-4">Are you sure you want to cancel your appointment?</p>
+                        <div className="bg-gray-50 rounded-lg p-4 border">
+                          <p className="font-medium text-gray-800">{appointmentToCancel.purpose}</p>
+                          <p className="text-gray-600 text-sm mt-1">
+                            <span className="font-medium">{appointmentToCancel.doctor}</span> •{" "}
+                            {appointmentToCancel.department}
                           </p>
-                          <div className="mt-4 space-y-2">
-                            <div className="flex items-center text-sm text-gray-700">
-                              <Check className="w-4 h-4 text-green-500 mr-2" />
-                              Last password change: May 15, 2025
-                            </div>
-                            <div className="flex items-center text-sm text-gray-700">
-                              <Check className="w-4 h-4 text-green-500 mr-2" />
-                              Secure login enabled
-                            </div>
-                            <div className="flex items-center text-sm text-gray-700">
-                              <AlertCircle className="w-4 h-4 text-amber-500 mr-2" />
-                              Two-factor authentication not enabled
-                            </div>
-                          </div>
-                          <button className="mt-4 text-sm text-blue-600 hover:text-blue-800 font-medium">
-                            Enable Two-Factor Authentication
-                          </button>
+                          <p className="text-gray-600 text-sm mt-2">
+                            📅 {appointmentToCancel.date} at {appointmentToCancel.time}
+                          </p>
                         </div>
                       </div>
+                    )}
+
+                    <div className="flex flex-col sm:flex-row gap-3 justify-end">
+                      <button
+                        onClick={() => setShowCancelModal(false)}
+                        className="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors order-2 sm:order-1"
+                      >
+                        Keep Appointment
+                      </button>
+                      <button
+                        onClick={() =>
+                          cancelAppointment(
+                            appointmentToCancel.time,
+                            appointmentToCancel.date,
+                            appointmentToCancel.doctorEmail || appointmentToCancel.doctor
+                          )
+                        }
+                        className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors order-1 sm:order-2"
+                      >
+                        Yes, Cancel
+                      </button>
                     </div>
-                  )}
+                  </div>
                 </div>
               )}
             </div>
-          </div>
+          )}
+
+          {activeTab === "security" && (
+            <div>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-800 flex items-center">
+                  <Lock className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-blue-600" />
+                  Account Security
+                </h2>
+                <button
+                  className="flex items-center text-blue-600 hover:text-blue-800 transition-colors w-full sm:w-auto justify-center sm:justify-start"
+                  onClick={() => setShowChangePassword(!showChangePassword)}
+                >
+                  <Lock className="w-4 h-4 mr-1" />
+                  {showChangePassword ? "Cancel" : "Change Password"}
+                </button>
+              </div>
+
+              {showChangePassword ? (
+                <div className="bg-blue-50 rounded-xl p-4 sm:p-6 border border-blue-100">
+                  <form onSubmit={handlePasswordChange}>
+                    <div className="space-y-4">
+                      <div>
+                        <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                          Current Password
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={passwordVisible.current ? "text" : "password"}
+                            id="currentPassword"
+                            value={passwordData.currentPassword}
+                            onChange={(e) =>
+                              setPasswordData({
+                                ...passwordData,
+                                currentPassword: e.target.value,
+                              })
+                            }
+                            className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-sm sm:text-base"
+                            placeholder="Enter current password"
+                          />
+                          <button
+                            type="button"
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                            onClick={() => togglePasswordVisibility("current")}
+                          >
+                            {passwordVisible.current ? (
+                              <EyeOff className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
+                            ) : (
+                              <Eye className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                          New Password
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={passwordVisible.new ? "text" : "password"}
+                            id="newPassword"
+                            value={passwordData.newPassword}
+                            onChange={(e) =>
+                              setPasswordData({
+                                ...passwordData,
+                                newPassword: e.target.value,
+                              })
+                            }
+                            className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-sm sm:text-base"
+                            placeholder="Enter new password"
+                          />
+                          <button
+                            type="button"
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                            onClick={() => togglePasswordVisibility("new")}
+                          >
+                            {passwordVisible.new ? (
+                              <EyeOff className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
+                            ) : (
+                              <Eye className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                          Confirm New Password
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={passwordVisible.confirm ? "text" : "password"}
+                            id="confirmPassword"
+                            value={passwordData.confirmPassword}
+                            onChange={(e) =>
+                              setPasswordData({
+                                ...passwordData,
+                                confirmPassword: e.target.value,
+                              })
+                            }
+                            className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-sm sm:text-base"
+                            placeholder="Confirm new password"
+                          />
+                          <button
+                            type="button"
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                            onClick={() => togglePasswordVisibility("confirm")}
+                          >
+                            {passwordVisible.confirm ? (
+                              <EyeOff className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
+                            ) : (
+                              <Eye className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+
+                      {passwordError && (
+                        <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm border border-red-100">
+                          <div className="flex items-center">
+                            <AlertCircle className="w-4 h-4 mr-2" />
+                            {passwordError}
+                          </div>
+                        </div>
+                      )}
+
+                      {passwordSuccess && (
+                        <div className="p-3 bg-green-50 text-green-700 rounded-lg text-sm border border-green-100">
+                          <div className="flex items-center">
+                            <Check className="w-4 h-4 mr-2" />
+                            Password changed successfully!
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="pt-2">
+                        <button
+                          type="submit"
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors shadow-md text-sm sm:text-base"
+                        >
+                          Update Password
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              ) : (
+                <div className="bg-blue-50 rounded-xl p-4 sm:p-6 border border-blue-100">
+                  <div className="flex flex-col sm:flex-row items-start">
+                    <div className="p-3 bg-white rounded-lg border border-blue-200 shadow-sm mr-0 sm:mr-4 mb-4 sm:mb-0">
+                      <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-medium text-gray-800">Account Security Status</h3>
+                      <p className="mt-1 text-gray-600 text-sm sm:text-base">
+                        Your account is secured with industry-standard encryption. For optimal security, we recommend
+                        changing your password every 90 days and enabling two-factor authentication.
+                      </p>
+                      <div className="mt-4 space-y-2">
+                        <div className="flex items-center text-sm text-gray-700">
+                          <Check className="w-4 h-4 text-green-500 mr-2" />
+                          Last password change: May 15, 2025
+                        </div>
+                        <div className="flex items-center text-sm text-gray-700">
+                          <Check className="w-4 h-4 text-green-500 mr-2" />
+                          Secure login enabled
+                        </div>
+                        <div className="flex items-center text-sm text-gray-700">
+                          <AlertCircle className="w-4 h-4 text-amber-500 mr-2" />
+                          Two-factor authentication not enabled
+                        </div>
+                      </div>
+                      <button className="mt-4 text-sm text-blue-600 hover:text-blue-800 font-medium">
+                        Enable Two-Factor Authentication
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Prescription View Modal */}
@@ -1792,7 +1715,7 @@ const UserProfileComponent = () => {
             <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-4 sm:p-6">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-xl font-bold text-gray-800">Prescription Details</h3>
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-800">Prescription Details</h3>
                   <button
                     onClick={() => {
                       setShowPrescriptionModal(false);
@@ -1800,7 +1723,7 @@ const UserProfileComponent = () => {
                     }}
                     className="text-gray-500 hover:text-gray-700"
                   >
-                    <X className="w-6 h-6" />
+                    <X className="w-5 h-5 sm:w-6 sm:h-6" />
                   </button>
                 </div>
 
@@ -1816,7 +1739,7 @@ const UserProfileComponent = () => {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <p className="text-sm text-gray-600">Date</p>
-                          <p className="font-medium">
+                          <p className="font-medium text-sm sm:text-base">
                             {new Date(prescriptionData.date).toLocaleDateString("en-US", {
                               year: "numeric",
                               month: "long",
@@ -1826,15 +1749,15 @@ const UserProfileComponent = () => {
                         </div>
                         <div>
                           <p className="text-sm text-gray-600">Time</p>
-                          <p className="font-medium">{prescriptionData.time}</p>
+                          <p className="font-medium text-sm sm:text-base">{prescriptionData.time}</p>
                         </div>
                         <div>
                           <p className="text-sm text-gray-600">Doctor Email</p>
-                          <p className="font-medium">{prescriptionData.doctorEmail}</p>
+                          <p className="font-medium text-sm sm:text-base break-all">{prescriptionData.doctorEmail}</p>
                         </div>
                         <div>
                           <p className="text-sm text-gray-600">Patient Email</p>
-                          <p className="font-medium">{prescriptionData.patientEmail}</p>
+                          <p className="font-medium text-sm sm:text-base break-all">{prescriptionData.patientEmail}</p>
                         </div>
                       </div>
                     </div>
@@ -1842,14 +1765,16 @@ const UserProfileComponent = () => {
                     <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
                       <h4 className="font-semibold text-blue-800 mb-2">Prescription Details</h4>
                       <div className="bg-white p-4 rounded border border-blue-200">
-                        <p className="whitespace-pre-wrap">{prescriptionData.prescriptionDetails}</p>
+                        <p className="whitespace-pre-wrap text-sm sm:text-base">
+                          {prescriptionData.prescriptionDetails}
+                        </p>
                       </div>
                     </div>
                   </div>
                 ) : (
                   <div className="text-center py-8 text-gray-500">
-                    <FileText className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                    <p>No prescription data available.</p>
+                    <FileText className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-4 text-gray-400" />
+                    <p className="text-sm sm:text-base">No prescription data available.</p>
                   </div>
                 )}
               </div>
@@ -1860,8 +1785,8 @@ const UserProfileComponent = () => {
         {/* Chat Modal */}
         {showChatModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end sm:items-center justify-end sm:justify-end p-0 sm:p-4">
-            <div className="w-full h-full sm:h-[70vh] sm:max-h-[600px] sm:min-h-[400px] sm:max-w-md">
-              <div className="bg-white h-full shadow-xl flex flex-col rounded-none sm:rounded-lg overflow-hidden">
+            <div className="w-full h-full sm:h-[70vh] sm:max-h-[600px] sm:min-h-[400px] sm:max-w-md sm:rounded-lg overflow-hidden">
+              <div className="bg-white h-full shadow-xl flex flex-col">
                 {/* Chat Header */}
                 <div className="bg-blue-600 p-4 flex items-start justify-between flex-shrink-0">
                   <div className="flex items-center">
@@ -1871,15 +1796,17 @@ const UserProfileComponent = () => {
                     >
                       <ArrowLeft className="w-5 h-5" />
                     </button>
-                    <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center mr-3">
-                      <User className="w-6 h-6 text-white" />
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-500 rounded-full flex items-center justify-center mr-3">
+                      <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                     </div>
                     <div>
-                      <h3 className="text-white font-medium">{chatAppointment?.doctor || "Dr. Smith"}</h3>
+                      <h3 className="text-white font-medium text-sm sm:text-base">
+                        {chatAppointment?.doctor || "Dr. Smith"}
+                      </h3>
                       <p className="text-blue-200 text-xs">
                         {chatAppointment?.department || "General Medicine"}
                       </p>
-                      <p className="text-blue-100 text-xs mt-1">
+                      <p className="text-blue-100 text-xs mt-1 truncate max-w-[150px] sm:max-w-none">
                         {chatAppointment?.date &&
                           `Appointment: ${chatAppointment.date} at ${chatAppointment.time}`}
                       </p>
@@ -1887,13 +1814,13 @@ const UserProfileComponent = () => {
                   </div>
                   <div className="flex items-start space-x-2 -mt-1">
                     <button className="text-white hover:text-blue-200">
-                      <Phone className="w-5 h-5" />
+                      <Phone className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
                     <button
                       onClick={() => setShowChatModal(false)}
                       className="text-white hover:text-blue-200"
                     >
-                      <X className="w-5 h-5" />
+                      <X className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
                   </div>
                 </div>
@@ -1905,8 +1832,8 @@ const UserProfileComponent = () => {
                       <div key={message.id} className="flex flex-col">
                         {message.sender === "doctor" ? (
                           <div className="flex items-start">
-                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-2 flex-shrink-0">
-                              <User className="w-4 h-4 text-blue-600" />
+                            <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 rounded-full flex items-center justify-center mr-2 flex-shrink-0">
+                              <User className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" />
                             </div>
                             <div className="flex-1">
                               {message.unavailable ? (
@@ -1932,7 +1859,7 @@ const UserProfileComponent = () => {
                                   ) : message.type === "file" ? (
                                     <div className="space-y-2">
                                       <div className="flex items-center space-x-2 bg-white rounded-lg p-2 border border-blue-200">
-                                        <Paperclip className="w-4 h-4 text-blue-600" />
+                                        <Paperclip className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" />
                                         <div className="flex-1 min-w-0">
                                           <p className="text-blue-800 text-sm font-medium truncate">
                                             {message.fileName || "File"}
@@ -1988,7 +1915,7 @@ const UserProfileComponent = () => {
                                 ) : message.type === "file" ? (
                                   <div className="space-y-2">
                                     <div className="flex items-center space-x-2 bg-blue-700 rounded-lg p-2">
-                                      <Paperclip className="w-4 h-4 text-white" />
+                                      <Paperclip className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                                       <div className="flex-1 min-w-0">
                                         <p className="text-white text-sm font-medium truncate">
                                           {message.fileName || "File"}
@@ -2024,9 +1951,9 @@ const UserProfileComponent = () => {
                     ))
                   ) : (
                     <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                      <MessageCircle className="w-12 h-12 mb-2" />
-                      <p>No messages yet</p>
-                      <p className="text-sm">Start the conversation with your doctor</p>
+                      <MessageCircle className="w-8 h-8 sm:w-12 sm:h-12 mb-2" />
+                      <p className="text-sm sm:text-base">No messages yet</p>
+                      <p className="text-xs sm:text-sm">Start the conversation with your doctor</p>
                     </div>
                   )}
                 </div>
@@ -2035,7 +1962,7 @@ const UserProfileComponent = () => {
                 <div className="bg-white p-4 border-t border-blue-100 flex-shrink-0">
                   <div className="flex items-center space-x-2">
                     <button className="text-blue-400 hover:text-blue-600">
-                      <Smile className="w-5 h-5" />
+                      <Smile className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
                     <div className="flex-1 relative">
                       <input
@@ -2044,31 +1971,36 @@ const UserProfileComponent = () => {
                         onChange={(e) => setNewMessage(e.target.value)}
                         onKeyPress={(e) => e.key === "Enter" && handleTextMessage()}
                         placeholder="Type your message..."
-                        className="w-full bg-blue-50 text-blue-800 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full bg-blue-50 text-blue-800 rounded-full px-3 sm:px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
 
                     <button className="text-blue-400 hover:text-blue-600">
-                      <Mic className="w-5 h-5" />
+                      <Mic className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
 
+                    {/* File Upload */}
                     <label className="text-blue-400 hover:text-blue-600 cursor-pointer">
-                      <Paperclip className="w-5 h-5" />
+                      <Paperclip className="w-4 h-4 sm:w-5 sm:h-5" />
                       <input type="file" hidden onChange={handleFileUpload} accept="*/*" />
                     </label>
 
+                    {/* Image Upload */}
                     <label className="text-blue-400 hover:text-blue-600 cursor-pointer">
-                      <Camera className="w-5 h-5" />
+                      <Camera className="w-4 h-4 sm:w-5 sm:h-5" />
                       <input type="file" hidden onChange={handleImageUpload} accept="image/*" />
                     </label>
 
                     {newMessage.trim() ? (
-                      <button onClick={handleTextMessage} className="text-blue-600 hover:text-blue-800">
-                        <Send className="w-5 h-5" />
+                      <button
+                        onClick={handleTextMessage}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        <Send className="w-4 h-4 sm:w-5 sm:h-5" />
                       </button>
                     ) : (
                       <button className="text-blue-400 hover:text-blue-600">
-                        <Smile className="w-5 h-5" />
+                        <Smile className="w-4 h-4 sm:w-5 sm:h-5" />
                       </button>
                     )}
                   </div>
@@ -2081,24 +2013,26 @@ const UserProfileComponent = () => {
         {/* Call Modal */}
         {showCallModal && incomingCall && (
           <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-4 sm:p-6">
               <div className="flex flex-col items-center text-center">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                  <Phone className="w-8 h-8 text-blue-600" />
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                  <Phone className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
                 </div>
 
-                <h3 className="text-xl font-bold text-gray-800 mb-2">Incoming Video Consultation</h3>
+                <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">Incoming Video Consultation</h3>
 
-                <p className="text-gray-600 mb-1">Dr. {incomingCall.doctorName} is calling...</p>
+                <p className="text-gray-600 mb-1 text-sm sm:text-base">
+                  Dr. {incomingCall.doctorName} is calling...
+                </p>
 
-                <p className="text-sm text-gray-500 mb-6">Appointment: {incomingCall.appointmentId}</p>
+                <p className="text-xs sm:text-sm text-gray-500 mb-6">Appointment: {incomingCall.appointmentId}</p>
 
-                <div className="flex gap-4 w-full flex-col sm:flex-row">
+                <div className="flex gap-3 sm:gap-4 w-full">
                   <button
                     onClick={acceptCall}
-                    className="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center"
+                    className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 sm:py-3 rounded-lg font-medium transition-colors flex items-center justify-center text-sm sm:text-base"
                   >
-                    <Phone className="w-5 h-5 mr-2" />
+                    <Phone className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                     Accept
                   </button>
                 </div>
@@ -2250,10 +2184,19 @@ const UserProfileComponent = () => {
       animation: progress 3s linear forwards;
     }
 
-    /* Responsive design improvements */
+    /* Responsive scrollbar hide */
+    .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Responsive text sizing */
     @media (max-width: 640px) {
-      .medical-symbol {
-        animation-duration: 6s;
+      .text-responsive {
+        font-size: 0.875rem;
       }
     }
   `}
