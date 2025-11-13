@@ -142,8 +142,9 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
             <div className="flex justify-between items-center p-6 bg-gradient-to-r rgb(0, 59, 115) rgb(0, 59, 115)-600 shadow-lg">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-white/20 rounded-lg">
-                  <Heart size={24} className="text-white" />
+                  <Heart size={24} className="text-[rgb(255,0,0)]" />
                 </div>
+
                 <span
                   className="text-xl font-bold"
                   style={{ color: "rgb(0, 59, 115)" }}
