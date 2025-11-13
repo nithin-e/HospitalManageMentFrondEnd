@@ -1,14 +1,28 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Menu, X, LogOut, User, Settings, Loader, Bell, Check, Home, Info, Stethoscope, Users, Heart } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useSelector, useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import Logo from '../navbar/Logo';
-import NavItem from '../navbar/NavItem';
-import AuthButtons from '../navbar/AuthButton';
-import { RootState } from '../../store/redux/store';
-import { logoutUser } from '@/store/redux/slices/authSlice';
-import { useSocket } from '@/context/socketContext';
+import React, { useState, useEffect, useRef } from "react";
+import {
+  Menu,
+  X,
+  LogOut,
+  User,
+  Settings,
+  Loader,
+  Bell,
+  Check,
+  Home,
+  Info,
+  Stethoscope,
+  Users,
+  Heart,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useSelector, useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import Logo from "../navbar/Logo";
+import NavItem from "../navbar/NavItem";
+import AuthButtons from "../navbar/AuthButton";
+import { RootState } from "../../store/redux/store";
+import { logoutUser } from "@/store/redux/slices/authSlice";
+import { useSocket } from "@/context/socketContext";
 
 interface User {
   name?: string;
@@ -78,25 +92,29 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
   const formatTimestamp = (timestamp: string) => {
     try {
       const date = new Date(timestamp);
-      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      return (
+        date.toLocaleDateString() +
+        " " +
+        date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      );
     } catch {
-      return 'Just now';
+      return "Just now";
     }
   };
 
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     }
 
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     };
   }, [isOpen]);
 
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   return (
     <AnimatePresence>
@@ -110,24 +128,32 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
             exit={{ opacity: 0 }}
             onClick={onItemClick}
           />
-          
+
           {/* Mobile Menu */}
           <motion.div
             ref={menuRef}
             className="md:hidden fixed top-0 right-0 bottom-0 w-4/5 max-w-sm bg-gradient-to-b from-white to-blue-50 z-50 flex flex-col shadow-2xl border-l border-blue-100"
-            initial={{ opacity: 0, x: '100%' }}
+            initial={{ opacity: 0, x: "100%" }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: '100%' }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            exit={{ opacity: 0, x: "100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
           >
             {/* Header with gradient */}
             <div className="flex justify-between items-center p-6 bg-gradient-to-r rgb(0, 59, 115) rgb(0, 59, 115)-600 shadow-lg">
-              <div className="flex items-center space-x-3">
+              {/* <div className="flex items-center space-x-3">
+                <div className="p-2 bg-white/20 rounded-lg">
+                  <Heart size={24} className="text-white" />
+                </div>
+                <span className="text-xl font-bold text-white">HealNova</span>
+              </div> */}
+
+              <div className="flex items-center space-x-3 bg-blue-600 p-2 rounded-lg">
                 <div className="p-2 bg-white/20 rounded-lg">
                   <Heart size={24} className="text-white" />
                 </div>
                 <span className="text-xl font-bold text-white">HealNova</span>
               </div>
+
               <button
                 onClick={onItemClick}
                 className="p-2 rounded-full bg-white/20 hover:bg-white/30 transition-all duration-200"
@@ -148,23 +174,21 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                           <motion.div
                             className="absolute inset-0 rounded-full bg-red-400 opacity-70 z-0"
                             initial={{ scale: 0.8, opacity: 0.5 }}
-                            animate={{ 
-                              scale: 1.5, 
+                            animate={{
+                              scale: 1.5,
                               opacity: 0,
-                              transition: { 
+                              transition: {
                                 duration: 1.5,
                                 repeat: Infinity,
-                                repeatType: "reverse" as const
-                              }
+                                repeatType: "reverse" as const,
+                              },
                             }}
                             exit={{ opacity: 0 }}
                           />
                         )}
                       </AnimatePresence>
-                      <div
-                        className="w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold border-4 border-white shadow-lg relative z-10 bg-gradient-to-br from-blue-500 to-indigo-600"
-                      >
-                        {userInitial || '?'}
+                      <div className="w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold border-4 border-white shadow-lg relative z-10 bg-gradient-to-br from-blue-500 to-indigo-600">
+                        {userInitial || "?"}
                       </div>
                       {hasNotifications && unreadCount > 0 && (
                         <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center shadow-lg z-20 border-2 border-white font-bold">
@@ -173,8 +197,12 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-lg font-bold text-gray-800 truncate">{user?.name || 'User'}</p>
-                      <p className="text-blue-600 text-sm truncate font-medium">{user?.email || ''}</p>
+                      <p className="text-lg font-bold text-gray-800 truncate">
+                        {user?.name || "User"}
+                      </p>
+                      <p className="text-blue-600 text-sm truncate font-medium">
+                        {user?.email || ""}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -205,7 +233,9 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                   {hasNotifications && (
                     <>
                       <motion.button
-                        onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                        onClick={() =>
+                          setIsNotificationsOpen(!isNotificationsOpen)
+                        }
                         className="flex items-center justify-between w-full p-4 rounded-2xl bg-orange-50 border border-orange-200 hover:bg-orange-100 transition-all duration-200 shadow-sm"
                         whileTap={{ scale: 0.95 }}
                       >
@@ -213,7 +243,9 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                           <div className="p-2 bg-orange-100 rounded-xl">
                             <Bell size={20} className="text-orange-600" />
                           </div>
-                          <span className="text-base font-semibold text-orange-800">Notifications</span>
+                          <span className="text-base font-semibold text-orange-800">
+                            Notifications
+                          </span>
                         </div>
                         <div className="flex items-center space-x-2">
                           {unreadCount > 0 && (
@@ -225,8 +257,18 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                             animate={{ rotate: isNotificationsOpen ? 180 : 0 }}
                             transition={{ duration: 0.2 }}
                           >
-                            <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            <svg
+                              className="w-5 h-5 text-orange-600"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 9l-7 7-7-7"
+                              />
                             </svg>
                           </motion.div>
                         </div>
@@ -237,15 +279,17 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                         {isNotificationsOpen && (
                           <motion.div
                             initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
+                            animate={{ opacity: 1, height: "auto" }}
                             exit={{ opacity: 0, height: 0 }}
                             className="overflow-hidden"
                           >
                             <div className="mt-3 bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-lg">
                               <div className="flex justify-between items-center p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
-                                <h3 className="font-bold text-gray-800">Recent Alerts</h3>
+                                <h3 className="font-bold text-gray-800">
+                                  Recent Alerts
+                                </h3>
                                 {unreadCount > 0 && (
-                                  <button 
+                                  <button
                                     onClick={markAllAsRead}
                                     className="text-sm text-blue-600 hover:text-blue-800 flex items-center space-x-1 font-semibold"
                                   >
@@ -254,29 +298,37 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                                   </button>
                                 )}
                               </div>
-                              
+
                               <div className="max-h-64 overflow-y-auto">
                                 {notifications.length > 0 ? (
-                                  notifications.map(notification => (
-                                    <motion.div 
-                                      key={notification.id} 
+                                  notifications.map((notification) => (
+                                    <motion.div
+                                      key={notification.id}
                                       className={`p-4 border-b border-gray-100 cursor-pointer transition-all duration-200 ${
-                                        notification.isRead 
-                                          ? 'bg-white hover:bg-gray-50' 
-                                          : 'bg-blue-50 border-l-4 border-l-blue-500 hover:bg-blue-100'
+                                        notification.isRead
+                                          ? "bg-white hover:bg-gray-50"
+                                          : "bg-blue-50 border-l-4 border-l-blue-500 hover:bg-blue-100"
                                       }`}
-                                      onClick={() => handleNotificationClick(notification.id)}
+                                      onClick={() =>
+                                        handleNotificationClick(notification.id)
+                                      }
                                       whileHover={{ scale: 1.02 }}
                                       whileTap={{ scale: 0.98 }}
                                     >
                                       <div className="flex justify-between items-start mb-2">
-                                        <h4 className={`font-semibold text-sm ${
-                                          notification.isRead ? 'text-gray-700' : 'text-blue-800'
-                                        }`}>
-                                          {notification.title || 'Notification'}
+                                        <h4
+                                          className={`font-semibold text-sm ${
+                                            notification.isRead
+                                              ? "text-gray-700"
+                                              : "text-blue-800"
+                                          }`}
+                                        >
+                                          {notification.title || "Notification"}
                                         </h4>
                                         <span className="text-xs text-gray-500 ml-2 flex-shrink-0 bg-white/80 px-2 py-1 rounded-full">
-                                          {formatTimestamp(notification.timestamp)}
+                                          {formatTimestamp(
+                                            notification.timestamp
+                                          )}
                                         </span>
                                       </div>
                                       <p className="text-sm text-gray-600 leading-relaxed">
@@ -285,14 +337,19 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                                       {!notification.isRead && (
                                         <div className="flex items-center mt-2 space-x-2">
                                           <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
-                                          <span className="text-xs text-blue-600 font-bold">NEW</span>
+                                          <span className="text-xs text-blue-600 font-bold">
+                                            NEW
+                                          </span>
                                         </div>
                                       )}
                                     </motion.div>
                                   ))
                                 ) : (
                                   <div className="p-6 text-center text-gray-500">
-                                    <Bell size={32} className="mx-auto text-gray-300 mb-2" />
+                                    <Bell
+                                      size={32}
+                                      className="mx-auto text-gray-300 mb-2"
+                                    />
                                     <p>No notifications yet</p>
                                   </div>
                                 )}
@@ -317,14 +374,14 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                           <motion.div
                             className="absolute -inset-1 rounded-full bg-red-400 opacity-30 z-0"
                             initial={{ scale: 0.8, opacity: 0.5 }}
-                            animate={{ 
-                              scale: 1.5, 
+                            animate={{
+                              scale: 1.5,
                               opacity: 0,
-                              transition: { 
+                              transition: {
                                 duration: 1.5,
                                 repeat: Infinity,
-                                repeatType: "reverse" as const
-                              }
+                                repeatType: "reverse" as const,
+                              },
                             }}
                             exit={{ opacity: 0 }}
                           />
@@ -360,7 +417,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                       <LogOut size={20} />
                     )}
                     <span className="text-base font-semibold">
-                      {isLoggingOut ? 'Logging out...' : 'Logout'}
+                      {isLoggingOut ? "Logging out..." : "Logout"}
                     </span>
                   </motion.button>
                 </div>
@@ -404,28 +461,28 @@ const Navbar: React.FC = () => {
   const { socket, connected } = useSocket();
 
   // Get auth and user data from Redux store
-  const user = useSelector((state: RootState) => state.user)
-  
-  const userData = user.user || user?.user|| user?.user || null;
-  const userName = userData?.name || '';
-  const userEmail = userData?.email || '';
-  const userInitial = userName.charAt(0)?.toUpperCase() || '';
+  const user = useSelector((state: RootState) => state.user);
+
+  const userData = user.user || user?.user || user?.user || null;
+  const userName = userData?.name || "";
+  const userEmail = userData?.email || "";
+  const userInitial = userName.charAt(0)?.toUpperCase() || "";
 
   const dispatch = useDispatch();
 
   // Navigation items with icons
   const navItems = [
-    { name: 'Home', href: '/', icon: <Home size={20} /> },
-    { name: 'About', href: '/history', icon: <Info size={20} /> },
-    { name: 'Services', href: '/services', icon: <Stethoscope size={20} /> },
-    { name: 'Doctors', href: '#doctors', icon: <Users size={20} /> },
+    { name: "Home", href: "/", icon: <Home size={20} /> },
+    { name: "About", href: "/history", icon: <Info size={20} /> },
+    { name: "Services", href: "/services", icon: <Stethoscope size={20} /> },
+    { name: "Doctors", href: "#doctors", icon: <Users size={20} /> },
   ];
 
   useEffect(() => {
     if (socket && connected) {
       const handleDoctorAlert = (response: any) => {
         console.log("Doctor alert received:", response);
-        
+
         if (response.type === "appointment_update") {
           console.log("Appointment update received:", response.data);
           setIsBeeping(true);
@@ -433,10 +490,10 @@ const Navbar: React.FC = () => {
         }
       };
 
-      socket.on('user_alert', handleDoctorAlert);
+      socket.on("user_alert", handleDoctorAlert);
 
       return () => {
-        socket.off('user_alert', handleDoctorAlert);
+        socket.off("user_alert", handleDoctorAlert);
       };
     }
   }, [socket, connected]);
@@ -446,54 +503,63 @@ const Navbar: React.FC = () => {
       setIsScrolled(window.scrollY > 10);
     };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsDropdownOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [dropdownRef]);
 
   useEffect(() => {
     if (userData?.email && socket) {
       setIsLoading(true);
-      
-      socket.emit('fetchNotifications', { email: userData.email });
-      
-      socket.on('notificationsResponse', (response) => {
+
+      socket.emit("fetchNotifications", { email: userData.email });
+
+      socket.on("notificationsResponse", (response) => {
         setIsLoading(false);
-        console.log('check here kittando responce', response);
-        
-        if (response?.notification && Array.isArray(response.notification) && response.notification.length > 0) {
+        console.log("check here kittando responce", response);
+
+        if (
+          response?.notification &&
+          Array.isArray(response.notification) &&
+          response.notification.length > 0
+        ) {
           setNotifications(response.notification);
           setHasNotifications(true);
-          setIsBeeping(response.notification.some((n: Notification) => !n.isRead));
+          setIsBeeping(
+            response.notification.some((n: Notification) => !n.isRead)
+          );
         } else {
           setNotifications([]);
           setHasNotifications(false);
           setIsBeeping(false);
         }
       });
-      
-      socket.on('newNotification', (newNotification) => {
-        setNotifications(prev => [newNotification, ...prev]);
+
+      socket.on("newNotification", (newNotification) => {
+        setNotifications((prev) => [newNotification, ...prev]);
         setHasNotifications(true);
         setIsBeeping(true);
         setTimeout(() => setIsBeeping(false), 60000);
       });
-      
+
       return () => {
-        socket.off('notificationsResponse');
-        socket.off('newNotification');
+        socket.off("notificationsResponse");
+        socket.off("newNotification");
       };
     }
   }, [userData?.email, socket]);
@@ -504,7 +570,7 @@ const Navbar: React.FC = () => {
       y: 0,
       opacity: 1,
       transition: {
-        type: 'spring',
+        type: "spring",
         stiffness: 300,
         damping: 30,
         staggerChildren: 0.1,
@@ -518,7 +584,7 @@ const Navbar: React.FC = () => {
     visible: {
       y: 0,
       opacity: 1,
-      transition: { type: 'spring', stiffness: 300 },
+      transition: { type: "spring", stiffness: 300 },
     },
   };
 
@@ -533,18 +599,20 @@ const Navbar: React.FC = () => {
   };
 
   const isAuthenticated =
-    !!userData || !!localStorage.getItem('userAccessToken') || user?.isUserAuthenticated;
+    !!userData ||
+    !!localStorage.getItem("userAccessToken") ||
+    user?.isUserAuthenticated;
 
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
       await new Promise((resolve) => setTimeout(resolve, 800));
 
-      localStorage.removeItem('AccessToken');
-      localStorage.removeItem('RefreshToken');
+      localStorage.removeItem("AccessToken");
+      localStorage.removeItem("RefreshToken");
 
       dispatch(logoutUser());
-      console.log('User logged out successfully');
+      console.log("User logged out successfully");
 
       setIsDropdownOpen(false);
       setIsMenuOpen(false);
@@ -552,46 +620,55 @@ const Navbar: React.FC = () => {
       setHasNotifications(false);
       setIsBeeping(false);
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error("Logout failed:", error);
     } finally {
       setIsLoggingOut(false);
     }
   };
 
   const handleNavigateToProfile = () => {
-    console.log('Navigating to profile');
+    console.log("Navigating to profile");
     setIsDropdownOpen(false);
   };
 
   const markAsRead = (id: string) => {
-    setNotifications(prev => 
-      prev.map(notification => 
-        notification.id === id ? { ...notification, isRead: true } : notification
+    setNotifications((prev) =>
+      prev.map((notification) =>
+        notification.id === id
+          ? { ...notification, isRead: true }
+          : notification
       )
     );
-    if (notifications.every(n => n.isRead || n.id === id)) {
+    if (notifications.every((n) => n.isRead || n.id === id)) {
       setIsBeeping(false);
     }
   };
 
   const handleNavigateToNotifications = () => {
-    console.log('Navigating to notifications');
+    console.log("Navigating to notifications");
     setIsDropdownOpen(false);
-    navigate('/NotificationList', { state: { notifications } });
+    navigate("/NotificationList", { state: { notifications } });
   };
 
   const markAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(notification => ({ ...notification, isRead: true }))
+    setNotifications((prev) =>
+      prev.map((notification) => ({ ...notification, isRead: true }))
     );
     setIsBeeping(false);
   };
 
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   const getAvatarColor = (name: string) => {
-    if (!name) return '#003B73';
-    const colors = ['#003B73', '#2C74B3', '#0A2647', '#144272', '#205295', '#0E6BA8'];
+    if (!name) return "#003B73";
+    const colors = [
+      "#003B73",
+      "#2C74B3",
+      "#0A2647",
+      "#144272",
+      "#205295",
+      "#0E6BA8",
+    ];
     const charCode = name.charCodeAt(0);
     return colors[charCode % colors.length];
   };
@@ -601,7 +678,7 @@ const Navbar: React.FC = () => {
   return (
     <motion.header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled ? 'bg-white/95 backdrop-blur-md shadow-lg' : 'bg-white'
+        isScrolled ? "bg-white/95 backdrop-blur-md shadow-lg" : "bg-white"
       }`}
       initial="hidden"
       animate="visible"
@@ -622,7 +699,11 @@ const Navbar: React.FC = () => {
               </motion.div>
             ))}
 
-            <motion.div variants={itemVariants} className="relative" ref={dropdownRef}>
+            <motion.div
+              variants={itemVariants}
+              className="relative"
+              ref={dropdownRef}
+            >
               {isAuthenticated ? (
                 <>
                   <div className="relative">
@@ -632,14 +713,14 @@ const Navbar: React.FC = () => {
                           <motion.div
                             className="absolute inset-0 rounded-full bg-red-600 opacity-30 z-0"
                             initial={{ scale: 0.8, opacity: 0.5 }}
-                            animate={{ 
-                              scale: 1.5, 
+                            animate={{
+                              scale: 1.5,
                               opacity: 0,
-                              transition: { 
+                              transition: {
                                 duration: 1.5,
                                 repeat: Infinity,
-                                repeatType: "reverse" as const
-                              }
+                                repeatType: "reverse" as const,
+                              },
                             }}
                             exit={{ opacity: 0 }}
                           />
@@ -648,10 +729,10 @@ const Navbar: React.FC = () => {
                       <div
                         className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold cursor-pointer transition-transform hover:scale-105 shadow-md relative z-10"
                         style={{ backgroundColor: avatarColor }}
-                        title={userName || 'User Profile'}
+                        title={userName || "User Profile"}
                         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                       >
-                        {userInitial || '?'}
+                        {userInitial || "?"}
                       </div>
                     </div>
                     {hasNotifications && unreadCount > 0 && (
@@ -676,14 +757,14 @@ const Navbar: React.FC = () => {
                                 <motion.div
                                   className="absolute inset-0 rounded-full bg-red-600 opacity-30 z-0"
                                   initial={{ scale: 0.8, opacity: 0.5 }}
-                                  animate={{ 
-                                    scale: 1.5, 
+                                  animate={{
+                                    scale: 1.5,
                                     opacity: 0,
-                                    transition: { 
+                                    transition: {
                                       duration: 1.5,
                                       repeat: Infinity,
-                                      repeatType: "reverse" as const
-                                    }
+                                      repeatType: "reverse" as const,
+                                    },
                                   }}
                                   exit={{ opacity: 0 }}
                                 />
@@ -693,14 +774,16 @@ const Navbar: React.FC = () => {
                               className="w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold mr-3 shadow-md relative z-10"
                               style={{ backgroundColor: avatarColor }}
                             >
-                              {userInitial || '?'}
+                              {userInitial || "?"}
                             </div>
                           </div>
                           <div className="overflow-hidden">
                             <div className="text-base font-semibold text-gray-900 truncate">
-                              {userName || 'User'}
+                              {userName || "User"}
                             </div>
-                            <div className="text-sm text-gray-500 truncate">{userEmail || 'No email'}</div>
+                            <div className="text-sm text-gray-500 truncate">
+                              {userEmail || "No email"}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -717,20 +800,23 @@ const Navbar: React.FC = () => {
                                 <motion.div
                                   className="absolute -inset-1 rounded-full bg-red-600 opacity-30 z-0"
                                   initial={{ scale: 0.8, opacity: 0.5 }}
-                                  animate={{ 
-                                    scale: 1.5, 
+                                  animate={{
+                                    scale: 1.5,
                                     opacity: 0,
-                                    transition: { 
+                                    transition: {
                                       duration: 1.5,
                                       repeat: Infinity,
-                                      repeatType: "reverse" as const
-                                    }
+                                      repeatType: "reverse" as const,
+                                    },
                                   }}
                                   exit={{ opacity: 0 }}
                                 />
                               )}
                             </AnimatePresence>
-                            <User size={18} className="relative z-10 text-blue-500 group-hover:text-blue-600 transition-colors" />
+                            <User
+                              size={18}
+                              className="relative z-10 text-blue-500 group-hover:text-blue-600 transition-colors"
+                            />
                           </div>
                           <span>View Profile</span>
                         </a>
@@ -740,7 +826,10 @@ const Navbar: React.FC = () => {
                             onClick={handleNavigateToNotifications}
                             className="w-full flex items-center px-6 py-3 text-sm text-gray-700 hover:bg-blue-50 transition-colors group relative text-left"
                           >
-                            <Bell size={18} className="mr-3 text-blue-500 group-hover:text-blue-600 transition-colors" />
+                            <Bell
+                              size={18}
+                              className="mr-3 text-blue-500 group-hover:text-blue-600 transition-colors"
+                            />
                             <span>Notifications</span>
                             {unreadCount > 0 && (
                               <span className="ml-2 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
@@ -773,10 +862,13 @@ const Navbar: React.FC = () => {
                           {isLoggingOut ? (
                             <Loader size={18} className="mr-3 animate-spin" />
                           ) : (
-                            <LogOut size={18} className="mr-3 group-hover:text-red-700 transition-colors" />
+                            <LogOut
+                              size={18}
+                              className="mr-3 group-hover:text-red-700 transition-colors"
+                            />
                           )}
                           <span className="font-medium group-hover:text-red-700 transition-colors">
-                            {isLoggingOut ? 'Logging out...' : 'Logout'}
+                            {isLoggingOut ? "Logging out..." : "Logout"}
                           </span>
                         </button>
                       </div>
