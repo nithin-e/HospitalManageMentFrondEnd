@@ -147,12 +147,13 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                 <span className="text-xl font-bold text-white">HealNova</span>
               </div> */}
 
-             <div className="flex items-center space-x-3 !block !opacity-100 !visible">
+<div className="flex items-center space-x-3 !block !visible !opacity-100 bg-red-500 border border-white z-50 relative">
   <div className="p-2 bg-white/20 rounded-lg">
     <Heart size={24} className="text-white" />
   </div>
   <span className="text-xl font-bold text-white">HealNova</span>
 </div>
+
 
 
               <button
