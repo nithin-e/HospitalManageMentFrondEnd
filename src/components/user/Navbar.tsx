@@ -13,6 +13,9 @@ import {
   Stethoscope,
   Users,
   Heart,
+  Calendar,
+  MapPin,
+  Clock,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSelector, useDispatch } from "react-redux";
@@ -75,6 +78,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
 }) => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [expandedNotification, setExpandedNotification] = useState<string | null>(null);
   const navigate = useNavigate();
   const menuRef = useRef<HTMLDivElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
@@ -88,6 +92,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
 
   const handleNotificationClick = (id: string) => {
     markAsRead(id);
+    setExpandedNotification(expandedNotification === id ? null : id);
   };
 
   const formatTimestamp = (timestamp: string) => {
@@ -101,6 +106,87 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
     } catch {
       return "Just now";
     }
+  };
+
+  const getNotificationIcon = (type?: number) => {
+    switch (type) {
+      case 1:
+        return <Calendar size={16} className="text-blue-500" />;
+      case 2:
+        return <Stethoscope size={16} className="text-green-500" />;
+      case 3:
+        return <Bell size={16} className="text-orange-500" />;
+      default:
+        return <Bell size={16} className="text-gray-500" />;
+    }
+  };
+
+  const renderNotificationDetails = (notification: Notification) => {
+    if (!expandedNotification || expandedNotification !== notification.id) {
+      return null;
+    }
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, height: 0 }}
+        animate={{ opacity: 1, height: "auto" }}
+        exit={{ opacity: 0, height: 0 }}
+        className="mt-3 p-3 bg-white rounded-lg border border-gray-200 space-y-2"
+      >
+        {/* Basic Message */}
+        <div className="text-sm text-gray-700 leading-relaxed">
+          {notification.message}
+        </div>
+
+        {/* Additional Details */}
+        <div className="space-y-1 text-xs">
+          {notification.date && (
+            <div className="flex items-center space-x-2 text-gray-600">
+              <Calendar size={12} />
+              <span>Date: {notification.date}</span>
+            </div>
+          )}
+          
+          {notification.time && (
+            <div className="flex items-center space-x-2 text-gray-600">
+              <Clock size={12} />
+              <span>Time: {notification.time}</span>
+            </div>
+          )}
+          
+          {notification.doctor && (
+            <div className="flex items-center space-x-2 text-gray-600">
+              <Stethoscope size={12} />
+              <span>Doctor: {notification.doctor}</span>
+            </div>
+          )}
+          
+          {notification.location && (
+            <div className="flex items-center space-x-2 text-gray-600">
+              <MapPin size={12} />
+              <span>Location: {notification.location}</span>
+            </div>
+          )}
+          
+          {notification.additionalInfo && (
+            <div className="pt-2 border-t border-gray-100">
+              <p className="text-gray-600">{notification.additionalInfo}</p>
+            </div>
+          )}
+        </div>
+
+        {/* View Full Details Button */}
+        <button
+          onClick={() => {
+            navigate("/NotificationList", { state: { notifications } });
+            onItemClick();
+          }}
+          className="w-full mt-2 px-3 py-2 bg-blue-50 text-blue-600 text-xs font-medium rounded-lg hover:bg-blue-100 transition-colors"
+        >
+          View Full Details
+        </button>
+      </motion.div>
+    );
   };
 
   // Improved scroll handling
@@ -129,6 +215,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
   useEffect(() => {
     if (!isOpen) {
       setIsNotificationsOpen(false);
+      setExpandedNotification(null);
     }
   }, [isOpen]);
 
@@ -162,12 +249,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                 <div className="p-2 bg-white/20 rounded-lg">
                   <Heart size={24} className="text-[#FF0000]" />
                 </div>
-
-                <span
-                  className="text-xl font-bold text-white"
-                >
-                  HealNova
-                </span>
+                <span className="text-xl font-bold text-white">HealNova</span>
               </div>
 
               <button
@@ -322,47 +404,58 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                                 >
                                   {notifications.length > 0 ? (
                                     notifications.map((notification) => (
-                                      <motion.div
-                                        key={notification.id}
-                                        className={`p-4 border-b border-gray-100 cursor-pointer transition-all duration-200 ${
-                                          notification.isRead
-                                            ? "bg-white hover:bg-gray-50"
-                                            : "bg-blue-50 border-l-4 border-l-blue-500 hover:bg-blue-100"
-                                        }`}
-                                        onClick={() =>
-                                          handleNotificationClick(notification.id)
-                                        }
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
-                                      >
-                                        <div className="flex justify-between items-start mb-2">
-                                          <h4
-                                            className={`font-semibold text-sm ${
-                                              notification.isRead
-                                                ? "text-gray-700"
-                                                : "text-blue-800"
-                                            }`}
-                                          >
-                                            {notification.title || "Notification"}
-                                          </h4>
-                                          <span className="text-xs text-gray-500 ml-2 flex-shrink-0 bg-white/80 px-2 py-1 rounded-full">
-                                            {formatTimestamp(
-                                              notification.timestamp
-                                            )}
-                                          </span>
-                                        </div>
-                                        <p className="text-sm text-gray-600 leading-relaxed">
-                                          {notification.message}
-                                        </p>
-                                        {!notification.isRead && (
-                                          <div className="flex items-center mt-2 space-x-2">
-                                            <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
-                                            <span className="text-xs text-blue-600 font-bold">
-                                              NEW
-                                            </span>
+                                      <div key={notification.id}>
+                                        <motion.div
+                                          className={`p-4 border-b border-gray-100 cursor-pointer transition-all duration-200 ${
+                                            notification.isRead
+                                              ? "bg-white hover:bg-gray-50"
+                                              : "bg-blue-50 border-l-4 border-l-blue-500 hover:bg-blue-100"
+                                          }`}
+                                          onClick={() =>
+                                            handleNotificationClick(notification.id)
+                                          }
+                                          whileHover={{ scale: 1.02 }}
+                                          whileTap={{ scale: 0.98 }}
+                                        >
+                                          <div className="flex items-start space-x-3">
+                                            <div className="flex-shrink-0 mt-1">
+                                              {getNotificationIcon(notification.type)}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                              <div className="flex justify-between items-start mb-2">
+                                                <h4
+                                                  className={`font-semibold text-sm ${
+                                                    notification.isRead
+                                                      ? "text-gray-700"
+                                                      : "text-blue-800"
+                                                  }`}
+                                                >
+                                                  {notification.title || "Notification"}
+                                                </h4>
+                                                <span className="text-xs text-gray-500 ml-2 flex-shrink-0 bg-white/80 px-2 py-1 rounded-full">
+                                                  {formatTimestamp(
+                                                    notification.timestamp
+                                                  )}
+                                                </span>
+                                              </div>
+                                              <p className="text-sm text-gray-600 leading-relaxed line-clamp-2">
+                                                {notification.message}
+                                              </p>
+                                              {!notification.isRead && (
+                                                <div className="flex items-center mt-2 space-x-2">
+                                                  <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+                                                  <span className="text-xs text-blue-600 font-bold">
+                                                    NEW
+                                                  </span>
+                                                </div>
+                                              )}
+                                            </div>
                                           </div>
-                                        )}
-                                      </motion.div>
+                                        </motion.div>
+                                        
+                                        {/* Expanded Notification Details */}
+                                        {renderNotificationDetails(notification)}
+                                      </div>
                                     ))
                                   ) : (
                                     <div className="p-6 text-center text-gray-500">
@@ -902,7 +995,6 @@ const Navbar: React.FC = () => {
             </motion.div>
           </nav>
 
-          {/* Mobile Menu Button */}
           <motion.button
             className="lg:hidden p-3 rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg hover:shadow-xl transition-all duration-200 z-50"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -915,7 +1007,6 @@ const Navbar: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile Menu */}
       <MobileMenu
         isOpen={isMenuOpen}
         navItems={navItems}
