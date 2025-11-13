@@ -153,12 +153,13 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                 </span>
               </div>
 
-              <button
-                onClick={onItemClick}
-                className="p-2 rounded-full bg-white/20 hover:bg-white/30 transition-all duration-200"
-              >
-                <X size={20} className="text-white" />
-              </button>
+<button
+  onClick={onItemClick}
+  className="p-2 rounded-full hover:opacity-90 transition-all duration-200"
+  style={{ backgroundColor: "rgb(0, 59, 115)" }}
+>
+  <X size={20} className="text-white" />
+</button>
             </div>
 
             {/* Scrollable Content */}
