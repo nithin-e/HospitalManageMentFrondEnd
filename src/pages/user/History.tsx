@@ -5,7 +5,7 @@ export default function HistoryComponent() {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-white py-16">
+  <div className="min-h-screen bg-white py-16 mt-[30px] sm:mt-[20px]">
         <section className="max-w-4xl mx-auto px-6">
           <header className="mb-16">
             <div className="mb-8">
