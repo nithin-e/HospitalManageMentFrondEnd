@@ -140,21 +140,17 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
           >
             {/* Header with gradient */}
             <div className="flex justify-between items-center p-6 bg-gradient-to-r rgb(0, 59, 115) rgb(0, 59, 115)-600 shadow-lg">
-              {/* <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-3">
                 <div className="p-2 bg-white/20 rounded-lg">
                   <Heart size={24} className="text-white" />
                 </div>
-                <span className="text-xl font-bold text-white">HealNova</span>
-              </div> */}
-
-<div className="flex items-center space-x-3 !block !visible !opacity-100 bg-red-500 border border-white z-50 relative">
-  <div className="p-2 bg-white/20 rounded-lg">
-    <Heart size={24} className="text-white" />
-  </div>
-  <span className="text-xl font-bold text-white">HealNova</span>
-</div>
-
-
+                <span
+                  className="text-xl font-bold"
+                  style={{ color: "rgb(0, 59, 115)" }}
+                >
+                  HealNova
+                </span>
+              </div>
 
               <button
                 onClick={onItemClick}
