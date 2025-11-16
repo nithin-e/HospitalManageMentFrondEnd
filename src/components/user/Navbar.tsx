@@ -60,9 +60,6 @@ interface MobileMenuProps {
   markAllAsRead: () => void;
   hasNotifications: boolean;
   isBeeping: boolean;
-  userName: string;
-  userEmail: string;
-  avatarColor: string;
 }
 
 const MobileMenu: React.FC<MobileMenuProps> = ({
@@ -78,9 +75,6 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
   markAllAsRead,
   hasNotifications,
   isBeeping,
-  userName,
-  userEmail,
-  avatarColor,
 }) => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -117,15 +111,27 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
   const getNotificationIcon = (type?: number) => {
     switch (type) {
       case 1:
-        return <Calendar className="w-5 h-5" />;
+        return <Calendar size={16} className="text-blue-500" />;
       case 2:
-        return <Heart className="w-5 h-5" />;
+        return <Stethoscope size={16} className="text-green-500" />;
       case 3:
-        return <Bell className="w-5 h-5" />;
+        return <Bell size={16} className="text-orange-500" />;
       default:
-        return <Info className="w-5 h-5" />;
+        return <Bell size={16} className="text-gray-500" />;
     }
   };
+
+
+  useEffect(() => {
+  console.log('Mobile Menu Debug:', {
+    isMenuOpen,
+    userData,
+    userName,
+    userInitial,
+    isAuthenticated
+  });
+}, [isMenuOpen, userData, userName, userInitial, isAuthenticated]);
+
 
   const renderNotificationDetails = (notification: Notification) => {
     if (!expandedNotification || expandedNotification !== notification.id) {
@@ -137,40 +143,48 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
         initial={{ opacity: 0, height: 0 }}
         animate={{ opacity: 1, height: "auto" }}
         exit={{ opacity: 0, height: 0 }}
-        className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200 space-y-2"
+        className="mt-3 p-3 bg-white rounded-lg border border-gray-200 space-y-2"
       >
-        <p className="text-xs text-gray-700 leading-relaxed">
+        <div className="text-sm text-gray-700 leading-relaxed">
           {notification.message}
-        </p>
-        {notification.date && (
-          <div className="flex items-center gap-2 text-xs text-gray-600">
-            <Calendar className="w-3 h-3" />
-            <span className="font-medium">Date:</span> {notification.date}
-          </div>
-        )}
-        {notification.time && (
-          <div className="flex items-center gap-2 text-xs text-gray-600">
-            <Clock className="w-3 h-3" />
-            <span className="font-medium">Time:</span> {notification.time}
-          </div>
-        )}
-        {notification.doctor && (
-          <div className="flex items-center gap-2 text-xs text-gray-600">
-            <Stethoscope className="w-3 h-3" />
-            <span className="font-medium">Doctor:</span> {notification.doctor}
-          </div>
-        )}
-        {notification.location && (
-          <div className="flex items-center gap-2 text-xs text-gray-600">
-            <MapPin className="w-3 h-3" />
-            <span className="font-medium">Location:</span> {notification.location}
-          </div>
-        )}
-        {notification.additionalInfo && (
-          <div className="text-xs text-gray-600 pt-2 border-t border-gray-200">
-            {notification.additionalInfo}
-          </div>
-        )}
+        </div>
+
+        <div className="space-y-1 text-xs">
+          {notification.date && (
+            <div className="flex items-center space-x-2 text-gray-600">
+              <Calendar size={12} />
+              <span>Date: {notification.date}</span>
+            </div>
+          )}
+          
+          {notification.time && (
+            <div className="flex items-center space-x-2 text-gray-600">
+              <Clock size={12} />
+              <span>Time: {notification.time}</span>
+            </div>
+          )}
+          
+          {notification.doctor && (
+            <div className="flex items-center space-x-2 text-gray-600">
+              <Stethoscope size={12} />
+              <span>Doctor: {notification.doctor}</span>
+            </div>
+          )}
+          
+          {notification.location && (
+            <div className="flex items-center space-x-2 text-gray-600">
+              <MapPin size={12} />
+              <span>Location: {notification.location}</span>
+            </div>
+          )}
+          
+          {notification.additionalInfo && (
+            <div className="pt-2 border-t border-gray-100">
+              <p className="text-gray-600">{notification.additionalInfo}</p>
+            </div>
+          )}
+        </div>
+
         <button
           onClick={() => {
             navigate("/NotificationList", { state: { notifications } });
@@ -215,297 +229,333 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   return (
-    <>
+    <AnimatePresence>
       {isOpen && (
         <>
           <motion.div
+            className="md:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
             onClick={onItemClick}
           />
 
           <motion.div
             ref={menuRef}
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed top-0 right-0 h-full w-[85%] max-w-sm bg-white shadow-2xl z-50 overflow-y-auto"
+            className="md:hidden fixed top-0 right-0 bottom-0 w-4/5 max-w-sm bg-gradient-to-b from-white to-blue-50 z-50 flex flex-col shadow-2xl border-l border-blue-100 overflow-hidden"
+            initial={{ opacity: 0, x: "100%" }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: "100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
           >
-            <div className="p-6 space-y-6">
-              {/* Header */}
-              <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-                <h2 className="text-2xl font-bold text-gray-800">HealNova</h2>
-                <motion.button
-                  onClick={onItemClick}
-                  whileTap={{ scale: 0.9 }}
-                  className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-                >
-                  <X className="w-6 h-6 text-gray-600" />
-                </motion.button>
+            <div className="flex justify-between items-center p-6 bg-gradient-to-r from-[#003B73] to-[#003B73] shadow-lg flex-shrink-0">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-white/20 rounded-lg">
+                  <Heart size={24} className="text-[#FF0000]" />
+                </div>
+                <span className="text-xl font-bold text-white">HealNova</span>
               </div>
 
-              {/* User Profile Section */}
-              {isAuthenticated && (
-                <div className="relative p-4 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 shadow-sm">
-                  {isBeeping && (
-                    <motion.div
-                      className="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full"
-                      animate={{
-                        scale: [1, 1.3, 1],
-                        opacity: [1, 0.5, 1],
-                      }}
-                      transition={{
-                        duration: 1.5,
-                        repeat: Infinity,
-                        repeatType: "reverse",
-                      }}
-                    />
-                  )}
-                  <div className="flex items-center gap-4">
-                    <div className="relative">
-                      <div
-                        className="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg"
-                        style={{ backgroundColor: avatarColor }}
-                      >
-                        {userInitial && userInitial !== "?" ? userInitial : (
-                          <User className="w-8 h-8" />
-                        )}
-                      </div>
-                      {hasNotifications && unreadCount > 0 && (
-                        <span className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-md">
-                          {unreadCount}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-lg font-bold text-gray-800 truncate">
-                        {userName || "User"}
-                      </p>
-                      <p className="text-sm text-gray-600 truncate">
-                        {userEmail || ""}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <button
+                onClick={onItemClick}
+                className="p-2 rounded-full hover:bg-white/20 transition-all duration-200"
+              >
+                <X size={20} className="text-white" />
+              </button>
+            </div>
 
-              {/* Navigation Items */}
-              <nav className="space-y-2">
-                {navItems.map((item, index) => (
-                  <motion.a
-                    key={item.name}
-                    href={item.href}
-                    onClick={onItemClick}
-                    className="flex items-center gap-4 p-4 rounded-xl hover:bg-gray-100 transition-all duration-200 group"
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <span className="text-gray-600 group-hover:text-blue-600 transition-colors">
-                      {item.icon}
-                    </span>
-                    <span className="text-base font-medium text-gray-700 group-hover:text-blue-600 transition-colors">
-                      {item.name}
-                    </span>
-                  </motion.a>
-                ))}
-              </nav>
-
-              {/* Authenticated User Menu */}
-              {isAuthenticated && (
-                <div className="space-y-3 pt-4 border-t border-gray-200">
-                  {/* Notifications Section */}
-                  {hasNotifications && (
-                    <>
-                      <motion.button
-                        onClick={() =>
-                          setIsNotificationsOpen(!isNotificationsOpen)
-                        }
-                        className="flex items-center justify-between w-full p-4 rounded-2xl bg-orange-50 border border-orange-200 hover:bg-orange-100 transition-all duration-200 shadow-sm"
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        <div className="flex items-center gap-3">
-                          <Bell className="w-5 h-5 text-orange-600" />
-                          <span className="font-medium text-gray-800">
-                            Notifications
-                          </span>
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <div className="flex-1 overflow-y-auto">
+                {isAuthenticated && (
+                  <div className="px-6 py-6 bg-white/80 backdrop-blur-sm border-b border-blue-100">
+                    <div className="flex items-center space-x-4">
+                      <div className="relative">
+                        <AnimatePresence>
+                          {isBeeping && (
+                            <motion.div
+                              className="absolute inset-0 rounded-full bg-red-400 opacity-70 z-0"
+                              initial={{ scale: 0.8, opacity: 0.5 }}
+                              animate={{
+                                scale: 1.5,
+                                opacity: 0,
+                                transition: {
+                                  duration: 1.5,
+                                  repeat: Infinity,
+                                  repeatType: "reverse" as const,
+                                },
+                              }}
+                              exit={{ opacity: 0 }}
+                            />
+                          )}
+                        </AnimatePresence>
+                        <div className="w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold border-4 border-white shadow-lg relative z-10 bg-gradient-to-br from-blue-500 to-indigo-600">
+                          {userInitial || "?"}
                         </div>
-                        {unreadCount > 0 && (
-                          <span className="px-2.5 py-1 bg-red-500 text-white text-xs font-bold rounded-full">
+                        {hasNotifications && unreadCount > 0 && (
+                          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center shadow-lg z-20 border-2 border-white font-bold">
                             {unreadCount}
                           </span>
                         )}
-                      </motion.button>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-lg font-bold text-gray-800 truncate">
+                          {user?.name || "User"}
+                        </p>
+                        <p className="text-blue-600 text-sm truncate font-medium">
+                          {user?.email || ""}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
-                      {/* Notifications List */}
-                      {isNotificationsOpen && (
-                        <motion.div
-                          ref={notificationsRef}
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="bg-gray-50 rounded-2xl border border-gray-200 p-4 space-y-3 max-h-96 overflow-y-auto"
+                <div className="p-4 space-y-3">
+                  {navItems.map((item, index) => (
+                    <motion.a
+                      key={index}
+                      href={item.href}
+                      className="flex items-center space-x-4 p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-blue-100 text-gray-700 hover:bg-blue-50 hover:text-[#003B73] hover:shadow-md transition-all duration-200 active:scale-95 shadow-sm"
+                      onClick={onItemClick}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <div className="p-2 bg-blue-100 rounded-xl text-[#003B73]">
+                        {item.icon}
+                      </div>
+                      <span className="text-base font-semibold">{item.name}</span>
+                    </motion.a>
+                  ))}
+                </div>
+
+                {isAuthenticated && (
+                  <div className="p-4 space-y-3">
+                    {hasNotifications && (
+                      <>
+                        <motion.button
+                          onClick={() =>
+                            setIsNotificationsOpen(!isNotificationsOpen)
+                          }
+                          className="flex items-center justify-between w-full p-4 rounded-2xl bg-orange-50 border border-orange-200 hover:bg-orange-100 transition-all duration-200 shadow-sm"
+                          whileTap={{ scale: 0.95 }}
                         >
-                          <div className="flex items-center justify-between mb-3">
-                            <h3 className="text-sm font-bold text-gray-800">
-                              Recent Alerts
-                            </h3>
-                            {unreadCount > 0 && (
-                              <button
-                                onClick={markAllAsRead}
-                                className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
-                              >
-                                <Check className="w-3 h-3" />
-                                Mark all read
-                              </button>
-                            )}
+                          <div className="flex items-center space-x-4">
+                            <div className="p-2 bg-orange-100 rounded-xl">
+                              <Bell size={20} className="text-orange-600" />
+                            </div>
+                            <span className="text-base font-semibold text-orange-800">
+                              Notifications
+                            </span>
                           </div>
-
-                          {notifications.length > 0 ? (
-                            notifications.map((notification) => (
-                              <motion.div
-                                key={notification.id}
-                                className={`p-3 rounded-xl border cursor-pointer transition-all ${
-                                  notification.isRead
-                                    ? "bg-white border-gray-200"
-                                    : "bg-blue-50 border-blue-300 shadow-sm"
-                                }`}
-                                onClick={() =>
-                                  handleNotificationClick(notification.id)
-                                }
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
+                          <div className="flex items-center space-x-2">
+                            {unreadCount > 0 && (
+                              <span className="bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold">
+                                {unreadCount}
+                              </span>
+                            )}
+                            <motion.div
+                              animate={{ rotate: isNotificationsOpen ? 180 : 0 }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              <svg
+                                className="w-5 h-5 text-orange-600"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
                               >
-                                <div className="flex items-start gap-3">
-                                  <div
-                                    className={`p-2 rounded-lg ${
-                                      notification.isRead
-                                        ? "bg-gray-100 text-gray-600"
-                                        : "bg-blue-100 text-blue-600"
-                                    }`}
-                                  >
-                                    {getNotificationIcon(notification.type)}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-start justify-between gap-2 mb-1">
-                                      <h4 className="text-sm font-semibold text-gray-800 line-clamp-1">
-                                        {notification.title || "Notification"}
-                                      </h4>
-                                      <span className="text-xs text-gray-500 whitespace-nowrap">
-                                        {formatTimestamp(
-                                          notification.timestamp
-                                        )}
-                                      </span>
-                                    </div>
-                                    <p className="text-xs text-gray-600 line-clamp-2">
-                                      {notification.message}
-                                    </p>
-                                    {!notification.isRead && (
-                                      <div className="mt-2 inline-flex items-center px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
-                                        NEW
-                                      </div>
-                                    )}
-                                  </div>
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M19 9l-7 7-7-7"
+                                />
+                              </svg>
+                            </motion.div>
+                          </div>
+                        </motion.button>
+
+                        {/* Notifications List */}
+                        <AnimatePresence>
+                          {isNotificationsOpen && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="mt-3 bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-lg">
+                                <div className="flex justify-between items-center p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
+                                  <h3 className="font-bold text-gray-800">
+                                    Recent Alerts
+                                  </h3>
+                                  {unreadCount > 0 && (
+                                    <button
+                                      onClick={markAllAsRead}
+                                      className="text-sm text-blue-600 hover:text-blue-800 flex items-center space-x-1 font-semibold"
+                                    >
+                                      <Check size={16} />
+                                      <span>Mark all read</span>
+                                    </button>
+                                  )}
                                 </div>
 
-                                {/* Expanded Notification Details */}
-                                {renderNotificationDetails(notification)}
-                              </motion.div>
-                            ))
-                          ) : (
-                            <div className="text-center py-8 text-gray-500 text-sm">
-                              No notifications yet
-                            </div>
+                                <div 
+                                  ref={notificationsRef}
+                                  className="max-h-64 overflow-y-auto custom-scrollbar"
+                                >
+                                  {notifications.length > 0 ? (
+                                    notifications.map((notification) => (
+                                      <div key={notification.id}>
+                                        <motion.div
+                                          className={`p-4 border-b border-gray-100 cursor-pointer transition-all duration-200 ${
+                                            notification.isRead
+                                              ? "bg-white hover:bg-gray-50"
+                                              : "bg-blue-50 border-l-4 border-l-blue-500 hover:bg-blue-100"
+                                          }`}
+                                          onClick={() =>
+                                            handleNotificationClick(notification.id)
+                                          }
+                                          whileHover={{ scale: 1.02 }}
+                                          whileTap={{ scale: 0.98 }}
+                                        >
+                                          <div className="flex items-start space-x-3">
+                                            <div className="flex-shrink-0 mt-1">
+                                              {getNotificationIcon(notification.type)}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                              <div className="flex justify-between items-start mb-2">
+                                                <h4
+                                                  className={`font-semibold text-sm ${
+                                                    notification.isRead
+                                                      ? "text-gray-700"
+                                                      : "text-blue-800"
+                                                  }`}
+                                                >
+                                                  {notification.title || "Notification"}
+                                                </h4>
+                                                <span className="text-xs text-gray-500 ml-2 flex-shrink-0 bg-white/80 px-2 py-1 rounded-full">
+                                                  {formatTimestamp(
+                                                    notification.timestamp
+                                                  )}
+                                                </span>
+                                              </div>
+                                              <p className="text-sm text-gray-600 leading-relaxed line-clamp-2">
+                                                {notification.message}
+                                              </p>
+                                              {!notification.isRead && (
+                                                <div className="flex items-center mt-2 space-x-2">
+                                                  <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+                                                  <span className="text-xs text-blue-600 font-bold">
+                                                    NEW
+                                                  </span>
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </motion.div>
+                                        
+                                        {/* Expanded Notification Details */}
+                                        {renderNotificationDetails(notification)}
+                                      </div>
+                                    ))
+                                  ) : (
+                                    <div className="p-6 text-center text-gray-500">
+                                      <Bell
+                                        size={32}
+                                        className="mx-auto text-gray-300 mb-2"
+                                      />
+                                      <p>No notifications yet</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </motion.div>
                           )}
-                        </motion.div>
-                      )}
-                    </>
-                  )}
+                        </AnimatePresence>
+                      </>
+                    )}
 
-                  {/* Profile & Settings */}
-                  <div className="space-y-2">
-                    <motion.button
-                      onClick={() => {
-                        navigate("/profile");
-                        onItemClick();
-                      }}
-                      className="flex items-center gap-3 w-full p-4 rounded-xl hover:bg-gray-100 transition-all duration-200"
+                    {/* Profile & Settings */}
+                    <motion.a
+                      href="/userprofile"
+                      className="flex items-center space-x-4 p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-blue-100 text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:shadow-md transition-all duration-200 active:scale-95 shadow-sm"
+                      onClick={onItemClick}
                       whileTap={{ scale: 0.95 }}
                     >
-                      {isBeeping && (
-                        <motion.div
-                          className="absolute w-2 h-2 bg-red-500 rounded-full -top-1 -right-1"
-                          animate={{
-                            scale: [1, 1.5, 1],
-                            opacity: [1, 0, 1],
-                          }}
-                          transition={{
-                            duration: 1.5,
-                            repeat: Infinity,
-                            repeatType: "reverse",
-                          }}
-                        />
-                      )}
-                      <User className="w-5 h-5 text-gray-600" />
-                      <span className="text-base font-medium text-gray-700">
-                        My Profile
-                      </span>
-                    </motion.button>
+                      <div className="relative p-2 bg-blue-100 rounded-xl">
+                        <AnimatePresence>
+                          {isBeeping && (
+                            <motion.div
+                              className="absolute -inset-1 rounded-full bg-red-400 opacity-30 z-0"
+                              initial={{ scale: 0.8, opacity: 0.5 }}
+                              animate={{
+                                scale: 1.5,
+                                opacity: 0,
+                                transition: {
+                                  duration: 1.5,
+                                  repeat: Infinity,
+                                  repeatType: "reverse" as const,
+                                },
+                              }}
+                              exit={{ opacity: 0 }}
+                            />
+                          )}
+                        </AnimatePresence>
+                        <User size={20} className="relative z-10 text-blue-600" />
+                      </div>
+                      <span className="text-base font-semibold">My Profile</span>
+                    </motion.a>
 
-                    <motion.button
-                      onClick={() => {
-                        navigate("/wallet");
-                        onItemClick();
-                      }}
-                      className="flex items-center gap-3 w-full p-4 rounded-xl hover:bg-gray-100 transition-all duration-200"
+                    <motion.a
+                      href="/userWallet"
+                      className="flex items-center space-x-4 p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-blue-100 text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:shadow-md transition-all duration-200 active:scale-95 shadow-sm"
+                      onClick={onItemClick}
                       whileTap={{ scale: 0.95 }}
                     >
-                      <Settings className="w-5 h-5 text-gray-600" />
-                      <span className="text-base font-medium text-gray-700">
-                        Wallet
-                      </span>
-                    </motion.button>
+                      <div className="p-2 bg-blue-100 rounded-xl">
+                        <Settings size={20} className="text-blue-600" />
+                      </div>
+                      <span className="text-base font-semibold">Wallet</span>
+                    </motion.a>
 
                     {/* Logout Button */}
                     <motion.button
                       onClick={handleMobileLogout}
                       disabled={isLoggingOut}
-                      className="flex items-center gap-3 w-full p-4 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 transition-all duration-200 disabled:opacity-50"
+                      className="flex items-center space-x-4 w-full p-4 rounded-2xl text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 transition-all duration-200 active:scale-95 disabled:opacity-50 shadow-lg"
                       whileTap={{ scale: 0.95 }}
                     >
                       {isLoggingOut ? (
-                        <Loader className="w-5 h-5 animate-spin" />
+                        <Loader size={20} className="animate-spin" />
                       ) : (
-                        <LogOut className="w-5 h-5" />
+                        <LogOut size={20} />
                       )}
-                      <span className="text-base font-medium">
+                      <span className="text-base font-semibold">
                         {isLoggingOut ? "Logging out..." : "Logout"}
                       </span>
                     </motion.button>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Auth Buttons for Non-authenticated */}
-              {!isAuthenticated && (
-                <div className="pt-4 border-t border-gray-200">
-                  <AuthButtons />
-                </div>
-              )}
+                {/* Auth Buttons for Non-authenticated */}
+                {!isAuthenticated && (
+                  <div className="p-4">
+                    <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-blue-100 shadow-sm">
+                      <AuthButtons />
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Footer */}
-              <div className="text-center text-xs text-gray-500 pt-6 border-t border-gray-200">
-                © 2025 HealNova. All rights reserved.
+              <div className="p-4 border-t border-blue-100 bg-white/80 backdrop-blur-sm flex-shrink-0">
+                <p className="text-center text-sm text-gray-500">
+                  © 2025 HealNova. All rights reserved.
+                </p>
               </div>
             </div>
           </motion.div>
         </>
       )}
-    </>
+    </AnimatePresence>
   );
 };
 
@@ -519,38 +569,31 @@ const Navbar: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [hasNotifications, setHasNotifications] = useState(false);
   const [isBeeping, setIsBeeping] = useState(false);
-
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { socket, connected } = useSocket();
-  const user = useSelector((state: RootState) => state.user);
-  const dispatch = useDispatch();
 
-  // Extract user data with fallback chain
-  const userData = user?.user || null;
+  const user = useSelector((state: RootState) => state.user);
+
+  const userData = user.user || user?.user || user?.user || null;
   const userName = userData?.name || "";
   const userEmail = userData?.email || "";
-  
-  // Calculate user initial - ensure it's always a single character or empty
-  const userInitial = userName && userName.trim() 
-    ? userName.trim().charAt(0).toUpperCase() 
-    : "";
+  const userInitial = userName.charAt(0)?.toUpperCase() || "";
+
+  const dispatch = useDispatch();
 
   // Navigation items with icons
   const navItems = [
-    { name: "Home", href: "/", icon: <Home className="w-5 h-5" /> },
-    { name: "About", href: "/history", icon: <Info className="w-5 h-5" /> },
-    {
-      name: "Services",
-      href: "/services",
-      icon: <Stethoscope className="w-5 h-5" />,
-    },
-    { name: "Doctors", href: "#doctors", icon: <Users className="w-5 h-5" /> },
+    { name: "Home", href: "/", icon: <Home size={20} /> },
+    { name: "About", href: "/history", icon: <Info size={20} /> },
+    { name: "Services", href: "/services", icon: <Stethoscope size={20} /> },
+    { name: "Doctors", href: "#doctors", icon: <Users size={20} /> },
   ];
 
   useEffect(() => {
     if (socket && connected) {
-      const handleDoctorAlert = (response: any) => {
+      const handleDoctorAlert = (response) => {
+
         if (response.type === "appointment_update") {
           setIsBeeping(true);
           setTimeout(() => setIsBeeping(false), 60000);
@@ -598,6 +641,7 @@ const Navbar: React.FC = () => {
 
       socket.on("notificationsResponse", (response) => {
         setIsLoading(false);
+
         if (
           response?.notification &&
           Array.isArray(response.notification) &&
@@ -664,7 +708,9 @@ const Navbar: React.FC = () => {
   };
 
   const isAuthenticated =
-    !!userData || !!localStorage.getItem("userAccessToken") || user?.isUserAuthenticated;
+    !!userData ||
+    !!localStorage.getItem("userAccessToken") ||
+    user?.isUserAuthenticated;
 
   const handleLogout = async () => {
     try {
@@ -673,6 +719,7 @@ const Navbar: React.FC = () => {
 
       localStorage.removeItem("AccessToken");
       localStorage.removeItem("RefreshToken");
+
       dispatch(logoutUser());
 
       setIsDropdownOpen(false);
@@ -689,16 +736,16 @@ const Navbar: React.FC = () => {
 
   const handleNavigateToProfile = () => {
     setIsDropdownOpen(false);
-    navigate("/profile");
   };
 
   const markAsRead = (id: string) => {
     setNotifications((prev) =>
       prev.map((notification) =>
-        notification.id === id ? { ...notification, isRead: true } : notification
+        notification.id === id
+          ? { ...notification, isRead: true }
+          : notification
       )
     );
-
     if (notifications.every((n) => n.isRead || n.id === id)) {
       setIsBeeping(false);
     }
@@ -735,219 +782,219 @@ const Navbar: React.FC = () => {
   const avatarColor = getAvatarColor(userName);
 
   return (
-    <motion.nav
-      className={`fixed top-0 left-0 right-0 z-30 transition-all duration-300 ${
-        isScrolled
-          ? "bg-white/95 backdrop-blur-md shadow-lg"
-          : "bg-transparent"
+    <motion.header
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled ? "bg-white/95 backdrop-blur-md shadow-lg" : "bg-white"
       }`}
-      variants={navVariants}
       initial="hidden"
       animate="visible"
+      variants={navVariants}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+      <div className="container mx-auto px-4 sm:px-6">
+        <div className="flex items-center justify-between h-16 sm:h-20">
           {/* Logo */}
-          <Logo />
+          <motion.div className="flex items-center" variants={itemVariants}>
+            <Logo />
+          </motion.div>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-1">
+          <nav className="hidden lg:flex items-center space-x-8">
             {navItems.map((item, index) => (
-              <motion.a
-                key={item.name}
-                href={item.href}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors group"
-                variants={itemVariants}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <span className="text-gray-600 group-hover:text-blue-600 transition-colors">
-                  {item.icon}
-                </span>
-                <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">
-                  {item.name}
-                </span>
-              </motion.a>
+              <motion.div key={index} variants={itemVariants}>
+                <NavItem name={item.name} href={item.href} />
+              </motion.div>
             ))}
-          </div>
 
-          <div className="hidden lg:flex items-center space-x-4">
-            {isAuthenticated ? (
-              <>
-                <div className="relative" ref={dropdownRef}>
-                  {isBeeping && (
-                    <motion.div
-                      className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full z-10"
-                      animate={{
-                        scale: [1, 1.5, 1],
-                        opacity: [1, 0, 1],
-                      }}
-                      transition={{
-                        duration: 1.5,
-                        repeat: Infinity,
-                        repeatType: "reverse",
-                      }}
-                    />
-                  )}
-                  <motion.button
-                    className="relative flex items-center space-x-3 px-4 py-2.5 rounded-full bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border border-blue-200 transition-all duration-200 shadow-sm hover:shadow-md group"
-                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    whileTap={{ scale: 0.95 }}
-                    variants={itemVariants}
-                  >
-                    <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-md transition-transform group-hover:scale-105"
-                      style={{ backgroundColor: avatarColor }}
-                    >
-                      {userInitial && userInitial !== "?" ? userInitial : (
-                        <User className="w-5 h-5" />
-                      )}
+            <motion.div
+              variants={itemVariants}
+              className="relative"
+              ref={dropdownRef}
+            >
+              {isAuthenticated ? (
+                <>
+                  <div className="relative">
+                    <div className="relative">
+                      <AnimatePresence>
+                        {isBeeping && (
+                          <motion.div
+                            className="absolute inset-0 rounded-full bg-red-600 opacity-30 z-0"
+                            initial={{ scale: 0.8, opacity: 0.5 }}
+                            animate={{
+                              scale: 1.5,
+                              opacity: 0,
+                              transition: {
+                                duration: 1.5,
+                                repeat: Infinity,
+                                repeatType: "reverse" as const,
+                              },
+                            }}
+                            exit={{ opacity: 0 }}
+                          />
+                        )}
+                      </AnimatePresence>
+                      <div
+                        className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold cursor-pointer transition-transform hover:scale-105 shadow-md relative z-10"
+                        style={{ backgroundColor: avatarColor }}
+                        title={userName || "User Profile"}
+                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                      >
+                        {userInitial || "?"}
+                      </div>
                     </div>
                     {hasNotifications && unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-md">
+                      <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center shadow-sm z-20">
                         {unreadCount}
                       </span>
                     )}
-                  </motion.button>
+                  </div>
 
                   {isDropdownOpen && (
                     <motion.div
+                      className="absolute right-0 mt-3 w-64 bg-white rounded-lg shadow-lg overflow-hidden z-50 border border-gray-100"
                       variants={dropdownVariants}
                       initial="hidden"
                       animate="visible"
-                      exit="hidden"
-                      className="absolute right-0 mt-3 w-72 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden"
                     >
-                      <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 border-b border-blue-200">
-                        {isBeeping && (
-                          <motion.div
-                            className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"
-                            animate={{
-                              scale: [1, 1.5, 1],
-                              opacity: [1, 0, 1],
-                            }}
-                            transition={{
-                              duration: 1.5,
-                              repeat: Infinity,
-                              repeatType: "reverse",
-                            }}
-                          />
-                        )}
-                        <div className="flex items-center gap-3">
-                          <div
-                            className="w-14 h-14 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-lg"
-                            style={{ backgroundColor: avatarColor }}
-                          >
-                            {userInitial && userInitial !== "?" ? userInitial : (
-                              <User className="w-7 h-7" />
-                            )}
+                      <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-blue-100 border-b border-gray-100">
+                        <div className="flex items-center">
+                          <div className="relative">
+                            <AnimatePresence>
+                              {isBeeping && (
+                                <motion.div
+                                  className="absolute inset-0 rounded-full bg-red-600 opacity-30 z-0"
+                                  initial={{ scale: 0.8, opacity: 0.5 }}
+                                  animate={{
+                                    scale: 1.5,
+                                    opacity: 0,
+                                    transition: {
+                                      duration: 1.5,
+                                      repeat: Infinity,
+                                      repeatType: "reverse" as const,
+                                    },
+                                  }}
+                                  exit={{ opacity: 0 }}
+                                />
+                              )}
+                            </AnimatePresence>
+                            <div
+                              className="w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold mr-3 shadow-md relative z-10"
+                              style={{ backgroundColor: avatarColor }}
+                            >
+                              {userInitial || "?"}
+                            </div>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-base font-bold text-gray-800 truncate">
+                          <div className="overflow-hidden">
+                            <div className="text-base font-semibold text-gray-900 truncate">
                               {userName || "User"}
-                            </p>
-                            <p className="text-sm text-gray-600 truncate">
+                            </div>
+                            <div className="text-sm text-gray-500 truncate">
                               {userEmail || "No email"}
-                            </p>
+                            </div>
                           </div>
                         </div>
                       </div>
 
-                      <div className="p-2">
-                        {isBeeping && (
-                          <motion.div
-                            className="absolute w-2 h-2 bg-red-500 rounded-full top-1 right-1"
-                            animate={{
-                              scale: [1, 1.5, 1],
-                              opacity: [1, 0, 1],
-                            }}
-                            transition={{
-                              duration: 1.5,
-                              repeat: Infinity,
-                              repeatType: "reverse",
-                            }}
-                          />
-                        )}
-                        <button
+                      <div className="py-1">
+                        <a
+                          href="/userprofile"
+                          className="flex items-center px-6 py-3 text-sm text-gray-700 hover:bg-blue-50 transition-colors group relative"
                           onClick={handleNavigateToProfile}
-                          className="flex items-center gap-3 w-full px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors text-left"
                         >
-                          <User className="w-5 h-5 text-gray-600" />
-                          <span className="text-sm font-medium text-gray-700">
-                            View Profile
-                          </span>
-                        </button>
+                          <div className="relative mr-3">
+                            <AnimatePresence>
+                              {isBeeping && (
+                                <motion.div
+                                  className="absolute -inset-1 rounded-full bg-red-600 opacity-30 z-0"
+                                  initial={{ scale: 0.8, opacity: 0.5 }}
+                                  animate={{
+                                    scale: 1.5,
+                                    opacity: 0,
+                                    transition: {
+                                      duration: 1.5,
+                                      repeat: Infinity,
+                                      repeatType: "reverse" as const,
+                                    },
+                                  }}
+                                  exit={{ opacity: 0 }}
+                                />
+                              )}
+                            </AnimatePresence>
+                            <User
+                              size={18}
+                              className="relative z-10 text-blue-500 group-hover:text-blue-600 transition-colors"
+                            />
+                          </div>
+                          <span>View Profile</span>
+                        </a>
 
                         {hasNotifications && (
                           <button
                             onClick={handleNavigateToNotifications}
-                            className="flex items-center justify-between w-full px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors text-left"
+                            className="w-full flex items-center px-6 py-3 text-sm text-gray-700 hover:bg-blue-50 transition-colors group relative text-left"
                           >
-                            <div className="flex items-center gap-3">
-                              <Bell className="w-5 h-5 text-gray-600" />
-                              <span className="text-sm font-medium text-gray-700">
-                                Notifications
-                              </span>
-                            </div>
+                            <Bell
+                              size={18}
+                              className="mr-3 text-blue-500 group-hover:text-blue-600 transition-colors"
+                            />
+                            <span>Notifications</span>
                             {unreadCount > 0 && (
-                              <span className="px-2 py-1 bg-red-500 text-white text-xs font-bold rounded-full">
+                              <span className="ml-2 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                                 {unreadCount}
                               </span>
                             )}
                           </button>
                         )}
 
-                        <button
-                          onClick={() => {
-                            setIsDropdownOpen(false);
-                            navigate("/wallet");
-                          }}
-                          className="flex items-center gap-3 w-full px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors text-left"
+                        <a
+                          href="/userWallet"
+                          className="flex items-center px-6 py-3 text-sm text-gray-700 hover:bg-blue-50 transition-colors group"
                         >
-                          <Settings className="w-5 h-5 text-gray-600" />
-                          <span className="text-sm font-medium text-gray-700">
-                            User Wallet
-                          </span>
-                        </button>
+                          <Settings
+                            size={18}
+                            className="mr-3 text-blue-500 group-hover:text-blue-600 transition-colors"
+                          />
+                          <span>User Wallet</span>
+                        </a>
                       </div>
 
-                      <div className="p-2 border-t border-gray-200">
+                      <div className="border-t border-gray-100"></div>
+
+                      <div className="py-1">
                         <button
                           onClick={handleLogout}
                           disabled={isLoggingOut}
-                          className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 transition-colors disabled:opacity-50"
+                          className="flex items-center w-full text-left px-6 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {isLoggingOut ? (
-                            <Loader className="w-5 h-5 animate-spin" />
+                            <Loader size={18} className="mr-3 animate-spin" />
                           ) : (
-                            <LogOut className="w-5 h-5" />
+                            <LogOut
+                              size={18}
+                              className="mr-3 group-hover:text-red-700 transition-colors"
+                            />
                           )}
-                          <span className="text-sm font-medium">
+                          <span className="font-medium group-hover:text-red-700 transition-colors">
                             {isLoggingOut ? "Logging out..." : "Logout"}
                           </span>
                         </button>
                       </div>
                     </motion.div>
                   )}
-                </div>
-              </>
-            ) : (
-              <AuthButtons />
-            )}
-          </div>
+                </>
+              ) : (
+                <AuthButtons />
+              )}
+            </motion.div>
+          </nav>
 
           <motion.button
-            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            className="lg:hidden p-3 rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg hover:shadow-xl transition-all duration-200 z-50"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="Toggle menu"
             whileTap={{ scale: 0.9 }}
             variants={itemVariants}
           >
-            {isMenuOpen ? (
-              <X className="w-6 h-6 text-gray-700" />
-            ) : (
-              <Menu className="w-6 h-6 text-gray-700" />
-            )}
+            {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </motion.button>
         </div>
       </div>
@@ -965,11 +1012,8 @@ const Navbar: React.FC = () => {
         markAllAsRead={markAllAsRead}
         hasNotifications={hasNotifications}
         isBeeping={isBeeping}
-        userName={userName}
-        userEmail={userEmail}
-        avatarColor={avatarColor}
       />
-    </motion.nav>
+    </motion.header>
   );
 };
 
