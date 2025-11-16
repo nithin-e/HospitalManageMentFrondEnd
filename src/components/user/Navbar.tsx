@@ -133,10 +133,12 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
         exit={{ opacity: 0, height: 0 }}
         className="mt-3 p-3 bg-white rounded-lg border border-gray-200 space-y-2"
       >
+        {/* Basic Message */}
         <div className="text-sm text-gray-700 leading-relaxed">
           {notification.message}
         </div>
 
+        {/* Additional Details */}
         <div className="space-y-1 text-xs">
           {notification.date && (
             <div className="flex items-center space-x-2 text-gray-600">
@@ -173,6 +175,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
           )}
         </div>
 
+        {/* View Full Details Button */}
         <button
           onClick={() => {
             navigate("/NotificationList", { state: { notifications } });
@@ -186,6 +189,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
     );
   };
 
+  // Improved scroll handling
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -207,6 +211,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
     };
   }, [isOpen]);
 
+  // Close notifications when menu closes
   useEffect(() => {
     if (!isOpen) {
       setIsNotificationsOpen(false);
@@ -220,6 +225,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
     <AnimatePresence>
       {isOpen && (
         <>
+          {/* Backdrop with blur effect */}
           <motion.div
             className="md:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
             initial={{ opacity: 0 }}
@@ -228,6 +234,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
             onClick={onItemClick}
           />
 
+          {/* Mobile Menu */}
           <motion.div
             ref={menuRef}
             className="md:hidden fixed top-0 right-0 bottom-0 w-4/5 max-w-sm bg-gradient-to-b from-white to-blue-50 z-50 flex flex-col shadow-2xl border-l border-blue-100 overflow-hidden"
@@ -236,6 +243,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
             exit={{ opacity: 0, x: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
           >
+            {/* Header with gradient */}
             <div className="flex justify-between items-center p-6 bg-gradient-to-r from-[#003B73] to-[#003B73] shadow-lg flex-shrink-0">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-white/20 rounded-lg">
@@ -252,8 +260,10 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
               </button>
             </div>
 
+            {/* Scrollable Content */}
             <div className="flex-1 flex flex-col overflow-hidden">
               <div className="flex-1 overflow-y-auto">
+                {/* User Profile Section */}
                 {isAuthenticated && (
                   <div className="px-6 py-6 bg-white/80 backdrop-blur-sm border-b border-blue-100">
                     <div className="flex items-center space-x-4">
@@ -315,8 +325,10 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                   ))}
                 </div>
 
+                {/* Authenticated User Menu */}
                 {isAuthenticated && (
                   <div className="p-4 space-y-3">
+                    {/* Notifications Section */}
                     {hasNotifications && (
                       <>
                         <motion.button
@@ -562,6 +574,7 @@ const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const { socket, connected } = useSocket();
 
+  // Get auth and user data from Redux store
   const user = useSelector((state: RootState) => state.user);
 
   const userData = user.user || user?.user || user?.user || null;
@@ -582,8 +595,10 @@ const Navbar: React.FC = () => {
   useEffect(() => {
     if (socket && connected) {
       const handleDoctorAlert = (response: any) => {
+        console.log("Doctor alert received:", response);
 
         if (response.type === "appointment_update") {
+          console.log("Appointment update received:", response.data);
           setIsBeeping(true);
           setTimeout(() => setIsBeeping(false), 60000);
         }
@@ -710,6 +725,7 @@ const Navbar: React.FC = () => {
       localStorage.removeItem("RefreshToken");
 
       dispatch(logoutUser());
+      console.log("User logged out successfully");
 
       setIsDropdownOpen(false);
       setIsMenuOpen(false);
@@ -724,6 +740,7 @@ const Navbar: React.FC = () => {
   };
 
   const handleNavigateToProfile = () => {
+    console.log("Navigating to profile");
     setIsDropdownOpen(false);
   };
 
@@ -741,6 +758,7 @@ const Navbar: React.FC = () => {
   };
 
   const handleNavigateToNotifications = () => {
+    console.log("Navigating to notifications");
     setIsDropdownOpen(false);
     navigate("/NotificationList", { state: { notifications } });
   };
