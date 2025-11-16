@@ -567,8 +567,8 @@ const Navbar: React.FC = () => {
   const user = useSelector((state: RootState) => state.user);
 
   // Improved user data extraction with better fallbacks
-  const userData = user?.user || user?.data || null;
-  const userName = userData?.name || userData?.displayName || userData?.username || "";
+  const userData = user?.user 
+  const userName = userData?.name  || "";
   const userEmail = userData?.email || "";
   
   // Improved user initial calculation
