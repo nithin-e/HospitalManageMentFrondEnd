@@ -53,9 +53,6 @@ interface MobileMenuProps {
   onItemClick: () => void;
   user: User | null;
   userInitial: string;
-  userName: string;
-  userEmail: string;
-  avatarColor: string;
   isAuthenticated: boolean;
   onLogout: () => Promise<void>;
   notifications: Notification[];
@@ -71,9 +68,6 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
   onItemClick,
   user,
   userInitial,
-  userName,
-  userEmail,
-  avatarColor,
   isAuthenticated,
   onLogout,
   notifications,
@@ -97,14 +91,11 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
   };
 
   useEffect(() => {
-    console.log('Mobile Menu Debug...........................:', {
-      userInitial,
-      userName,
-      userEmail,
-      user,
-      avatarColor
-    });
-  }, [userInitial, userName, userEmail, user, avatarColor]);
+  console.log('Mobile Menu Debug...........................:', {
+    userInitial,
+    user
+  });
+}, [, user, userInitial]);
 
   const handleNotificationClick = (id: string) => {
     markAsRead(id);
@@ -136,6 +127,10 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
         return <Bell size={16} className="text-gray-500" />;
     }
   };
+
+
+  
+
 
   const renderNotificationDetails = (notification: Notification) => {
     if (!expandedNotification || expandedNotification !== notification.id) {
@@ -292,15 +287,8 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                             />
                           )}
                         </AnimatePresence>
-                        <div 
-                          className="w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold border-4 border-white shadow-lg relative z-10"
-                          style={{ backgroundColor: avatarColor }}
-                        >
-                          {userInitial && userInitial !== "" ? (
-                            userInitial
-                          ) : (
-                            <User size={28} />
-                          )}
+                        <div className="w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold border-4 border-white shadow-lg relative z-10 bg-gradient-to-br from-blue-500 to-indigo-600">
+                          {userInitial || "?"}
                         </div>
                         {hasNotifications && unreadCount > 0 && (
                           <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center shadow-lg z-20 border-2 border-white font-bold">
@@ -310,10 +298,10 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-lg font-bold text-gray-800 truncate">
-                          {userName || "User"}
+                          {user?.name || "User"}
                         </p>
                         <p className="text-blue-600 text-sm truncate font-medium">
-                          {userEmail || ""}
+                          {user?.email || ""}
                         </p>
                       </div>
                     </div>
@@ -383,6 +371,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                           </div>
                         </motion.button>
 
+                        {/* Notifications List */}
                         <AnimatePresence>
                           {isNotificationsOpen && (
                             <motion.div
@@ -462,6 +451,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                                           </div>
                                         </motion.div>
                                         
+                                        {/* Expanded Notification Details */}
                                         {renderNotificationDetails(notification)}
                                       </div>
                                     ))
@@ -482,6 +472,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                       </>
                     )}
 
+                    {/* Profile & Settings */}
                     <motion.a
                       href="/userprofile"
                       className="flex items-center space-x-4 p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-blue-100 text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:shadow-md transition-all duration-200 active:scale-95 shadow-sm"
@@ -524,6 +515,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                       <span className="text-base font-semibold">Wallet</span>
                     </motion.a>
 
+                    {/* Logout Button */}
                     <motion.button
                       onClick={handleMobileLogout}
                       disabled={isLoggingOut}
@@ -542,6 +534,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                   </div>
                 )}
 
+                {/* Auth Buttons for Non-authenticated */}
                 {!isAuthenticated && (
                   <div className="p-4">
                     <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-blue-100 shadow-sm">
@@ -551,6 +544,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                 )}
               </div>
 
+              {/* Footer */}
               <div className="p-4 border-t border-blue-100 bg-white/80 backdrop-blur-sm flex-shrink-0">
                 <p className="text-center text-sm text-gray-500">
                   © 2025 HealNova. All rights reserved.
@@ -580,13 +574,19 @@ const Navbar: React.FC = () => {
 
   const user = useSelector((state: RootState) => state.user);
 
-  const userData = user?.user || null;
+  const userData = user.user || user?.user || user?.user || null;
   const userName = userData?.name || "";
   const userEmail = userData?.email || "";
-  const userInitial = userName && userName.trim() ? userName.trim().charAt(0).toUpperCase() : "";
+  const userInitial = userName.charAt(0)?.toUpperCase() || "";
+
+console.log('debug this............',userData);
+
+  
+  
 
   const dispatch = useDispatch();
 
+  // Navigation items with icons
   const navItems = [
     { name: "Home", href: "/", icon: <Home size={20} /> },
     { name: "About", href: "/history", icon: <Info size={20} /> },
@@ -595,17 +595,9 @@ const Navbar: React.FC = () => {
   ];
 
   useEffect(() => {
-    console.log('Navbar Debug...........................:', {
-      userInitial,
-      userName,
-      userEmail,
-      userData
-    });
-  }, [userInitial, userName, userEmail, userData]);
-
-  useEffect(() => {
     if (socket && connected) {
-      const handleDoctorAlert = (response: any) => {
+      const handleDoctorAlert = (response) => {
+
         if (response.type === "appointment_update") {
           setIsBeeping(true);
           setTimeout(() => setIsBeeping(false), 60000);
@@ -804,10 +796,12 @@ const Navbar: React.FC = () => {
     >
       <div className="container mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16 sm:h-20">
+          {/* Logo */}
           <motion.div className="flex items-center" variants={itemVariants}>
             <Logo />
           </motion.div>
 
+          {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center space-x-8">
             {navItems.map((item, index) => (
               <motion.div key={index} variants={itemVariants}>
@@ -848,11 +842,7 @@ const Navbar: React.FC = () => {
                         title={userName || "User Profile"}
                         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                       >
-                        {userInitial && userInitial !== "" ? (
-                          userInitial
-                        ) : (
-                          <User size={20} />
-                        )}
+                        {userInitial || "?"}
                       </div>
                     </div>
                     {hasNotifications && unreadCount > 0 && (
@@ -894,11 +884,7 @@ const Navbar: React.FC = () => {
                               className="w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold mr-3 shadow-md relative z-10"
                               style={{ backgroundColor: avatarColor }}
                             >
-                              {userInitial && userInitial !== "" ? (
-                                userInitial
-                              ) : (
-                                <User size={24} />
-                              )}
+                              {userInitial || "?"}
                             </div>
                           </div>
                           <div className="overflow-hidden">
@@ -1023,9 +1009,6 @@ const Navbar: React.FC = () => {
         onItemClick={() => setIsMenuOpen(false)}
         user={userData}
         userInitial={userInitial}
-        userName={userName}
-        userEmail={userEmail}
-        avatarColor={avatarColor}
         isAuthenticated={isAuthenticated}
         onLogout={handleLogout}
         notifications={notifications}
