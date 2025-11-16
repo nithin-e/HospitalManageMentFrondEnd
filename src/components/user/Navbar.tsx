@@ -90,6 +90,13 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
     setIsLoggingOut(false);
   };
 
+  useEffect(() => {
+  console.log('Mobile Menu Debug...........................:', {
+    userInitial,
+    user
+  });
+}, [, user, userInitial]);
+
   const handleNotificationClick = (id: string) => {
     markAsRead(id);
     setExpandedNotification(expandedNotification === id ? null : id);
@@ -122,15 +129,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
   };
 
 
-  useEffect(() => {
-  console.log('Mobile Menu Debug:', {
-    isMenuOpen,
-    userData,
-    userName,
-    userInitial,
-    isAuthenticated
-  });
-}, [isMenuOpen, userData, userName, userInitial, isAuthenticated]);
+  
 
 
   const renderNotificationDetails = (notification: Notification) => {
