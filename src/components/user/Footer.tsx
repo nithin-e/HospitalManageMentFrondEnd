@@ -187,7 +187,7 @@ const Footer: React.FC = () => {
                 {[
                   { icon: 'location', text: '123 Healthcare St, Medical City, MC 12345' },
                   { icon: 'phone', text: '+1 (555) 123-4567' },
-                  { icon: 'email', text: 'info@onahealthcare.com' }
+                  { icon: 'email', text: 'info@healnovahealthcare.com' }
                 ].map((item, index) => (
                   <motion.li 
                     key={item.icon}
@@ -228,7 +228,7 @@ const Footer: React.FC = () => {
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.6 }}
         >
-          <p>&copy; {currentYear} ONA Healthcare. All rights reserved.</p>
+          <p>&copy; {currentYear} HealNova Healthcare. All rights reserved.</p>
         </motion.div>
       </div>
     </footer>
