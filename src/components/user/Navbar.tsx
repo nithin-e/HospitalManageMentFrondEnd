@@ -506,7 +506,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                     </motion.a>
 
                     <motion.a
-                      href="/settings"
+                      href="/userWallet"
                       className="flex items-center space-x-4 p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-blue-100 text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:shadow-md transition-all duration-200 active:scale-95 shadow-sm"
                       onClick={onItemClick}
                       whileTap={{ scale: 0.95 }}
@@ -514,7 +514,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                       <div className="p-2 bg-blue-100 rounded-xl">
                         <Settings size={20} className="text-blue-600" />
                       </div>
-                      <span className="text-base font-semibold">Settings</span>
+                      <span className="text-base font-semibold">Wallet</span>
                     </motion.a>
 
                     {/* Logout Button */}

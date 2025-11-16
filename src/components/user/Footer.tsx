@@ -33,7 +33,7 @@ const Footer: React.FC = () => {
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: 0.1 }}
               >
-                ONA
+                HealNova
                 <motion.div 
                   className="h-1 w-0 bg-brand-accent absolute -bottom-1 left-0"
                   initial={{ width: 0 }}

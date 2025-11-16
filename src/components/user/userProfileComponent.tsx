@@ -424,7 +424,6 @@ const UserProfileComponent = () => {
         doctorName: callData.doctorName,
       };
 
-      console.log("Emitting userInformationForVideoCall with:", callData);
       if (callData.url) {
         window.location.href = callData.url;
       }
@@ -448,7 +447,6 @@ const UserProfileComponent = () => {
       setLoading(true);
       const res = await fetchUserProfileData(userEmail);
 
-      console.log("check this data after fecthing user profile", res);
 
       if (res) {
         const profile = {
@@ -538,7 +536,6 @@ const UserProfileComponent = () => {
       };
 
       const res = await fetchingPrescription(prescription);
-      console.log("check bro check fetchingPrescription", res);
 
       await generatePrescriptionPDF(res.data);
     } catch (error) {
@@ -581,10 +578,7 @@ const UserProfileComponent = () => {
             userIdd,
             appointment.doctorId
           );
-          console.log(
-            "chekc this user conversation......................",
-            res
-          );
+        
 
           if (res.success && res.result?.conversations?.length > 0) {
             newHasConversations[appointment.id] = true;
@@ -812,7 +806,7 @@ const UserProfileComponent = () => {
         }
       }
 
-      console.log("Message data to emit:", messageData);
+    
 
       socket.emit("sendMessage", messageData);
     } catch (error) {
@@ -854,7 +848,7 @@ const UserProfileComponent = () => {
   const navigate = useNavigate();
 
   const handleNavigate = () => {
-    navigate("/AppointMent"); // change to your desired route
+    navigate("/AppointMent")
   };
 
   if (loading) {

@@ -155,7 +155,7 @@ const DoctorDashBoard: React.FC = () => {
     socket.emit("initiateConsultation", {
       appointmentId: appointment.id,
       patientId: appointment.userId,
-      url: `https://www.healnova.fun/Video-call/${roomId}`,
+      url: `https://healnova.fun/Video-call/${roomId}`,
       doctorId: doctor?.id,
       doctorName: `${doctor?.firstName} ${"doctor"}`,
     });

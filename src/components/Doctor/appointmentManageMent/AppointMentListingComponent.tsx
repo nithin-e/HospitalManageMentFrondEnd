@@ -271,15 +271,8 @@ const AppointMentListingComponent = () => {
   };
 
   const fetchUserConversation = async (userId: string, doctorId: string) => {
-
     try {
-
-      console.log('check the both ids user and doctor',userId,doctorId);
-      
       const res = await fetchUserConversations(userId, doctorId);
-
-      console.log('check this fetchUserConversations',res);
-      
 
       if (res.success) {
         const messages = res.conversations[0].messages.map((msg) => {
@@ -320,7 +313,6 @@ const AppointMentListingComponent = () => {
   };
 
   const handleChatClick = async (appointment: Appointment) => {
-    console.log("starting chat with appoitment........", appointment);
     setChatAppointment(appointment);
     setShowChatModal(true);
 
@@ -354,11 +346,6 @@ const AppointMentListingComponent = () => {
   };
 
   const sendMessageToBackend = async (message: any) => {
-    console.log(
-      "{check this chatAppointment{} before sending to backent:}",
-      chatAppointment
-    );
-
     try {
       if (!socket || !connected || !chatAppointment || !doctor) {
         console.error("Socket not connected or missing data");
@@ -378,11 +365,6 @@ const AppointMentListingComponent = () => {
         fileSize: message.fileSize,
         mimeType: message.mimeType,
       };
-
-      console.log(
-        "checke here also before sending message too backend",
-        messageData
-      );
 
       socket.emit("sendMessage", messageData);
     } catch (error) {
@@ -433,8 +415,6 @@ const AppointMentListingComponent = () => {
     if (messageType === "text") {
       setNewMessage("");
     }
-
-    console.log("check this message before sending to backent:", message);
 
     sendMessageToBackend(message);
   };
