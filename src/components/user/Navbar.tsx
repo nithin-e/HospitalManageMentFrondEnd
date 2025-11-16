@@ -90,13 +90,6 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
     setIsLoggingOut(false);
   };
 
-  useEffect(() => {
-  console.log('Mobile Menu Debug...........................:', {
-    userInitial,
-    user
-  });
-}, [, user, userInitial]);
-
   const handleNotificationClick = (id: string) => {
     markAsRead(id);
     setExpandedNotification(expandedNotification === id ? null : id);
@@ -127,10 +120,6 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
         return <Bell size={16} className="text-gray-500" />;
     }
   };
-
-
-  
-
 
   const renderNotificationDetails = (notification: Notification) => {
     if (!expandedNotification || expandedNotification !== notification.id) {
@@ -308,6 +297,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                   </div>
                 )}
 
+                {/* Navigation Items */}
                 <div className="p-4 space-y-3">
                   {navItems.map((item, index) => (
                     <motion.a
@@ -579,11 +569,6 @@ const Navbar: React.FC = () => {
   const userEmail = userData?.email || "";
   const userInitial = userName.charAt(0)?.toUpperCase() || "";
 
-console.log('debug this............',userData);
-
-  
-  
-
   const dispatch = useDispatch();
 
   // Navigation items with icons
@@ -596,7 +581,7 @@ console.log('debug this............',userData);
 
   useEffect(() => {
     if (socket && connected) {
-      const handleDoctorAlert = (response) => {
+      const handleDoctorAlert = (response: any) => {
 
         if (response.type === "appointment_update") {
           setIsBeeping(true);
