@@ -13,6 +13,9 @@ import {
   Stethoscope,
   Users,
   Heart,
+  Calendar,
+  MapPin,
+  Clock,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSelector, useDispatch } from "react-redux";
@@ -75,8 +78,10 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
 }) => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [expandedNotification, setExpandedNotification] = useState<string | null>(null);
   const navigate = useNavigate();
   const menuRef = useRef<HTMLDivElement>(null);
+  const notificationsRef = useRef<HTMLDivElement>(null);
 
   const handleMobileLogout = async () => {
     setIsLoggingOut(true);
@@ -87,6 +92,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
 
   const handleNotificationClick = (id: string) => {
     markAsRead(id);
+    setExpandedNotification(expandedNotification === id ? null : id);
   };
 
   const formatTimestamp = (timestamp: string) => {
@@ -102,16 +108,115 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
     }
   };
 
+  const getNotificationIcon = (type?: number) => {
+    switch (type) {
+      case 1:
+        return <Calendar size={16} className="text-blue-500" />;
+      case 2:
+        return <Stethoscope size={16} className="text-green-500" />;
+      case 3:
+        return <Bell size={16} className="text-orange-500" />;
+      default:
+        return <Bell size={16} className="text-gray-500" />;
+    }
+  };
+
+  const renderNotificationDetails = (notification: Notification) => {
+    if (!expandedNotification || expandedNotification !== notification.id) {
+      return null;
+    }
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, height: 0 }}
+        animate={{ opacity: 1, height: "auto" }}
+        exit={{ opacity: 0, height: 0 }}
+        className="mt-3 p-3 bg-white rounded-lg border border-gray-200 space-y-2"
+      >
+        {/* Basic Message */}
+        <div className="text-sm text-gray-700 leading-relaxed">
+          {notification.message}
+        </div>
+
+        {/* Additional Details */}
+        <div className="space-y-1 text-xs">
+          {notification.date && (
+            <div className="flex items-center space-x-2 text-gray-600">
+              <Calendar size={12} />
+              <span>Date: {notification.date}</span>
+            </div>
+          )}
+          
+          {notification.time && (
+            <div className="flex items-center space-x-2 text-gray-600">
+              <Clock size={12} />
+              <span>Time: {notification.time}</span>
+            </div>
+          )}
+          
+          {notification.doctor && (
+            <div className="flex items-center space-x-2 text-gray-600">
+              <Stethoscope size={12} />
+              <span>Doctor: {notification.doctor}</span>
+            </div>
+          )}
+          
+          {notification.location && (
+            <div className="flex items-center space-x-2 text-gray-600">
+              <MapPin size={12} />
+              <span>Location: {notification.location}</span>
+            </div>
+          )}
+          
+          {notification.additionalInfo && (
+            <div className="pt-2 border-t border-gray-100">
+              <p className="text-gray-600">{notification.additionalInfo}</p>
+            </div>
+          )}
+        </div>
+
+        {/* View Full Details Button */}
+        <button
+          onClick={() => {
+            navigate("/NotificationList", { state: { notifications } });
+            onItemClick();
+          }}
+          className="w-full mt-2 px-3 py-2 bg-blue-50 text-blue-600 text-xs font-medium rounded-lg hover:bg-blue-100 transition-colors"
+        >
+          View Full Details
+        </button>
+      </motion.div>
+    );
+  };
+
+  // Improved scroll handling
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
+      document.body.style.position = "fixed";
+      document.body.style.width = "100%";
+      document.body.style.height = "100%";
     } else {
       document.body.style.overflow = "unset";
+      document.body.style.position = "";
+      document.body.style.width = "";
+      document.body.style.height = "";
     }
 
     return () => {
       document.body.style.overflow = "unset";
+      document.body.style.position = "";
+      document.body.style.width = "";
+      document.body.style.height = "";
     };
+  }, [isOpen]);
+
+  // Close notifications when menu closes
+  useEffect(() => {
+    if (!isOpen) {
+      setIsNotificationsOpen(false);
+      setExpandedNotification(null);
+    }
   }, [isOpen]);
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
@@ -132,312 +237,321 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
           {/* Mobile Menu */}
           <motion.div
             ref={menuRef}
-            className="md:hidden fixed top-0 right-0 bottom-0 w-4/5 max-w-sm bg-gradient-to-b from-white to-blue-50 z-50 flex flex-col shadow-2xl border-l border-blue-100"
+            className="md:hidden fixed top-0 right-0 bottom-0 w-4/5 max-w-sm bg-gradient-to-b from-white to-blue-50 z-50 flex flex-col shadow-2xl border-l border-blue-100 overflow-hidden"
             initial={{ opacity: 0, x: "100%" }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
           >
             {/* Header with gradient */}
-            <div className="flex justify-between items-center p-6 bg-gradient-to-r rgb(0, 59, 115) rgb(0, 59, 115)-600 shadow-lg">
+            <div className="flex justify-between items-center p-6 bg-gradient-to-r from-[#003B73] to-[#003B73] shadow-lg flex-shrink-0">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-white/20 rounded-lg">
-                  <Heart size={24} className="text-[rgb(255,0,0)]" />
+                  <Heart size={24} className="text-[#FF0000]" />
                 </div>
-
-                <span
-                  className="text-xl font-bold"
-                  style={{ color: "rgb(0, 59, 115)" }}
-                >
-                  HealNova
-                </span>
+                <span className="text-xl font-bold text-white">HealNova</span>
               </div>
 
-<button
-  onClick={onItemClick}
-  className="p-2 rounded-full hover:opacity-90 transition-all duration-200"
-  style={{ backgroundColor: "rgb(0, 59, 115)" }}
->
-  <X size={20} className="text-white" />
-</button>
+              <button
+                onClick={onItemClick}
+                className="p-2 rounded-full hover:bg-white/20 transition-all duration-200"
+              >
+                <X size={20} className="text-white" />
+              </button>
             </div>
 
             {/* Scrollable Content */}
-            <div className="flex-1 flex flex-col overflow-y-auto">
-              {/* User Profile Section */}
-              {isAuthenticated && (
-                <div className="px-6 py-6 bg-white/80 backdrop-blur-sm border-b border-blue-100">
-                  <div className="flex items-center space-x-4">
-                    <div className="relative">
-                      <AnimatePresence>
-                        {isBeeping && (
-                          <motion.div
-                            className="absolute inset-0 rounded-full bg-red-400 opacity-70 z-0"
-                            initial={{ scale: 0.8, opacity: 0.5 }}
-                            animate={{
-                              scale: 1.5,
-                              opacity: 0,
-                              transition: {
-                                duration: 1.5,
-                                repeat: Infinity,
-                                repeatType: "reverse" as const,
-                              },
-                            }}
-                            exit={{ opacity: 0 }}
-                          />
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <div className="flex-1 overflow-y-auto">
+                {/* User Profile Section */}
+                {isAuthenticated && (
+                  <div className="px-6 py-6 bg-white/80 backdrop-blur-sm border-b border-blue-100">
+                    <div className="flex items-center space-x-4">
+                      <div className="relative">
+                        <AnimatePresence>
+                          {isBeeping && (
+                            <motion.div
+                              className="absolute inset-0 rounded-full bg-red-400 opacity-70 z-0"
+                              initial={{ scale: 0.8, opacity: 0.5 }}
+                              animate={{
+                                scale: 1.5,
+                                opacity: 0,
+                                transition: {
+                                  duration: 1.5,
+                                  repeat: Infinity,
+                                  repeatType: "reverse" as const,
+                                },
+                              }}
+                              exit={{ opacity: 0 }}
+                            />
+                          )}
+                        </AnimatePresence>
+                        <div className="w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold border-4 border-white shadow-lg relative z-10 bg-gradient-to-br from-blue-500 to-indigo-600">
+                          {userInitial || "?"}
+                        </div>
+                        {hasNotifications && unreadCount > 0 && (
+                          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center shadow-lg z-20 border-2 border-white font-bold">
+                            {unreadCount}
+                          </span>
                         )}
-                      </AnimatePresence>
-                      <div className="w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold border-4 border-white shadow-lg relative z-10 bg-gradient-to-br from-blue-500 to-indigo-600">
-                        {userInitial || "?"}
                       </div>
-                      {hasNotifications && unreadCount > 0 && (
-                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center shadow-lg z-20 border-2 border-white font-bold">
-                          {unreadCount}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-lg font-bold text-gray-800 truncate">
-                        {user?.name || "User"}
-                      </p>
-                      <p className="text-blue-600 text-sm truncate font-medium">
-                        {user?.email || ""}
-                      </p>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-lg font-bold text-gray-800 truncate">
+                          {user?.name || "User"}
+                        </p>
+                        <p className="text-blue-600 text-sm truncate font-medium">
+                          {user?.email || ""}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Navigation Items */}
-              <div className="p-4 space-y-3">
-                {navItems.map((item, index) => (
-                  <motion.a
-                    key={index}
-                    href={item.href}
-                    className="flex items-center space-x-4 p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-blue-100 text-gray-700 hover:bg-blue-50 rgb(0, 59, 115) hover:shadow-md transition-all duration-200 active:scale-95 shadow-sm"
-                    onClick={onItemClick}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <div className="p-2 bg-blue-100 rounded-xl rgb(0, 59, 115)">
-                      {item.icon}
+                {/* Navigation Items */}
+                <div className="p-4 space-y-3">
+                  {navItems.map((item, index) => (
+                    <motion.a
+                      key={index}
+                      href={item.href}
+                      className="flex items-center space-x-4 p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-blue-100 text-gray-700 hover:bg-blue-50 hover:text-[#003B73] hover:shadow-md transition-all duration-200 active:scale-95 shadow-sm"
+                      onClick={onItemClick}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <div className="p-2 bg-blue-100 rounded-xl text-[#003B73]">
+                        {item.icon}
+                      </div>
+                      <span className="text-base font-semibold">{item.name}</span>
+                    </motion.a>
+                  ))}
+                </div>
+
+                {/* Authenticated User Menu */}
+                {isAuthenticated && (
+                  <div className="p-4 space-y-3">
+                    {/* Notifications Section */}
+                    {hasNotifications && (
+                      <>
+                        <motion.button
+                          onClick={() =>
+                            setIsNotificationsOpen(!isNotificationsOpen)
+                          }
+                          className="flex items-center justify-between w-full p-4 rounded-2xl bg-orange-50 border border-orange-200 hover:bg-orange-100 transition-all duration-200 shadow-sm"
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <div className="flex items-center space-x-4">
+                            <div className="p-2 bg-orange-100 rounded-xl">
+                              <Bell size={20} className="text-orange-600" />
+                            </div>
+                            <span className="text-base font-semibold text-orange-800">
+                              Notifications
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            {unreadCount > 0 && (
+                              <span className="bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold">
+                                {unreadCount}
+                              </span>
+                            )}
+                            <motion.div
+                              animate={{ rotate: isNotificationsOpen ? 180 : 0 }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              <svg
+                                className="w-5 h-5 text-orange-600"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M19 9l-7 7-7-7"
+                                />
+                              </svg>
+                            </motion.div>
+                          </div>
+                        </motion.button>
+
+                        {/* Notifications List */}
+                        <AnimatePresence>
+                          {isNotificationsOpen && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="mt-3 bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-lg">
+                                <div className="flex justify-between items-center p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
+                                  <h3 className="font-bold text-gray-800">
+                                    Recent Alerts
+                                  </h3>
+                                  {unreadCount > 0 && (
+                                    <button
+                                      onClick={markAllAsRead}
+                                      className="text-sm text-blue-600 hover:text-blue-800 flex items-center space-x-1 font-semibold"
+                                    >
+                                      <Check size={16} />
+                                      <span>Mark all read</span>
+                                    </button>
+                                  )}
+                                </div>
+
+                                <div 
+                                  ref={notificationsRef}
+                                  className="max-h-64 overflow-y-auto custom-scrollbar"
+                                >
+                                  {notifications.length > 0 ? (
+                                    notifications.map((notification) => (
+                                      <div key={notification.id}>
+                                        <motion.div
+                                          className={`p-4 border-b border-gray-100 cursor-pointer transition-all duration-200 ${
+                                            notification.isRead
+                                              ? "bg-white hover:bg-gray-50"
+                                              : "bg-blue-50 border-l-4 border-l-blue-500 hover:bg-blue-100"
+                                          }`}
+                                          onClick={() =>
+                                            handleNotificationClick(notification.id)
+                                          }
+                                          whileHover={{ scale: 1.02 }}
+                                          whileTap={{ scale: 0.98 }}
+                                        >
+                                          <div className="flex items-start space-x-3">
+                                            <div className="flex-shrink-0 mt-1">
+                                              {getNotificationIcon(notification.type)}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                              <div className="flex justify-between items-start mb-2">
+                                                <h4
+                                                  className={`font-semibold text-sm ${
+                                                    notification.isRead
+                                                      ? "text-gray-700"
+                                                      : "text-blue-800"
+                                                  }`}
+                                                >
+                                                  {notification.title || "Notification"}
+                                                </h4>
+                                                <span className="text-xs text-gray-500 ml-2 flex-shrink-0 bg-white/80 px-2 py-1 rounded-full">
+                                                  {formatTimestamp(
+                                                    notification.timestamp
+                                                  )}
+                                                </span>
+                                              </div>
+                                              <p className="text-sm text-gray-600 leading-relaxed line-clamp-2">
+                                                {notification.message}
+                                              </p>
+                                              {!notification.isRead && (
+                                                <div className="flex items-center mt-2 space-x-2">
+                                                  <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+                                                  <span className="text-xs text-blue-600 font-bold">
+                                                    NEW
+                                                  </span>
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </motion.div>
+                                        
+                                        {/* Expanded Notification Details */}
+                                        {renderNotificationDetails(notification)}
+                                      </div>
+                                    ))
+                                  ) : (
+                                    <div className="p-6 text-center text-gray-500">
+                                      <Bell
+                                        size={32}
+                                        className="mx-auto text-gray-300 mb-2"
+                                      />
+                                      <p>No notifications yet</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </>
+                    )}
+
+                    {/* Profile & Settings */}
+                    <motion.a
+                      href="/userprofile"
+                      className="flex items-center space-x-4 p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-blue-100 text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:shadow-md transition-all duration-200 active:scale-95 shadow-sm"
+                      onClick={onItemClick}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <div className="relative p-2 bg-blue-100 rounded-xl">
+                        <AnimatePresence>
+                          {isBeeping && (
+                            <motion.div
+                              className="absolute -inset-1 rounded-full bg-red-400 opacity-30 z-0"
+                              initial={{ scale: 0.8, opacity: 0.5 }}
+                              animate={{
+                                scale: 1.5,
+                                opacity: 0,
+                                transition: {
+                                  duration: 1.5,
+                                  repeat: Infinity,
+                                  repeatType: "reverse" as const,
+                                },
+                              }}
+                              exit={{ opacity: 0 }}
+                            />
+                          )}
+                        </AnimatePresence>
+                        <User size={20} className="relative z-10 text-blue-600" />
+                      </div>
+                      <span className="text-base font-semibold">My Profile</span>
+                    </motion.a>
+
+                    <motion.a
+                      href="/userWallet"
+                      className="flex items-center space-x-4 p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-blue-100 text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:shadow-md transition-all duration-200 active:scale-95 shadow-sm"
+                      onClick={onItemClick}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <div className="p-2 bg-blue-100 rounded-xl">
+                        <Settings size={20} className="text-blue-600" />
+                      </div>
+                      <span className="text-base font-semibold">Wallet</span>
+                    </motion.a>
+
+                    {/* Logout Button */}
+                    <motion.button
+                      onClick={handleMobileLogout}
+                      disabled={isLoggingOut}
+                      className="flex items-center space-x-4 w-full p-4 rounded-2xl text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 transition-all duration-200 active:scale-95 disabled:opacity-50 shadow-lg"
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      {isLoggingOut ? (
+                        <Loader size={20} className="animate-spin" />
+                      ) : (
+                        <LogOut size={20} />
+                      )}
+                      <span className="text-base font-semibold">
+                        {isLoggingOut ? "Logging out..." : "Logout"}
+                      </span>
+                    </motion.button>
+                  </div>
+                )}
+
+                {/* Auth Buttons for Non-authenticated */}
+                {!isAuthenticated && (
+                  <div className="p-4">
+                    <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-blue-100 shadow-sm">
+                      <AuthButtons />
                     </div>
-                    <span className="text-base font-semibold">{item.name}</span>
-                  </motion.a>
-                ))}
+                  </div>
+                )}
               </div>
 
-              {/* Authenticated User Menu */}
-              {isAuthenticated && (
-                <div className="p-4 space-y-3">
-                  {/* Notifications Section */}
-                  {hasNotifications && (
-                    <>
-                      <motion.button
-                        onClick={() =>
-                          setIsNotificationsOpen(!isNotificationsOpen)
-                        }
-                        className="flex items-center justify-between w-full p-4 rounded-2xl bg-orange-50 border border-orange-200 hover:bg-orange-100 transition-all duration-200 shadow-sm"
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        <div className="flex items-center space-x-4">
-                          <div className="p-2 bg-orange-100 rounded-xl">
-                            <Bell size={20} className="text-orange-600" />
-                          </div>
-                          <span className="text-base font-semibold text-orange-800">
-                            Notifications
-                          </span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          {unreadCount > 0 && (
-                            <span className="bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold">
-                              {unreadCount}
-                            </span>
-                          )}
-                          <motion.div
-                            animate={{ rotate: isNotificationsOpen ? 180 : 0 }}
-                            transition={{ duration: 0.2 }}
-                          >
-                            <svg
-                              className="w-5 h-5 text-orange-600"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 9l-7 7-7-7"
-                              />
-                            </svg>
-                          </motion.div>
-                        </div>
-                      </motion.button>
-
-                      {/* Notifications List */}
-                      <AnimatePresence>
-                        {isNotificationsOpen && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="mt-3 bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-lg">
-                              <div className="flex justify-between items-center p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
-                                <h3 className="font-bold text-gray-800">
-                                  Recent Alerts
-                                </h3>
-                                {unreadCount > 0 && (
-                                  <button
-                                    onClick={markAllAsRead}
-                                    className="text-sm text-blue-600 hover:text-blue-800 flex items-center space-x-1 font-semibold"
-                                  >
-                                    <Check size={16} />
-                                    <span>Mark all read</span>
-                                  </button>
-                                )}
-                              </div>
-
-                              <div className="max-h-64 overflow-y-auto">
-                                {notifications.length > 0 ? (
-                                  notifications.map((notification) => (
-                                    <motion.div
-                                      key={notification.id}
-                                      className={`p-4 border-b border-gray-100 cursor-pointer transition-all duration-200 ${
-                                        notification.isRead
-                                          ? "bg-white hover:bg-gray-50"
-                                          : "bg-blue-50 border-l-4 border-l-blue-500 hover:bg-blue-100"
-                                      }`}
-                                      onClick={() =>
-                                        handleNotificationClick(notification.id)
-                                      }
-                                      whileHover={{ scale: 1.02 }}
-                                      whileTap={{ scale: 0.98 }}
-                                    >
-                                      <div className="flex justify-between items-start mb-2">
-                                        <h4
-                                          className={`font-semibold text-sm ${
-                                            notification.isRead
-                                              ? "text-gray-700"
-                                              : "text-blue-800"
-                                          }`}
-                                        >
-                                          {notification.title || "Notification"}
-                                        </h4>
-                                        <span className="text-xs text-gray-500 ml-2 flex-shrink-0 bg-white/80 px-2 py-1 rounded-full">
-                                          {formatTimestamp(
-                                            notification.timestamp
-                                          )}
-                                        </span>
-                                      </div>
-                                      <p className="text-sm text-gray-600 leading-relaxed">
-                                        {notification.message}
-                                      </p>
-                                      {!notification.isRead && (
-                                        <div className="flex items-center mt-2 space-x-2">
-                                          <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
-                                          <span className="text-xs text-blue-600 font-bold">
-                                            NEW
-                                          </span>
-                                        </div>
-                                      )}
-                                    </motion.div>
-                                  ))
-                                ) : (
-                                  <div className="p-6 text-center text-gray-500">
-                                    <Bell
-                                      size={32}
-                                      className="mx-auto text-gray-300 mb-2"
-                                    />
-                                    <p>No notifications yet</p>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </>
-                  )}
-
-                  {/* Profile & Settings */}
-                  <motion.a
-                    href="/userprofile"
-                    className="flex items-center space-x-4 p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-blue-100 text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:shadow-md transition-all duration-200 active:scale-95 shadow-sm"
-                    onClick={onItemClick}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <div className="relative p-2 bg-blue-100 rounded-xl">
-                      <AnimatePresence>
-                        {isBeeping && (
-                          <motion.div
-                            className="absolute -inset-1 rounded-full bg-red-400 opacity-30 z-0"
-                            initial={{ scale: 0.8, opacity: 0.5 }}
-                            animate={{
-                              scale: 1.5,
-                              opacity: 0,
-                              transition: {
-                                duration: 1.5,
-                                repeat: Infinity,
-                                repeatType: "reverse" as const,
-                              },
-                            }}
-                            exit={{ opacity: 0 }}
-                          />
-                        )}
-                      </AnimatePresence>
-                      <User size={20} className="relative z-10 text-blue-600" />
-                    </div>
-                    <span className="text-base font-semibold">My Profile</span>
-                  </motion.a>
-
-                  <motion.a
-                    href="/settings"
-                    className="flex items-center space-x-4 p-4 rounded-2xl bg-white/80 backdrop-blur-sm border border-blue-100 text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:shadow-md transition-all duration-200 active:scale-95 shadow-sm"
-                    onClick={onItemClick}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <div className="p-2 bg-blue-100 rounded-xl">
-                      <Settings size={20} className="text-blue-600" />
-                    </div>
-                    <span className="text-base font-semibold">Settings</span>
-                  </motion.a>
-
-                  {/* Logout Button */}
-                  <motion.button
-                    onClick={handleMobileLogout}
-                    disabled={isLoggingOut}
-                    className="flex items-center space-x-4 w-full p-4 rounded-2xl text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 transition-all duration-200 active:scale-95 disabled:opacity-50 shadow-lg"
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    {isLoggingOut ? (
-                      <Loader size={20} className="animate-spin" />
-                    ) : (
-                      <LogOut size={20} />
-                    )}
-                    <span className="text-base font-semibold">
-                      {isLoggingOut ? "Logging out..." : "Logout"}
-                    </span>
-                  </motion.button>
-                </div>
-              )}
-
-              {/* Auth Buttons for Non-authenticated */}
-              {!isAuthenticated && (
-                <div className="p-4">
-                  <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-blue-100 shadow-sm">
-                    <AuthButtons />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="p-4 border-t border-blue-100 bg-white/80 backdrop-blur-sm">
-              <p className="text-center text-sm text-gray-500">
-                © 2025 HealNova. All rights reserved.
-              </p>
+              {/* Footer */}
+              <div className="p-4 border-t border-blue-100 bg-white/80 backdrop-blur-sm flex-shrink-0">
+                <p className="text-center text-sm text-gray-500">
+                  © 2025 HealNova. All rights reserved.
+                </p>
+              </div>
             </div>
           </motion.div>
         </>
@@ -881,7 +995,6 @@ const Navbar: React.FC = () => {
             </motion.div>
           </nav>
 
-          {/* Mobile Menu Button */}
           <motion.button
             className="lg:hidden p-3 rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg hover:shadow-xl transition-all duration-200 z-50"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -894,7 +1007,6 @@ const Navbar: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile Menu */}
       <MobileMenu
         isOpen={isMenuOpen}
         navItems={navItems}
