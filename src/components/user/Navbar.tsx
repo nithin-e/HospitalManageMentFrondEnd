@@ -577,6 +577,9 @@ const Navbar: React.FC = () => {
   // Get auth and user data from Redux store
   const user = useSelector((state: RootState) => state.user);
 
+  console.log('............check this  data inside the store.............',user);
+  
+
   const userData = user.user || user?.user || user?.user || null;
   const userName = userData?.name || "";
   const userEmail = userData?.email || "";
@@ -594,7 +597,7 @@ const Navbar: React.FC = () => {
 
   useEffect(() => {
     if (socket && connected) {
-      const handleDoctorAlert = (response: any) => {
+      const handleDoctorAlert = (response) => {
         console.log("Doctor alert received:", response);
 
         if (response.type === "appointment_update") {
