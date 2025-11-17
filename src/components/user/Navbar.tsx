@@ -574,13 +574,20 @@ const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const { socket, connected } = useSocket();
 
+
+
+
   // Get auth and user data from Redux store
   const user = useSelector((state: RootState) => state.user);
 
   console.log('............check this  data inside the store.............',user);
   
 
-  const userData = user.user || user?.user || user?.user || null;
+    const userData = user?.user || user?.user || null;
+
+      console.log('............check double tyme.............',userData);
+
+
   const userName = userData?.name || "";
   const userEmail = userData?.email || "";
   const userInitial = userName.charAt(0)?.toUpperCase() || "";
