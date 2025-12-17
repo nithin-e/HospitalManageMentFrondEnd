@@ -4,7 +4,6 @@ import Footer from '@/components/user/Footer';
 
 const DoctorApplySuccessPage = () => {
   useEffect(() => {
-    // Pulse animation effect for the medical icons
     const pulseMedicalIcons = () => {
       const icons = document.querySelectorAll('.medical-icon');
       icons.forEach((icon, index) => {
@@ -14,7 +13,6 @@ const DoctorApplySuccessPage = () => {
       });
     };
     
-    // Animate the progress steps sequentially
     const animateProgress = () => {
       const steps = document.querySelectorAll('.step-item');
       steps.forEach((step, index) => {
@@ -24,7 +22,6 @@ const DoctorApplySuccessPage = () => {
       });
     };
     
-    // Animate counter for application ID
     const animateCounter = () => {
       const counterElement = document.getElementById('application-number');
       const targetNumber = parseInt(counterElement.getAttribute('data-value'));
@@ -50,7 +47,6 @@ const DoctorApplySuccessPage = () => {
     setTimeout(animateProgress, 800);
     setTimeout(animateCounter, 500);
     
-    // Add floating medical symbols effect
     const addMedicalSymbols = () => {
       const symbolsContainer = document.getElementById('medical-symbols-container');
       const symbols = ['⚕️', '+', '🩺', '💊', '🏥'];
@@ -61,7 +57,6 @@ const DoctorApplySuccessPage = () => {
         symbol.className = 'medical-symbol';
         symbol.innerText = symbols[Math.floor(Math.random() * symbols.length)];
         
-        // Random positions and animations
         const size = Math.random() * 20 + 10;
         const isPlus = symbol.innerText === '+';
         
@@ -88,30 +83,24 @@ const DoctorApplySuccessPage = () => {
     
     addMedicalSymbols();
     
-    // Clean up function
     return () => {
-      // Clean up code if needed
     };
   }, []);
 
   return (
-    // <div className="flex flex-col min-h-screen bg-gradient-to-b from-blue-50 to-white">
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-blue-50 to-white mt-8">
 
       <div id="medical-symbols-container" className="fixed inset-0 pointer-events-none overflow-hidden"></div>
       <Navbar />
       
       <div className="flex-grow flex items-center justify-center px-4 py-12 relative">
-        {/* Background pattern overlay */}
         <div className="absolute inset-0 bg-grid-pattern opacity-5 pointer-events-none"></div>
         
         <div className="w-full max-w-2xl relative z-10">
-          {/* Medical themed decorative elements */}
           <div className="absolute -top-16 -left-16 w-32 h-32 rounded-full border-4 border-blue-100 opacity-30 hidden md:block"></div>
           <div className="absolute -bottom-8 -right-8 w-16 h-16 rounded-full border-4 border-green-100 opacity-30 hidden md:block"></div>
           
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden transform transition-all animate-fadeIn border border-gray-100">
-            {/* Success header with pulse effect */}
             <div className="relative overflow-hidden">
               <div className="absolute inset-0 bg-medical-pattern opacity-10"></div>
               <div className="bg-gradient-to-r from-blue-600 to-blue-700 py-6 px-8 relative">
@@ -133,9 +122,7 @@ const DoctorApplySuccessPage = () => {
               </div>
             </div>
             
-            {/* Main content */}
             <div className="p-8">
-              {/* Application ID and date section */}
               <div className="flex flex-col sm:flex-row justify-between items-center p-4 bg-gray-50 rounded-lg mb-8 border border-gray-100">
                 <div className="flex items-center mb-3 sm:mb-0">
                   <svg className="w-5 h-5 text-blue-600 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -158,7 +145,6 @@ const DoctorApplySuccessPage = () => {
                 </div>
               </div>
               
-              {/* Success message with medical style */}
               <div className="flex items-start mb-8">
                 <div className="flex-shrink-0 mt-1">
                   <div className="p-2 bg-green-100 rounded-full">
@@ -175,7 +161,6 @@ const DoctorApplySuccessPage = () => {
                 </div>
               </div>
               
-              {/* Medical icons section */}
               <div className="grid grid-cols-4 gap-3 mb-8">
                 <div className="medical-icon flex flex-col items-center justify-center p-3 bg-blue-50 rounded-lg opacity-0 transform translate-y-4">
                   <svg className="w-8 h-8 text-blue-600 mb-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -205,7 +190,6 @@ const DoctorApplySuccessPage = () => {
                 </div>
               </div>
               
-              {/* Application progress with labels */}
               <div className="mb-8">
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="text-sm font-semibold text-gray-700">Application Progress</h4>
@@ -260,7 +244,23 @@ const DoctorApplySuccessPage = () => {
                 </div>
               </div>
               
-              {/* Important information box */}
+              {/* Added section for "Your application is under processing" */}
+              <div className="p-5 bg-yellow-50 border-l-4 border-yellow-500 rounded-r-lg mb-8">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-semibold text-yellow-800">Your application is under processing</h3>
+                    <div className="mt-2 text-sm text-yellow-700">
+                      <p>Our medical team is now reviewing your application. This process typically takes 3-5 business days. You will be notified via email once the review is complete.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
               <div className="p-5 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg mb-8">
                 <div className="flex">
                   <div className="flex-shrink-0">
@@ -280,7 +280,6 @@ const DoctorApplySuccessPage = () => {
                 </div>
               </div>
               
-              {/* Action buttons */}
               <div className="flex flex-col sm:flex-row gap-4">
                 <a
                   href="/"
@@ -301,7 +300,6 @@ const DoctorApplySuccessPage = () => {
                 </button>
               </div>
               
-              {/* Contact information */}
               <div className="mt-6 text-center text-sm text-gray-500 flex items-center justify-center">
                 <svg className="w-4 h-4 mr-1 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
@@ -309,7 +307,6 @@ const DoctorApplySuccessPage = () => {
                 A confirmation email has been sent to your registered email address
               </div>
               
-              {/* Mobile app prompt */}
               <div className="mt-6 flex items-center justify-center">
                 <div className="text-xs text-gray-500 mr-2">Get updates on our mobile app</div>
                 <div className="flex space-x-2">
@@ -338,4 +335,4 @@ const DoctorApplySuccessPage = () => {
   );
 };
 
-export default DoctorApplySuccessPage
+export default DoctorApplySuccessPage;
