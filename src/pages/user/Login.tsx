@@ -26,7 +26,6 @@ const Login = () => {
   const isMobile = useIsMobile();
   const dispatch = useDispatch();
 
-  // Effect to handle password reset message display
   useEffect(() => {
     if (passwordReset) {
       setShowMessage(true);
@@ -86,7 +85,6 @@ const Login = () => {
           return;
         }
 
-        console.log("Login response:", response);
 
         const loginPayload = {
           user: {
@@ -160,7 +158,6 @@ const Login = () => {
         }
 
         const userData = await userInfoResponse.json();
-        console.log("check this responce after thhe google login", userData);
         const backendResponse = await axiosInstance.post(
           "/api/user/loginUser",
           {
@@ -194,7 +191,6 @@ const Login = () => {
         };
 
         const result = await dispatch(login(loginPayload));
-        console.log("goofgle 000login result:", result);
 
         if ((result.payload as any).user.role === "admin") {
           navigate("/adminDash");

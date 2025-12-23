@@ -45,6 +45,10 @@ const queryClient = new QueryClient();
 const App = () => {
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
+    console.log(
+    "GOOGLE CLIENT ID:",
+    import.meta.env.VITE_GOOGLE_CLIENT_ID
+  );
   if (!clientId) {
     console.error('Google Client ID is not defined in .env');
     return <div>Error: Google Client ID not configured. Please check your .env file.</div>;
