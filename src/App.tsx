@@ -43,7 +43,8 @@ import HistoryComponent from './pages/user/History';
 const queryClient = new QueryClient();
 
 const App = () => {
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  // const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const clientId = '1094206557691-01tg6uk0scv8rrrit19beac0deic4cls.apps.googleusercontent.com'
 
     console.log(
     "GOOGLE CLIENT ID:",
