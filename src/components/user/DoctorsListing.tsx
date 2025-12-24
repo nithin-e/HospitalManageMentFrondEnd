@@ -53,8 +53,8 @@ const DoctorListing = () => {
         console.log('checkc this responce while the fecting doctor tyme',res);
         
         if (!mounted) return;
-        const data = Array.isArray(res) ? res : res.data.data ?? res.doctors ?? [];
-        setDoctors(data);
+        const data = Array.isArray(res) ? res : res.data.data ?? res.data.data ?? [];
+        setDoctors(data.data.data);
         setFiltered(data);
       } catch (err) {
         setError('Failed to fetch doctors');
