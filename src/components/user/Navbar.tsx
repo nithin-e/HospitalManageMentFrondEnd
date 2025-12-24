@@ -580,12 +580,10 @@ const Navbar: React.FC = () => {
   // Get auth and user data from Redux store
   const user = useSelector((state: RootState) => state.user);
 
-  console.log('............check this  data inside the store.............',user);
   
 
     const userData = user?.user || user?.user || null;
 
-      console.log('............check double tyme.............',userData);
 
 
   const userName = userData?.name || "";
@@ -599,7 +597,7 @@ const Navbar: React.FC = () => {
     { name: "Home", href: "/", icon: <Home size={20} /> },
     { name: "About", href: "/history", icon: <Info size={20} /> },
     { name: "Services", href: "/services", icon: <Stethoscope size={20} /> },
-    { name: "Doctors", href: "#doctors", icon: <Users size={20} /> },
+    { name: "Doctors", href: "/doctors", icon: <Users size={20} /> },
   ];
 
   useEffect(() => {
