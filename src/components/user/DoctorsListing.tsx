@@ -50,7 +50,7 @@ const DoctorListing = () => {
       setError(null);
       try {
         const res = await UserfetchingDoctors();
-        console.log('checkc this responce while the fecting doctor tyme',res);
+        console.log('checkc this responce while the fecting doctor tyme',res.data.data);
         
         if (!mounted) return;
         const data = Array.isArray(res) ? res : res.data.data ?? res.data.data ?? [];
