@@ -53,7 +53,7 @@ const DoctorListing = () => {
         console.log('checkc this responce while the fecting doctor tyme',res);
         
         if (!mounted) return;
-        const data = Array.isArray(res) ? res : res.data ?? res.doctors ?? [];
+        const data = Array.isArray(res) ? res : res.data.data ?? res.doctors ?? [];
         setDoctors(data);
         setFiltered(data);
       } catch (err) {
