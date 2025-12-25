@@ -18,7 +18,7 @@ const DoctorCard = ({ doctor, onBook }) => {
   const displayName = fullName.length > 4 ? fullName : 'Doctor';
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 p-6 relative overflow-hidden group">
+    <div className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 p-6 relative overflow-hidden group border border-gray-200">
       {/* Verified Badge */}
       {isActive && (
         <div className="absolute top-4 right-4 bg-green-100 rounded-full p-1.5 z-10">
@@ -27,11 +27,11 @@ const DoctorCard = ({ doctor, onBook }) => {
       )}
       
       {/* Accent Line */}
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-400 to-blue-500"></div>
+      <div className="absolute top-0 left-0 w-full h-1" style={{ backgroundColor: 'rgb(0, 59, 115)' }}></div>
       
       <div className="flex flex-col items-center">
         {/* Profile Image */}
-        <div className="w-32 h-32 rounded-full overflow-hidden mb-4 border-4 border-gray-100 shadow-md group-hover:border-cyan-200 transition-colors">
+        <div className="w-32 h-32 rounded-full overflow-hidden mb-4 border-4 border-gray-100 shadow-md group-hover:border-blue-200 transition-colors">
           {profileImageUrl ? (
             <img 
               src={profileImageUrl} 
@@ -44,9 +44,10 @@ const DoctorCard = ({ doctor, onBook }) => {
             />
           ) : null}
           <div 
-            className={`w-full h-full bg-gradient-to-br from-cyan-100 to-blue-100 flex items-center justify-center ${profileImageUrl ? 'hidden' : 'flex'}`}
+            className={`w-full h-full flex items-center justify-center ${profileImageUrl ? 'hidden' : 'flex'}`}
+            style={{ backgroundColor: 'rgba(0, 59, 115, 0.1)' }}
           >
-            <User className="w-16 h-16 text-cyan-600" />
+            <User className="w-16 h-16" style={{ color: 'rgb(0, 59, 115)' }} />
           </div>
         </div>
         
@@ -56,7 +57,7 @@ const DoctorCard = ({ doctor, onBook }) => {
         </h3>
         
         {/* Specialty */}
-        <p className="text-cyan-600 font-medium mb-2 text-center">
+        <p className="font-medium mb-2 text-center" style={{ color: 'rgb(0, 59, 115)' }}>
           {specialty}
         </p>
         
@@ -75,13 +76,14 @@ const DoctorCard = ({ doctor, onBook }) => {
         )}
         
         {/* Divider */}
-        <div className="w-12 h-1 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full"></div>
+        <div className="w-12 h-1 rounded-full" style={{ backgroundColor: 'rgb(0, 59, 115)' }}></div>
 
         {/* Actions */}
         <div className="mt-4 w-full flex items-center justify-center gap-3">
           <button
             onClick={() => onBook(doctor)}
-            className="px-4 py-2 bg-cyan-600 text-white rounded-lg font-medium shadow-sm hover:bg-cyan-700 transition-all"
+            className="px-4 py-2 text-white rounded-lg font-medium shadow-sm hover:opacity-90 transition-all"
+            style={{ backgroundColor: 'rgb(0, 59, 115)' }}
           >
             Book Now
           </button>
@@ -215,16 +217,15 @@ const DoctorListing = () => {
   const pageItems = sortedFiltered.slice(start, start + perPage);
 
   const handleBook = (doctor) => {
-    // You can pass doctor data via state if needed on the appointment page
     navigate('/AppointMent', { state: { doctor } });
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-gray-50 to-blue-100 p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header Section */}
         <div className="text-center mb-8 sm:mb-12">
-          <h1 className="text-4xl sm:text-5xl font-bold text-gray-800 mb-3 bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent">
+          <h1 className="text-4xl sm:text-5xl font-bold mb-3" style={{ color: 'rgb(0, 59, 115)' }}>
             Our Medical Experts
           </h1>
           <p className="text-gray-600 text-lg sm:text-xl">
@@ -242,11 +243,12 @@ const DoctorListing = () => {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search by name or specialty..."
-                className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all"
+                className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 shadow-sm focus:outline-none focus:ring-2 transition-all"
+                style={{ '--tw-ring-color': 'rgb(0, 59, 115)' }}
               />
             </div>
           </div>
-          <div className="text-sm text-gray-600 font-medium bg-white px-4 py-3 rounded-lg shadow-sm">
+          <div className="text-sm text-gray-600 font-medium bg-white px-4 py-3 rounded-lg shadow-sm border border-gray-200">
             Page {page} of {totalPages} • {filtered.length} doctor{filtered.length !== 1 ? 's' : ''}
           </div>
         </div>
@@ -254,7 +256,7 @@ const DoctorListing = () => {
         {/* Loading State */}
         {loading && (
           <div className="text-center py-20">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-600"></div>
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: 'rgb(0, 59, 115)' }}></div>
             <p className="mt-4 text-gray-600">Loading doctors...</p>
           </div>
         )}
@@ -278,7 +280,8 @@ const DoctorListing = () => {
             {search && (
               <button
                 onClick={() => setSearch('')}
-                className="mt-4 text-cyan-600 hover:text-cyan-700 font-medium"
+                className="mt-4 font-medium hover:opacity-80 transition-opacity"
+                style={{ color: 'rgb(0, 59, 115)' }}
               >
                 Clear search
               </button>
@@ -310,14 +313,14 @@ const DoctorListing = () => {
               Previous
             </button>
             
-            <div className="px-5 py-2.5 bg-cyan-600 text-white rounded-lg font-medium shadow-sm">
+            <div className="px-5 py-2.5 text-white rounded-lg font-medium shadow-sm" style={{ backgroundColor: 'rgb(0, 59, 115)' }}>
               {page} / {totalPages}
             </div>
             
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages}
-              className="px-5 py-2.5 bg-white border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-clicked transition-all shadow-sm hover:shadow"
+              className="px-5 py-2.5 bg-white border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow"
             >
               Next
             </button>
