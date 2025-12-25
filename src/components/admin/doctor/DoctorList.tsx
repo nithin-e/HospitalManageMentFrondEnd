@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Search, Filter, ChevronDown, ArrowUpDown, Shield, User, Briefcase, Clock, X, ChevronLeft, ChevronRight, Loader2, RefreshCw, ChevronUp, Eye, Edit, Download, Upload } from "lucide-react";
+import { Search, Filter, ChevronDown, ArrowUpDown, Shield, User, Briefcase, Clock, X, ChevronLeft, ChevronRight, Loader2, RefreshCw, ChevronUp } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/docui/avatar";
 import { Input } from "@/components/ui/docui/input";
 import { Button } from "@/components/ui/docui/button";
@@ -42,29 +42,28 @@ export const DoctorsList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   
-  // Modal states
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentDoctor, setCurrentDoctor] = useState(null);
-  const [medicalLicenseUrl, setMedicalLicenseUrl] = useState("");
-  const [isEditing, setIsEditing] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  
   const navigate = useNavigate();
   const location = useLocation();
 
   const debouncedSearchTerm = useDebounce(searchQuery, 500);
 
+  // Handle rejected doctor state from navigation
   useEffect(() => {
     if (location.state?.rejectedDoctor && location.state?.rejectedDoctorEmail) {
       const email = location.state?.rejectedDoctorEmail;
+      console.log('Found rejected doctor with email:', email);
       removeRejectedDoctor(email);
     }
   }, [location.state]);
 
   const removeRejectedDoctor = async (email) => {
     try {
+      console.log('Removing doctor with email:', email);
       setDoctors(prevDoctors => prevDoctors.filter(doctor => doctor.email !== email));
+      console.log('Making API call to delete doctor with email:', email);
       const response = await deleteDoctor(email);
+      console.log('API response:', response);
+      console.log(`Doctor with email ${email} successfully removed`);
     } catch (error) {
       console.error("Error removing rejected doctor:", error);
       fetchDoctorData(currentPage);
@@ -87,6 +86,7 @@ export const DoctorsList = () => {
 
   const fetchDoctorData = async (page = 1) => {
     try {
+     
       if (page === 1 && !searchLoading) {
         setLoading(true);
       } else {
@@ -101,7 +101,9 @@ export const DoctorsList = () => {
         params.append('searchQuery', debouncedSearchTerm.trim());
       }
       
+   
       if (statusFilter !== "all") {
+       
         params.append('status', statusFilter.toLowerCase());
       }
       
@@ -110,7 +112,11 @@ export const DoctorsList = () => {
       params.append('page', page.toString());
       params.append('limit', doctorsPerPage.toString());
 
+      console.log("Fetching doctors with params:", params.toString());
+      
       const response = await doctorPaginationApi(params);
+      console.log('Doctor data response:', response.data);
+      
       const responseData = response.data.data;
       
       if (!responseData || !responseData.success) {
@@ -162,102 +168,6 @@ export const DoctorsList = () => {
     } finally {
       setLoading(false);
       setSearchLoading(false);
-    }
-  };
-
-  // Medical License Modal Functions
-  const openMedicalLicenseModal = (doctor) => {
-    setCurrentDoctor(doctor);
-    setMedicalLicenseUrl(doctor.medicalLicenseUrl || "");
-    setIsEditing(false);
-    setIsModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setCurrentDoctor(null);
-    setMedicalLicenseUrl("");
-    setIsEditing(false);
-  };
-
-  const handleEditClick = () => {
-    setIsEditing(true);
-  };
-
-  const handleSaveClick = async () => {
-    if (!currentDoctor || !medicalLicenseUrl.trim()) return;
-
-    try {
-      // Here you would typically call an API to update the medical license URL
-      // For now, we'll update the local state
-      setDoctors(prevDoctors =>
-        prevDoctors.map(doctor =>
-          doctor.id === currentDoctor.id
-            ? { ...doctor, medicalLicenseUrl }
-            : doctor
-        )
-      );
-
-      // If you have an API endpoint for updating medical license:
-      // await updateMedicalLicenseApi(currentDoctor.id, medicalLicenseUrl);
-      
-      setIsEditing(false);
-      // Optionally show a success message
-    } catch (error) {
-      console.error("Error updating medical license:", error);
-      // Handle error (show error message)
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setMedicalLicenseUrl(currentDoctor?.medicalLicenseUrl || "");
-    setIsEditing(false);
-  };
-
-  const handleDownloadLicense = () => {
-    if (!medicalLicenseUrl) return;
-    
-    const link = document.createElement('a');
-    link.href = medicalLicenseUrl;
-    link.download = `medical_license_${currentDoctor?.medicalLicenseNumber || currentDoctor?.id}.jpg`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const handleFileUpload = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    // Check file type
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf'];
-    if (!validTypes.includes(file.type)) {
-      alert('Please upload a valid image (JPEG, PNG, GIF) or PDF file');
-      return;
-    }
-
-    // Check file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert('File size should be less than 5MB');
-      return;
-    }
-
-    setIsUploading(true);
-
-    try {
-      // In a real application, you would upload the file to your server
-      // and get back a URL. For now, we'll create a local URL.
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const dataUrl = e.target.result;
-        setMedicalLicenseUrl(dataUrl);
-        setIsUploading(false);
-      };
-      reader.readAsDataURL(file);
-    } catch (error) {
-      console.error("Error uploading file:", error);
-      setIsUploading(false);
-      alert('Error uploading file. Please try again.');
     }
   };
 
@@ -615,7 +525,7 @@ export const DoctorsList = () => {
         <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
           <div className="grid grid-cols-12 p-4 bg-gray-50 font-medium border-b border-gray-200">
             <div 
-              className="col-span-4 flex items-center gap-1 cursor-pointer hover:text-blue-600 transition-colors"
+              className="col-span-5 flex items-center gap-1 cursor-pointer hover:text-blue-600 transition-colors"
               onClick={() => toggleSort("name")}
             >
               Doctor
@@ -627,7 +537,7 @@ export const DoctorsList = () => {
               )}
             </div>
             <div 
-              className="col-span-2 flex items-center gap-1 cursor-pointer hover:text-blue-600 transition-colors"
+              className="col-span-3 flex items-center gap-1 cursor-pointer hover:text-blue-600 transition-colors"
               onClick={() => toggleSort("specialty")}
             >
               Specialty
@@ -651,7 +561,6 @@ export const DoctorsList = () => {
                 </span>
               )}
             </div>
-            <div className="col-span-2 text-center">Medical License</div>
           </div>
 
           {/* Doctor rows */}
@@ -665,7 +574,7 @@ export const DoctorsList = () => {
                   className="grid grid-cols-12 items-center p-4 hover:bg-blue-50 cursor-pointer transition-colors duration-200"
                   onClick={() => handleDoctorClick(doctor)}
                 >
-                  <div className="col-span-4 flex items-center gap-3">
+                  <div className="col-span-5 flex items-center gap-3">
                     <Avatar className="h-12 w-12 rounded-full shadow-sm">
                       <AvatarImage src={doctor.profileImageUrl} alt={doctor.name} />
                       <AvatarFallback className="bg-gray-100 text-blue-600">
@@ -685,7 +594,7 @@ export const DoctorsList = () => {
                     </div>
                   </div>
                   
-                  <div className="col-span-2">
+                  <div className="col-span-3">
                     <div className="flex items-center gap-2">
                       <span className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
                         <Briefcase className="w-4 h-4 text-blue-600" />
@@ -704,20 +613,6 @@ export const DoctorsList = () => {
                   <div className="col-span-2 text-sm text-gray-500">
                     {doctor.formattedDate}
                   </div>
-                  
-                  <div className="col-span-2 flex justify-center">
-                    <Button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openMedicalLicenseModal(doctor);
-                      }}
-                      className="bg-blue-100 text-blue-700 hover:bg-blue-200 flex items-center gap-2"
-                      size="sm"
-                    >
-                      <Eye className="w-4 h-4" />
-                      View License
-                    </Button>
-                  </div>
                 </div>
               );
             })}
@@ -733,249 +628,6 @@ export const DoctorsList = () => {
         <div className="mt-4 text-center text-sm text-gray-500">
           Showing {((currentPage - 1) * doctorsPerPage) + 1} to {Math.min(currentPage * doctorsPerPage, totalDoctors)} of {totalDoctors} doctors
           {debouncedSearchTerm && ` (filtered results)`}
-        </div>
-      )}
-
-      {/* Medical License Modal */}
-      {isModalOpen && currentDoctor && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900">Medical License</h2>
-                <p className="text-gray-600 mt-1">
-                  {currentDoctor.name} • {currentDoctor.specialty}
-                </p>
-                {currentDoctor.medicalLicenseNumber && (
-                  <p className="text-gray-500 text-sm mt-1">
-                    License #: {currentDoctor.medicalLicenseNumber}
-                  </p>
-                )}
-              </div>
-              <Button
-                onClick={closeModal}
-                className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-2"
-                variant="ghost"
-              >
-                <X className="w-5 h-5" />
-              </Button>
-            </div>
-
-            {/* Modal Content */}
-            <div className="p-6 overflow-y-auto max-h-[60vh]">
-              <div className="flex flex-col lg:flex-row gap-6">
-                {/* Left Column - License Preview */}
-                <div className="lg:w-2/3">
-                  <div className="border-2 border-gray-200 rounded-xl overflow-hidden bg-gray-50">
-                    {medicalLicenseUrl ? (
-                      <div className="relative">
-                        {medicalLicenseUrl.toLowerCase().endsWith('.pdf') ? (
-                          <div className="h-96 flex flex-col items-center justify-center p-8">
-                            <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                              <span className="text-red-600 font-bold text-2xl">PDF</span>
-                            </div>
-                            <p className="text-gray-700 font-medium mb-2">Medical License PDF Document</p>
-                            <p className="text-gray-500 text-sm">Click download to view the PDF file</p>
-                          </div>
-                        ) : (
-                          <img
-                            src={medicalLicenseUrl}
-                            alt="Medical License"
-                            className="w-full h-auto object-contain max-h-96"
-                            onError={(e) => {
-                              e.target.onerror = null;
-                              e.target.src = "https://via.placeholder.com/600x400?text=Image+Not+Available";
-                            }}
-                          />
-                        )}
-                      </div>
-                    ) : (
-                      <div className="h-96 flex flex-col items-center justify-center p-8">
-                        <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center mb-4">
-                          <User className="w-10 h-10 text-gray-400" />
-                        </div>
-                        <p className="text-gray-700 font-medium mb-2">No Medical License Uploaded</p>
-                        <p className="text-gray-500 text-sm text-center">
-                          This doctor hasn't uploaded their medical license yet
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Action Buttons */}
-                  <div className="flex flex-wrap gap-3 mt-4">
-                    {medicalLicenseUrl && (
-                      <Button
-                        onClick={handleDownloadLicense}
-                        className="bg-green-100 text-green-700 hover:bg-green-200 flex items-center gap-2"
-                      >
-                        <Download className="w-4 h-4" />
-                        Download License
-                      </Button>
-                    )}
-                    
-                    {!isEditing && (
-                      <Button
-                        onClick={handleEditClick}
-                        className="bg-blue-100 text-blue-700 hover:bg-blue-200 flex items-center gap-2"
-                      >
-                        <Edit className="w-4 h-4" />
-                        Edit License
-                      </Button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Right Column - Edit Form */}
-                <div className="lg:w-1/3">
-                  <div className="bg-gray-50 p-4 rounded-xl">
-                    <h3 className="font-medium text-gray-900 mb-3">
-                      {isEditing ? "Edit Medical License" : "License Information"}
-                    </h3>
-                    
-                    {isEditing ? (
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            License URL
-                          </label>
-                          <Input
-                            type="text"
-                            value={medicalLicenseUrl}
-                            onChange={(e) => setMedicalLicenseUrl(e.target.value)}
-                            placeholder="Enter license URL"
-                            className="w-full"
-                          />
-                        </div>
-                        
-                        <div className="border-t border-gray-200 pt-4">
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Upload New License
-                          </label>
-                          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors cursor-pointer">
-                            <input
-                              type="file"
-                              id="license-upload"
-                              className="hidden"
-                              accept="image/*,.pdf"
-                              onChange={handleFileUpload}
-                              disabled={isUploading}
-                            />
-                            <label htmlFor="license-upload" className="cursor-pointer">
-                              {isUploading ? (
-                                <div className="flex flex-col items-center">
-                                  <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-2" />
-                                  <p className="text-sm text-gray-600">Uploading...</p>
-                                </div>
-                              ) : (
-                                <>
-                                  <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                                  <p className="text-sm text-gray-600">
-                                    Click to upload or drag and drop
-                                  </p>
-                                  <p className="text-xs text-gray-500 mt-1">
-                                    PNG, JPG, GIF up to 5MB or PDF
-                                  </p>
-                                </>
-                              )}
-                            </label>
-                          </div>
-                        </div>
-                        
-                        <div className="flex gap-3 pt-4">
-                          <Button
-                            onClick={handleSaveClick}
-                            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-                            disabled={!medicalLicenseUrl.trim() || isUploading}
-                          >
-                            Save Changes
-                          </Button>
-                          <Button
-                            onClick={handleCancelEdit}
-                            className="flex-1 bg-gray-200 text-gray-700 hover:bg-gray-300"
-                            variant="outline"
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        <div>
-                          <p className="text-sm text-gray-500">License Status</p>
-                          <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full mt-1 ${
-                            medicalLicenseUrl ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {medicalLicenseUrl ? (
-                              <>
-                                <Shield className="w-4 h-4" />
-                                <span className="font-medium">Uploaded</span>
-                              </>
-                            ) : (
-                              <>
-                                <Clock className="w-4 h-4" />
-                                <span className="font-medium">Pending</span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                        
-                        {medicalLicenseUrl && (
-                          <div>
-                            <p className="text-sm text-gray-500 mb-2">Current License URL</p>
-                            <div className="bg-white p-3 rounded-lg border border-gray-200 overflow-x-auto">
-                              <code className="text-xs text-gray-700 break-all">
-                                {medicalLicenseUrl}
-                              </code>
-                            </div>
-                          </div>
-                        )}
-                        
-                        <div className="pt-4">
-                          <p className="text-sm text-gray-500 mb-3">
-                            To edit the medical license, click the "Edit License" button.
-                          </p>
-                          <div className="text-xs text-gray-400 space-y-1">
-                            <p>• Supported formats: JPG, PNG, GIF, PDF</p>
-                            <p>• Maximum file size: 5MB</p>
-                            <p>• Make sure the license is valid and readable</p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="border-t border-gray-200 p-6 bg-gray-50">
-              <div className="flex justify-between items-center">
-                <div className="text-sm text-gray-500">
-                  Last updated: {new Date(currentDoctor.createdAt).toLocaleDateString()}
-                </div>
-                <div className="flex gap-3">
-                  <Button
-                    onClick={closeModal}
-                    className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-                    variant="outline"
-                  >
-                    Close
-                  </Button>
-                  {!isEditing && medicalLicenseUrl && (
-                    <Button
-                      onClick={handleDownloadLicense}
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      <Download className="w-4 h-4 mr-2" />
-                      Download License
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       )}
     </div>

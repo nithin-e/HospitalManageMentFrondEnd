@@ -53,6 +53,7 @@ interface DoctorFormData {
   qualifications: string;
   profileImageUrl: string;
   profileImage: string;
+  medicalLicenseUrl: string;
   [key: string]: any;
 }
 
@@ -103,6 +104,7 @@ const DoctorDashBoard: React.FC = () => {
     qualifications: "",
     profileImageUrl: "",
     profileImage: "",
+    medicalLicenseUrl: "",
   });
 
   const itemsPerPage = 5;
@@ -231,6 +233,7 @@ const DoctorDashBoard: React.FC = () => {
         qualifications: (doctor as any).qualifications || "",
         profileImageUrl: (doctor as any).profileImageUrl || "",
         profileImage: (doctor as any).profileImage || "",
+        medicalLicenseUrl: (doctor as any).medicalLicenseUrl || "",
       });
     }
     setIsEditModalOpen(true);
@@ -240,7 +243,9 @@ const DoctorDashBoard: React.FC = () => {
     setIsEditModalOpen(false);
   };
 
-  const handleDoctorFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleDoctorFormChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setDoctorFormData((prev) => ({
       ...prev,
@@ -518,6 +523,19 @@ const DoctorDashBoard: React.FC = () => {
                     (doctor as any).licenseNumber ||
                     "N/A"}
                 </p>
+                {(doctor as any).medicalLicenseUrl && (
+                  <p className="text-blue-500 text-sm mt-1">
+                    <a 
+                      href={(doctor as any).medicalLicenseUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      View Medical License ↗
+                    </a>
+                  </p>
+                )}
                 <p className="text-blue-500 text-sm mt-2 font-medium">
                   Click to view/edit profile
                 </p>
@@ -661,6 +679,23 @@ const DoctorDashBoard: React.FC = () => {
                     {(doctor as any).licenseNumber ||
                       (doctor as any).medicalLicenseNumber ||
                       "N/A"}
+                  </p>
+                </div>
+                <div className="md:col-span-2">
+                  <p className="text-gray-500">Medical License URL</p>
+                  <p className="font-medium">
+                    {(doctor as any).medicalLicenseUrl ? (
+                      <a 
+                        href={(doctor as any).medicalLicenseUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-blue-500 hover:underline break-all"
+                      >
+                        {(doctor as any).medicalLicenseUrl}
+                      </a>
+                    ) : (
+                      "N/A"
+                    )}
                   </p>
                 </div>
                 <div className="md:col-span-2">
@@ -816,6 +851,38 @@ const DoctorDashBoard: React.FC = () => {
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Medical License URL
+                      </label>
+                      <input
+                        type="url"
+                        name="medicalLicenseUrl"
+                        value={doctorFormData.medicalLicenseUrl}
+                        onChange={handleDoctorFormChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="https://example.com/license.pdf"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Enter the URL where your medical license is hosted (PDF, image, or webpage)
+                      </p>
+                      {doctorFormData.medicalLicenseUrl && (
+                        <div className="mt-2">
+                          <a 
+                            href={doctorFormData.medicalLicenseUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-blue-500 hover:underline text-sm flex items-center gap-1"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                            Preview current license
+                          </a>
+                        </div>
+                      )}
                     </div>
 
                     <div>
