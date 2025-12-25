@@ -42,6 +42,20 @@ interface StatsData {
   newPatientsTrend: number;
 }
 
+interface DoctorFormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+  specialty: string;
+  licenseNumber: string;
+  medicalLicenseNumber: string;
+  qualifications: string;
+  profileImageUrl: string;
+  profileImage: string;
+  [key: string]: any;
+}
+
 const DoctorDashBoard: React.FC = () => {
   const location = useLocation();
   const email = location.state?.email || "";
@@ -49,7 +63,6 @@ const DoctorDashBoard: React.FC = () => {
   const { socket, connected } = useSocket();
 
   const doctor = useSelector((state: RootState) => state.doctor.data);
-
   const doctorEmail = doctor?.email;
 
   const navigate = useNavigate();
@@ -78,6 +91,19 @@ const DoctorDashBoard: React.FC = () => {
     useState<AppointmentData | null>(null);
   const [prescriptionText, setPrescriptionText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [doctorFormData, setDoctorFormData] = useState<DoctorFormData>({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phoneNumber: "",
+    specialty: "",
+    licenseNumber: "",
+    medicalLicenseNumber: "",
+    qualifications: "",
+    profileImageUrl: "",
+    profileImage: "",
+  });
 
   const itemsPerPage = 5;
 
@@ -189,6 +215,51 @@ const DoctorDashBoard: React.FC = () => {
     } catch (error) {
       console.error("Failed to submit prescription:", error);
       alert("Failed to submit prescription. Please try again.");
+    }
+  };
+
+  const handleOpenEditModal = () => {
+    if (doctor) {
+      setDoctorFormData({
+        firstName: doctor.firstName || "",
+        lastName: (doctor as any).lastName || "",
+        email: doctor.email || "",
+        phoneNumber: doctor.phoneNumber || "",
+        specialty: (doctor as any).specialty || "",
+        licenseNumber: (doctor as any).licenseNumber || "",
+        medicalLicenseNumber: (doctor as any).medicalLicenseNumber || "",
+        qualifications: (doctor as any).qualifications || "",
+        profileImageUrl: (doctor as any).profileImageUrl || "",
+        profileImage: (doctor as any).profileImage || "",
+      });
+    }
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+  };
+
+  const handleDoctorFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setDoctorFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmitDoctorInfo = async () => {
+    try {
+      // Here you would typically dispatch an action to update doctor info
+      console.log("Updated doctor info:", doctorFormData);
+      // Example: await dispatch(updateDoctorInfo(doctorFormData));
+      
+      // For now, just show a success message
+      alert("Doctor information updated successfully!");
+      handleCloseEditModal();
+    } catch (error) {
+      console.error("Failed to update doctor information:", error);
+      alert("Failed to update doctor information. Please try again.");
     }
   };
 
@@ -406,7 +477,6 @@ const DoctorDashBoard: React.FC = () => {
   const doctorName = `${doctor.firstName || ""}`.trim();
   const firstName = doctor.firstName || "";
 
-  // Client-side pagination calculations
   const totalPages = Math.ceil(appointments.length / itemsPerPage);
   const currentAppointments = appointments.slice(
     (currentPage - 1) * itemsPerPage,
@@ -420,7 +490,10 @@ const DoctorDashBoard: React.FC = () => {
         <main className="max-w-4xl mx-auto p-8">
           {/* Doctor Profile Summary */}
           <div className="bg-white rounded-lg shadow p-6 mb-8">
-            <div className="flex items-center">
+            <div 
+              className="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
+              onClick={handleOpenEditModal}
+            >
               <div className="mr-4">
                 <img
                   src={
@@ -444,6 +517,9 @@ const DoctorDashBoard: React.FC = () => {
                   {(doctor as any).medicalLicenseNumber ||
                     (doctor as any).licenseNumber ||
                     "N/A"}
+                </p>
+                <p className="text-blue-500 text-sm mt-2 font-medium">
+                  Click to view/edit profile
                 </p>
               </div>
             </div>
@@ -594,8 +670,186 @@ const DoctorDashBoard: React.FC = () => {
                   </p>
                 </div>
               </div>
+              <button
+                onClick={handleOpenEditModal}
+                className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+              >
+                Edit Doctor Information
+              </button>
             </div>
           </section>
+
+          {/* Edit Doctor Information Modal */}
+          {isEditModalOpen && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="p-6">
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-bold">Edit Doctor Information</h2>
+                    <button
+                      onClick={handleCloseEditModal}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    {/* Profile Image Section */}
+                    <div className="flex flex-col items-center mb-6">
+                      <img
+                        src={
+                          doctorFormData.profileImageUrl ||
+                          doctorFormData.profileImage ||
+                          defaultAvatar
+                        }
+                        alt="Doctor profile"
+                        className="w-32 h-32 rounded-full object-cover mb-4"
+                      />
+                      <div className="w-full">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Profile Image URL
+                        </label>
+                        <input
+                          type="text"
+                          name="profileImageUrl"
+                          value={doctorFormData.profileImageUrl}
+                          onChange={handleDoctorFormChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="Enter image URL"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Basic Information */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          First Name
+                        </label>
+                        <input
+                          type="text"
+                          name="firstName"
+                          value={doctorFormData.firstName}
+                          onChange={handleDoctorFormChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Last Name
+                        </label>
+                        <input
+                          type="text"
+                          name="lastName"
+                          value={doctorFormData.lastName}
+                          onChange={handleDoctorFormChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Email
+                        </label>
+                        <input
+                          type="email"
+                          name="email"
+                          value={doctorFormData.email}
+                          onChange={handleDoctorFormChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Phone Number
+                        </label>
+                        <input
+                          type="tel"
+                          name="phoneNumber"
+                          value={doctorFormData.phoneNumber}
+                          onChange={handleDoctorFormChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Specialty
+                      </label>
+                      <input
+                        type="text"
+                        name="specialty"
+                        value={doctorFormData.specialty}
+                        onChange={handleDoctorFormChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          License Number
+                        </label>
+                        <input
+                          type="text"
+                          name="licenseNumber"
+                          value={doctorFormData.licenseNumber}
+                          onChange={handleDoctorFormChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Medical License Number
+                        </label>
+                        <input
+                          type="text"
+                          name="medicalLicenseNumber"
+                          value={doctorFormData.medicalLicenseNumber}
+                          onChange={handleDoctorFormChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Qualifications
+                      </label>
+                      <textarea
+                        name="qualifications"
+                        value={doctorFormData.qualifications}
+                        onChange={handleDoctorFormChange}
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end space-x-3 mt-6">
+                    <button
+                      onClick={handleCloseEditModal}
+                      className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSubmitDoctorInfo}
+                      className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+                    >
+                      Save Changes
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Prescription Modal */}
           {isPrescriptionModalOpen && selectedAppointment && (

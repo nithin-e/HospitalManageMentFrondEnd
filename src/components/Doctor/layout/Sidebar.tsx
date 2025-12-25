@@ -16,7 +16,7 @@ import { useState } from "react";
 const sidebarLinks = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/DoctorDashboard" },
   { icon: Clock, label: "Appointments", path: "/AppointListing" },
-  { icon: Users, label: "doctoreProfile", path: "/DoctorProfile" },
+  // { icon: Users, label: "doctoreProfile", path: "/DoctorProfile" },
   // { icon: BellRing, label: "Reminders", path: "/reminders" },
   // { icon: MessageSquare, label: "Chat", path: "/chat" },
   { icon: CalendarDays, label: "Set Dates", path: "/AppointmentScheduler" },

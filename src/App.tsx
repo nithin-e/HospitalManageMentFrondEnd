@@ -104,7 +104,6 @@ const App = () => {
                   <Route path="/AppointListing" element={<DoctorProtectedRoute><AppointMentMangemant /></DoctorProtectedRoute>}/>
                   <Route path="/ListPaymentDoctor" element={<DoctorProtectedRoute><ListPayment/></DoctorProtectedRoute>}/>
                   <Route path="/Prescription" element={<DoctorProtectedRoute><PrescriptionForm/></DoctorProtectedRoute>}/>
-                  <Route path="/DoctorProfile" element={<PrescriptionForm/>}/>
 
                 </Routes>
               </TooltipProvider>
