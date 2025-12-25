@@ -7,7 +7,8 @@ const DoctorCard = ({ doctor }) => {
     firstName = '', 
     lastName = '', 
     specialty = 'General Practice', 
-    profileImageUrl = '', 
+    profileImageUrl
+                 = '', 
     qualifications = '',
     medicalLicenseNumber = '',
     isActive = false
@@ -102,17 +103,13 @@ const DoctorListing = () => {
         
         if (!mounted) return;
         
-        // Handle different response structures
         let doctorData = [];
         
         if (response?.data?.data?.data) {
-          // Structure: response.data.data.data (as shown in console)
           doctorData = response.data.data.data;
         } else if (response?.data?.data) {
-          // Structure: response.data.data
           doctorData = response.data.data;
         } else if (response?.data) {
-          // Structure: response.data
           doctorData = response.data;
         } else if (Array.isArray(response)) {
           // Direct array

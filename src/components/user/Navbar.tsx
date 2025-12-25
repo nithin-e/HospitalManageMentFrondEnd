@@ -597,7 +597,7 @@ const Navbar: React.FC = () => {
     { name: "Home", href: "/", icon: <Home size={20} /> },
     { name: "About", href: "/history", icon: <Info size={20} /> },
     { name: "Services", href: "/services", icon: <Stethoscope size={20} /> },
-    { name: "Doctors", href: "/doctors", icon: <Users size={20} /> },
+    { name: "Doctor", href: "/doctors", icon: <Users size={20} /> },
   ];
 
   useEffect(() => {

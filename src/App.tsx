@@ -71,7 +71,7 @@ const App = () => {
                   <Route path="/register" element={<Register />} />
                   <Route path="*" element={<NotFound />} />
                   <Route path="/" element={<Index />} />
-                  <Route path="/doctors" element={<DoctorList />} />
+                  <Route path="/doctor" element={<DoctorList />} />
                   <Route path="/history" element={<HistoryComponent />} />
                  <Route path="/AppointMent"  element={<ProtectedRoute><AppointMent /></ProtectedRoute>} />
 
