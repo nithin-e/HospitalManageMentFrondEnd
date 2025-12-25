@@ -3,7 +3,24 @@ import { Check, Search, User } from 'lucide-react';
 import { UserfetchingDoctors } from '../../store/userSideApi/UserfetchingDoctors';
 import { useNavigate } from 'react-router-dom';
 
-const DoctorCard = ({ doctor, onBook }) => {
+interface Doctor {
+  id?: string;
+  _id?: string;
+  firstName?: string;
+  lastName?: string;
+  specialty?: string;
+  profileImageUrl?: string;
+  qualifications?: string;
+  medicalLicenseNumber?: string;
+  isActive?: boolean;
+}
+
+interface DoctorCardProps {
+  doctor: Doctor;
+  onBook: (doctor: Doctor) => void;
+}
+
+const DoctorCard: React.FC<DoctorCardProps> = ({ doctor, onBook }) => {
   const { 
     firstName = '', 
     lastName = '', 
@@ -19,27 +36,28 @@ const DoctorCard = ({ doctor, onBook }) => {
 
   return (
     <div className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 p-6 relative overflow-hidden group border border-gray-200">
-      {/* Verified Badge */}
       {isActive && (
         <div className="absolute top-4 right-4 bg-green-100 rounded-full p-1.5 z-10">
           <Check className="w-4 h-4 text-green-600" />
         </div>
       )}
       
-      {/* Accent Line */}
       <div className="absolute top-0 left-0 w-full h-1" style={{ backgroundColor: 'rgb(0, 59, 115)' }}></div>
       
       <div className="flex flex-col items-center">
-        {/* Profile Image */}
         <div className="w-32 h-32 rounded-full overflow-hidden mb-4 border-4 border-gray-100 shadow-md group-hover:border-blue-200 transition-colors">
           {profileImageUrl ? (
             <img 
               src={profileImageUrl} 
               alt={displayName}
               className="w-full h-full object-cover"
-              onError={(e) => {
-                e.target.style.display = 'none';
-                e.target.nextSibling.style.display = 'flex';
+              onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                const nextEl = target.nextSibling as HTMLElement;
+                if (nextEl) {
+                  nextEl.style.display = 'flex';
+                }
               }}
             />
           ) : null}
@@ -51,34 +69,28 @@ const DoctorCard = ({ doctor, onBook }) => {
           </div>
         </div>
         
-        {/* Doctor Name */}
         <h3 className="text-xl font-semibold text-gray-800 mb-1 text-center">
           {displayName}
         </h3>
         
-        {/* Specialty */}
         <p className="font-medium mb-2 text-center" style={{ color: 'rgb(0, 59, 115)' }}>
           {specialty}
         </p>
         
-        {/* Qualifications */}
         {qualifications && (
           <p className="text-sm text-gray-500 mb-3 text-center line-clamp-2">
             {qualifications}
           </p>
         )}
         
-        {/* License Number */}
         {medicalLicenseNumber && (
           <p className="text-xs text-gray-400 mb-4">
             License: {medicalLicenseNumber}
           </p>
         )}
         
-        {/* Divider */}
         <div className="w-12 h-1 rounded-full" style={{ backgroundColor: 'rgb(0, 59, 115)' }}></div>
 
-        {/* Actions */}
         <div className="mt-4 w-full flex items-center justify-center gap-3">
           <button
             onClick={() => onBook(doctor)}
@@ -93,14 +105,14 @@ const DoctorCard = ({ doctor, onBook }) => {
   );
 };
 
-const DoctorListing = () => {
-  const [doctors, setDoctors] = useState([]);
-  const [filtered, setFiltered] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
-  const [sort, setSort] = useState('name-asc');
+const DoctorListing: React.FC = () => {
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [filtered, setFiltered] = useState<Doctor[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState<string>('');
+  const [page, setPage] = useState<number>(1);
+  const [sort, setSort] = useState<string>('name-asc');
   const perPage = 8;
   const navigate = useNavigate();
 
@@ -113,11 +125,10 @@ const DoctorListing = () => {
       
       try {
         const response = await UserfetchingDoctors();
-        console.log('API Response:', response);
         
         if (!mounted) return;
         
-        let doctorData = [];
+        let doctorData: Doctor[] = [];
         
         if (response?.data?.data?.data) {
           doctorData = response.data.data.data;
@@ -132,8 +143,6 @@ const DoctorListing = () => {
         if (!Array.isArray(doctorData)) {
           doctorData = [];
         }
-        
-        console.log('Processed doctor data:', doctorData);
         
         setDoctors(doctorData);
         setFiltered(doctorData);
@@ -165,7 +174,7 @@ const DoctorListing = () => {
       return;
     }
     
-    const filtered = doctors.filter((doctor) => {
+    const filteredDoctors = doctors.filter((doctor) => {
       const firstName = (doctor.firstName || '').toLowerCase();
       const lastName = (doctor.lastName || '').toLowerCase();
       const fullName = `${firstName} ${lastName}`.trim();
@@ -181,7 +190,7 @@ const DoctorListing = () => {
       );
     });
     
-    setFiltered(filtered);
+    setFiltered(filteredDoctors);
     setPage(1);
   }, [search, doctors]);
 
@@ -206,7 +215,7 @@ const DoctorListing = () => {
       case 'specialty-desc':
         return items.sort((a, b) => ((b.specialty || '')).toLowerCase().localeCompare(((a.specialty || '')).toLowerCase()));
       case 'active-first':
-        return items.sort((a, b) => (b.isActive === true) - (a.isActive === true));
+        return items.sort((a, b) => Number(b.isActive === true) - Number(a.isActive === true));
       default:
         return items;
     }
@@ -216,7 +225,7 @@ const DoctorListing = () => {
   const start = (page - 1) * perPage;
   const pageItems = sortedFiltered.slice(start, start + perPage);
 
-  const handleBook = (doctor) => {
+  const handleBook = (doctor: Doctor) => {
     navigate('/AppointMent', { state: { doctor } });
   };
 
@@ -243,8 +252,11 @@ const DoctorListing = () => {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search by name or specialty..."
-                className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 shadow-sm focus:outline-none focus:ring-2 transition-all"
-                style={{ '--tw-ring-color': 'rgb(0, 59, 115)' }}
+                className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all"
+                style={{ 
+                  '--tw-ring-opacity': '0.5',
+                  '--tw-ring-color': 'rgb(0, 59, 115)'
+                } as React.CSSProperties}
               />
             </div>
           </div>
