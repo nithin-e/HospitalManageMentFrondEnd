@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Check, Search, User } from 'lucide-react';
 import { UserfetchingDoctors } from '../../store/userSideApi/UserfetchingDoctors';
+import { useNavigate } from 'react-router-dom';
 
-const DoctorCard = ({ doctor }) => {
+const DoctorCard = ({ doctor, onBook }) => {
   const { 
     firstName = '', 
     lastName = '', 
     specialty = 'General Practice', 
-    profileImageUrl
-                 = '', 
+    profileImageUrl = '',      
     qualifications = '',
     medicalLicenseNumber = '',
     isActive = false
@@ -76,6 +76,16 @@ const DoctorCard = ({ doctor }) => {
         
         {/* Divider */}
         <div className="w-12 h-1 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full"></div>
+
+        {/* Actions */}
+        <div className="mt-4 w-full flex items-center justify-center gap-3">
+          <button
+            onClick={() => onBook && onBook(doctor)}
+            className="px-4 py-2 bg-cyan-600 text-white rounded-lg font-medium shadow-sm hover:bg-cyan-700 transition-all"
+          >
+            Book Now
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -88,7 +98,9 @@ const DoctorListing = () => {
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState('name-asc');
   const perPage = 8;
+  const navigate = useNavigate();
 
   useEffect(() => {
     let mounted = true;
@@ -173,9 +185,41 @@ const DoctorListing = () => {
     setPage(1);
   }, [search, doctors]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
+  const sortedFiltered = useMemo(() => {
+    const items = Array.isArray(filtered) ? [...filtered] : [];
+
+    switch (sort) {
+      case 'name-asc':
+        return items.sort((a, b) => {
+          const aName = `${(a.firstName || '')} ${(a.lastName || '')}`.trim().toLowerCase();
+          const bName = `${(b.firstName || '')} ${(b.lastName || '')}`.trim().toLowerCase();
+          return aName.localeCompare(bName);
+        });
+      case 'name-desc':
+        return items.sort((a, b) => {
+          const aName = `${(a.firstName || '')} ${(a.lastName || '')}`.trim().toLowerCase();
+          const bName = `${(b.firstName || '')} ${(b.lastName || '')}`.trim().toLowerCase();
+          return bName.localeCompare(aName);
+        });
+      case 'specialty-asc':
+        return items.sort((a, b) => ((a.specialty || '')).toLowerCase().localeCompare(((b.specialty || '')).toLowerCase()));
+      case 'specialty-desc':
+        return items.sort((a, b) => ((b.specialty || '')).toLowerCase().localeCompare(((a.specialty || '')).toLowerCase()));
+      case 'active-first':
+        return items.sort((a, b) => (b.isActive === true) - (a.isActive === true));
+      default:
+        return items;
+    }
+  }, [filtered, sort]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedFiltered.length / perPage));
   const start = (page - 1) * perPage;
-  const pageItems = filtered.slice(start, start + perPage);
+  const pageItems = sortedFiltered.slice(start, start + perPage);
+
+  const handleBook = (doctor) => {
+    // Navigate to the appointment page and pass the doctor as location state
+    navigate('/AppointMent', { state: { doctor } });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50 p-4 sm:p-6 lg:p-8">
