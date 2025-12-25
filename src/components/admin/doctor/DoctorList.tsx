@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Search, Filter, ChevronDown, ArrowUpDown, Shield, User, Briefcase, Clock, X, ChevronLeft, ChevronRight, Loader2, RefreshCw, ChevronUp } from "lucide-react";
+import { Search, Filter, ChevronDown, ArrowUpDown, Shield, User, Briefcase, Clock, X, ChevronLeft, ChevronRight, Loader2, RefreshCw, ChevronUp, FileText, Eye, Edit } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/docui/avatar";
 import { Input } from "@/components/ui/docui/input";
 import { Button } from "@/components/ui/docui/button";
@@ -47,23 +47,17 @@ export const DoctorsList = () => {
 
   const debouncedSearchTerm = useDebounce(searchQuery, 500);
 
-  // Handle rejected doctor state from navigation
   useEffect(() => {
     if (location.state?.rejectedDoctor && location.state?.rejectedDoctorEmail) {
       const email = location.state?.rejectedDoctorEmail;
-      console.log('Found rejected doctor with email:', email);
       removeRejectedDoctor(email);
     }
   }, [location.state]);
 
   const removeRejectedDoctor = async (email) => {
     try {
-      console.log('Removing doctor with email:', email);
       setDoctors(prevDoctors => prevDoctors.filter(doctor => doctor.email !== email));
-      console.log('Making API call to delete doctor with email:', email);
       const response = await deleteDoctor(email);
-      console.log('API response:', response);
-      console.log(`Doctor with email ${email} successfully removed`);
     } catch (error) {
       console.error("Error removing rejected doctor:", error);
       fetchDoctorData(currentPage);
@@ -86,7 +80,6 @@ export const DoctorsList = () => {
 
   const fetchDoctorData = async (page = 1) => {
     try {
-     
       if (page === 1 && !searchLoading) {
         setLoading(true);
       } else {
@@ -101,9 +94,7 @@ export const DoctorsList = () => {
         params.append('searchQuery', debouncedSearchTerm.trim());
       }
       
-   
       if (statusFilter !== "all") {
-       
         params.append('status', statusFilter.toLowerCase());
       }
       
@@ -112,10 +103,7 @@ export const DoctorsList = () => {
       params.append('page', page.toString());
       params.append('limit', doctorsPerPage.toString());
 
-      console.log("Fetching doctors with params:", params.toString());
-      
       const response = await doctorPaginationApi(params);
-      console.log('Doctor data response:', response.data);
       
       const responseData = response.data.data;
       
@@ -245,6 +233,22 @@ export const DoctorsList = () => {
 
   const handleDoctorClick = (doctor) => {
     navigate(`/adminDetails/${doctor.id}`, { state: { doctor } });
+  };
+
+  const handleViewLicense = (e, doctor) => {
+    e.stopPropagation(); // Prevent row click from triggering
+    if (doctor.medicalLicenseUrl) {
+      window.open(doctor.medicalLicenseUrl, '_blank');
+    } else {
+      alert("No medical license available for this doctor.");
+    }
+  };
+
+  const handleEditLicense = (e, doctor) => {
+    e.stopPropagation(); // Prevent row click from triggering
+    // Here you can implement edit functionality
+    // For example, open a modal or navigate to edit page
+    navigate(`/admin/edit-license/${doctor.id}`, { state: { doctor } });
   };
 
   // Generate pagination buttons
@@ -525,7 +529,7 @@ export const DoctorsList = () => {
         <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
           <div className="grid grid-cols-12 p-4 bg-gray-50 font-medium border-b border-gray-200">
             <div 
-              className="col-span-5 flex items-center gap-1 cursor-pointer hover:text-blue-600 transition-colors"
+              className="col-span-4 flex items-center gap-1 cursor-pointer hover:text-blue-600 transition-colors"
               onClick={() => toggleSort("name")}
             >
               Doctor
@@ -537,7 +541,7 @@ export const DoctorsList = () => {
               )}
             </div>
             <div 
-              className="col-span-3 flex items-center gap-1 cursor-pointer hover:text-blue-600 transition-colors"
+              className="col-span-2 flex items-center gap-1 cursor-pointer hover:text-blue-600 transition-colors"
               onClick={() => toggleSort("specialty")}
             >
               Specialty
@@ -561,6 +565,7 @@ export const DoctorsList = () => {
                 </span>
               )}
             </div>
+            <div className="col-span-2 text-center">Medical License</div>
           </div>
 
           {/* Doctor rows */}
@@ -574,7 +579,7 @@ export const DoctorsList = () => {
                   className="grid grid-cols-12 items-center p-4 hover:bg-blue-50 cursor-pointer transition-colors duration-200"
                   onClick={() => handleDoctorClick(doctor)}
                 >
-                  <div className="col-span-5 flex items-center gap-3">
+                  <div className="col-span-4 flex items-center gap-3">
                     <Avatar className="h-12 w-12 rounded-full shadow-sm">
                       <AvatarImage src={doctor.profileImageUrl} alt={doctor.name} />
                       <AvatarFallback className="bg-gray-100 text-blue-600">
@@ -594,7 +599,7 @@ export const DoctorsList = () => {
                     </div>
                   </div>
                   
-                  <div className="col-span-3">
+                  <div className="col-span-2">
                     <div className="flex items-center gap-2">
                       <span className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
                         <Briefcase className="w-4 h-4 text-blue-600" />
@@ -612,6 +617,53 @@ export const DoctorsList = () => {
                   
                   <div className="col-span-2 text-sm text-gray-500">
                     {doctor.formattedDate}
+                  </div>
+
+                  <div className="col-span-2">
+                    <div className="flex justify-center gap-2">
+                      {doctor.medicalLicenseUrl ? (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => handleViewLicense(e, doctor)}
+                            className="flex items-center gap-1 text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300"
+                          >
+                            <Eye className="h-3 w-3" />
+                            View
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => handleEditLicense(e, doctor)}
+                            className="flex items-center gap-1 text-green-600 hover:text-green-700 border-green-200 hover:border-green-300"
+                          >
+                            <Edit className="h-3 w-3" />
+                            Edit
+                          </Button>
+                        </>
+                      ) : (
+                        <div className="flex flex-col items-center gap-1">
+                          <div className="px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-sm">
+                            No License
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => handleEditLicense(e, doctor)}
+                            className="flex items-center gap-1 text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300 text-xs"
+                          >
+                            <Edit className="h-3 w-3" />
+                            Add License
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                    {doctor.medicalLicenseNumber && (
+                      <div className="text-xs text-gray-500 text-center mt-1">
+                        #{doctor.medicalLicenseNumber}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
