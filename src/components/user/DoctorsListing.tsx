@@ -80,7 +80,7 @@ const DoctorCard = ({ doctor, onBook }) => {
         {/* Actions */}
         <div className="mt-4 w-full flex items-center justify-center gap-3">
           <button
-            onClick={() => onBook && onBook(doctor)}
+            onClick={() => onBook(doctor)}
             className="px-4 py-2 bg-cyan-600 text-white rounded-lg font-medium shadow-sm hover:bg-cyan-700 transition-all"
           >
             Book Now
@@ -124,11 +124,9 @@ const DoctorListing = () => {
         } else if (response?.data) {
           doctorData = response.data;
         } else if (Array.isArray(response)) {
-          // Direct array
           doctorData = response;
         }
         
-        // Ensure we have an array
         if (!Array.isArray(doctorData)) {
           doctorData = [];
         }
@@ -217,7 +215,7 @@ const DoctorListing = () => {
   const pageItems = sortedFiltered.slice(start, start + perPage);
 
   const handleBook = (doctor) => {
-    // Navigate to the appointment page and pass the doctor as location state
+    // You can pass doctor data via state if needed on the appointment page
     navigate('/AppointMent', { state: { doctor } });
   };
 
@@ -292,7 +290,11 @@ const DoctorListing = () => {
         {!loading && !error && pageItems.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
             {pageItems.map((doctor) => (
-              <DoctorCard key={doctor.id || doctor._id} doctor={doctor} />
+              <DoctorCard 
+                key={doctor.id || doctor._id} 
+                doctor={doctor} 
+                onBook={handleBook}
+              />
             ))}
           </div>
         )}
@@ -315,7 +317,7 @@ const DoctorListing = () => {
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages}
-              className="px-5 py-2.5 bg-white border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow"
+              className="px-5 py-2.5 bg-white border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-clicked transition-all shadow-sm hover:shadow"
             >
               Next
             </button>
