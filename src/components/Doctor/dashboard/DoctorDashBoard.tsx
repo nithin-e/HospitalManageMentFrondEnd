@@ -125,6 +125,38 @@ const DoctorDashBoard: React.FC = () => {
     )}-${String(today.getDate()).padStart(2, "0")}`;
   };
 
+  // Function to shorten URLs
+  const shortenUrl = (url: string): string => {
+    if (!url) return "";
+    
+    try {
+      // For S3 URLs, extract the key/filename
+      const urlObj = new URL(url);
+      
+      // Check if it's an S3 URL
+      if (urlObj.hostname.includes('s3') && urlObj.hostname.includes('amazonaws.com')) {
+        const pathParts = urlObj.pathname.split('/').filter(Boolean);
+        const filename = pathParts[pathParts.length - 1] || 'document';
+        return `S3://${filename}`;
+      }
+      
+      // For other URLs, show domain + filename
+      const domain = urlObj.hostname;
+      const pathname = urlObj.pathname;
+      const filename = pathname.split('/').pop() || 'document';
+      
+      // Return shortened version
+      return `${domain.replace('www.', '')}/${filename.length > 20 ? 
+        filename.substring(0, 20) + '...' : filename}`;
+    } catch {
+      // If URL parsing fails, truncate the URL
+      if (url.length > 30) {
+        return url.substring(0, 30) + '...';
+      }
+      return url;
+    }
+  };
+
   const normalizeDoctorName = (name: string): string => {
     return name
       .toLowerCase()
@@ -685,14 +717,20 @@ const DoctorDashBoard: React.FC = () => {
                   <p className="text-gray-500">Medical License URL</p>
                   <p className="font-medium">
                     {(doctor as any).medicalLicenseUrl ? (
-                      <a 
-                        href={(doctor as any).medicalLicenseUrl} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-blue-500 hover:underline break-all"
-                      >
-                        {(doctor as any).medicalLicenseUrl}
-                      </a>
+                      <>
+                        <a 
+                          href={(doctor as any).medicalLicenseUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-500 hover:underline break-all"
+                          title={(doctor as any).medicalLicenseUrl}
+                        >
+                          {shortenUrl((doctor as any).medicalLicenseUrl)}
+                        </a>
+                        <span className="text-xs text-gray-400 ml-2">
+                          (Click to view full URL)
+                        </span>
+                      </>
                     ) : (
                       "N/A"
                     )}
@@ -743,19 +781,6 @@ const DoctorDashBoard: React.FC = () => {
                         alt="Doctor profile"
                         className="w-32 h-32 rounded-full object-cover mb-4"
                       />
-                      {/* <div className="w-full">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Profile Image URL
-                        </label>
-                        <input
-                          type="text"
-                          name="profileImageUrl"
-                          value={doctorFormData.profileImageUrl}
-                          onChange={handleDoctorFormChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="Enter image URL"
-                        />
-                      </div> */}
                     </div>
 
                     {/* Basic Information */}
@@ -865,24 +890,25 @@ const DoctorDashBoard: React.FC = () => {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="https://example.com/license.pdf"
                       />
-                      <p className="text-xs text-gray-500 mt-1">
-                        Enter the URL where your medical license is hosted (PDF, image, or webpage)
-                      </p>
-                      {doctorFormData.medicalLicenseUrl && (
-                        <div className="mt-2">
+                      <div className="flex items-center mt-2">
+                        <p className="text-xs text-gray-500 mr-2">
+                          Current: 
+                        </p>
+                        {doctorFormData.medicalLicenseUrl && (
                           <a 
                             href={doctorFormData.medicalLicenseUrl} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="text-blue-500 hover:underline text-sm flex items-center gap-1"
+                            className="text-blue-500 hover:underline text-xs flex items-center gap-1"
+                            title={doctorFormData.medicalLicenseUrl}
                           >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                             </svg>
-                            Preview current license
+                            {shortenUrl(doctorFormData.medicalLicenseUrl)}
                           </a>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
 
                     <div>
