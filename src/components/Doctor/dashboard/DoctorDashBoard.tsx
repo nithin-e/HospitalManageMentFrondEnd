@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import Sidebar from "../layout/Sidebar";
 import { useDispatch, useSelector } from "react-redux";
@@ -106,6 +106,9 @@ const DoctorDashBoard: React.FC = () => {
     profileImage: "",
     medicalLicenseUrl: "",
   });
+  const [profileImagePreview, setProfileImagePreview] = useState<string>("");
+  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const itemsPerPage = 5;
 
@@ -130,26 +133,21 @@ const DoctorDashBoard: React.FC = () => {
     if (!url) return "";
     
     try {
-      // For S3 URLs, extract the key/filename
       const urlObj = new URL(url);
       
-      // Check if it's an S3 URL
       if (urlObj.hostname.includes('s3') && urlObj.hostname.includes('amazonaws.com')) {
         const pathParts = urlObj.pathname.split('/').filter(Boolean);
         const filename = pathParts[pathParts.length - 1] || 'document';
         return `S3://${filename}`;
       }
       
-      // For other URLs, show domain + filename
       const domain = urlObj.hostname;
       const pathname = urlObj.pathname;
       const filename = pathname.split('/').pop() || 'document';
       
-      // Return shortened version
       return `${domain.replace('www.', '')}/${filename.length > 20 ? 
         filename.substring(0, 20) + '...' : filename}`;
     } catch {
-      // If URL parsing fails, truncate the URL
       if (url.length > 30) {
         return url.substring(0, 30) + '...';
       }
@@ -254,6 +252,7 @@ const DoctorDashBoard: React.FC = () => {
 
   const handleOpenEditModal = () => {
     if (doctor) {
+      const profileImage = (doctor as any).profileImageUrl || (doctor as any).profileImage || "";
       setDoctorFormData({
         firstName: doctor.firstName || "",
         lastName: (doctor as any).lastName || "",
@@ -263,16 +262,19 @@ const DoctorDashBoard: React.FC = () => {
         licenseNumber: (doctor as any).licenseNumber || "",
         medicalLicenseNumber: (doctor as any).medicalLicenseNumber || "",
         qualifications: (doctor as any).qualifications || "",
-        profileImageUrl: (doctor as any).profileImageUrl || "",
-        profileImage: (doctor as any).profileImage || "",
+        profileImageUrl: profileImage,
+        profileImage: profileImage,
         medicalLicenseUrl: (doctor as any).medicalLicenseUrl || "",
       });
+      setProfileImagePreview(profileImage || defaultAvatar);
+      setProfileImageFile(null);
     }
     setIsEditModalOpen(true);
   };
 
   const handleCloseEditModal = () => {
     setIsEditModalOpen(false);
+    setProfileImageFile(null);
   };
 
   const handleDoctorFormChange = (
@@ -285,15 +287,93 @@ const DoctorDashBoard: React.FC = () => {
     }));
   };
 
+  const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Check file size (limit to 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert("File size should be less than 5MB");
+        return;
+      }
+
+      // Check file type
+      if (!file.type.startsWith('image/')) {
+        alert("Please select an image file");
+        return;
+      }
+
+      setProfileImageFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setProfileImagePreview(result);
+        setDoctorFormData((prev) => ({
+          ...prev,
+          profileImage: result,
+          profileImageUrl: result,
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveProfileImage = () => {
+    setProfileImageFile(null);
+    setProfileImagePreview(defaultAvatar);
+    setDoctorFormData((prev) => ({
+      ...prev,
+      profileImage: "",
+      profileImageUrl: "",
+    }));
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const handleSubmitDoctorInfo = async () => {
     try {
-      // Here you would typically dispatch an action to update doctor info
-      console.log("Updated doctor info:", doctorFormData);
-      // Example: await dispatch(updateDoctorInfo(doctorFormData));
+      // Create form data for file upload
+      const formData = new FormData();
       
-      // For now, just show a success message
+      // Append all form fields
+      Object.keys(doctorFormData).forEach(key => {
+        if (key !== 'profileImage' || profileImageFile) {
+          formData.append(key, doctorFormData[key]);
+        }
+      });
+
+      // Append the profile image file if selected
+      if (profileImageFile) {
+        formData.append('profileImageFile', profileImageFile);
+      }
+
+      // Here you would typically dispatch an action to update doctor info
+      console.log("Updated doctor info:", {
+        ...doctorFormData,
+        profileImageFile: profileImageFile ? profileImageFile.name : "No new image"
+      });
+      
+      // Example API call:
+      // const response = await fetch('/api/doctor/update-profile', {
+      //   method: 'PUT',
+      //   body: formData,
+      // });
+      
+      // if (response.ok) {
+      //   const result = await response.json();
+      //   // Update local state with new data
+      //   // dispatch(updateDoctorProfile(result));
+      // }
+
       alert("Doctor information updated successfully!");
       handleCloseEditModal();
+      
+      // Refresh doctor data
+      if (doctor?.email) {
+        await fetchDoctorData(doctor.email);
+      }
     } catch (error) {
       console.error("Failed to update doctor information:", error);
       alert("Failed to update doctor information. Please try again.");
@@ -773,14 +853,38 @@ const DoctorDashBoard: React.FC = () => {
                     {/* Profile Image Section */}
                     <div className="flex flex-col items-center mb-6">
                       <img
-                        src={
-                          doctorFormData.profileImageUrl ||
-                          doctorFormData.profileImage ||
-                          defaultAvatar
-                        }
-                        alt="Doctor profile"
-                        className="w-32 h-32 rounded-full object-cover mb-4"
+                        src={profileImagePreview || defaultAvatar}
+                        alt="Doctor profile preview"
+                        className="w-32 h-32 rounded-full object-cover mb-4 border-2 border-gray-200"
                       />
+                      <div className="flex flex-col items-center gap-2">
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          accept="image/*"
+                          onChange={handleProfileImageChange}
+                          className="hidden"
+                          id="profile-image-input"
+                        />
+                        <label
+                          htmlFor="profile-image-input"
+                          className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors cursor-pointer text-sm"
+                        >
+                          Change Profile Image
+                        </label>
+                        {profileImagePreview && profileImagePreview !== defaultAvatar && (
+                          <button
+                            type="button"
+                            onClick={handleRemoveProfileImage}
+                            className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors text-xs"
+                          >
+                            Remove Image
+                          </button>
+                        )}
+                        <p className="text-xs text-gray-500 mt-1">
+                          Max file size: 5MB. Supported formats: JPG, PNG, GIF
+                        </p>
+                      </div>
                     </div>
 
                     {/* Basic Information */}
