@@ -5,7 +5,7 @@ export const changeDoctorInfo = async (formData) => {
   try {
     const response = await axiosInstance.post(
       DOCTOR_ROUTES.CHANGE_DOCTOR_INFO,
-      { formData }
+       formData 
     );
 
     console.log("Backend API response:", response);
@@ -15,3 +15,5 @@ export const changeDoctorInfo = async (formData) => {
     throw error;
   }
 };
+
+////////////////////////////
