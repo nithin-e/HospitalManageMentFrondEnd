@@ -234,8 +234,7 @@ const DoctorListing: React.FC = () => {
   return (
     <>
       <Navbar/>
-     {/* <div className="min-h-screen bg-gradient-to-br from-blue-50 via-gray-50 to-blue-100 p-4 sm:p-6 lg:p-8"> */}
-<div className="min-h-screen mt-[50px] bg-gradient-to-br from-blue-50 via-gray-50 to-blue-100 p-4 sm:p-6 lg:p-8">
+<div className="min-h-screen mt-[30px] bg-gradient-to-br from-blue-50 via-gray-50 to-blue-100 p-4 sm:p-6 lg:p-8">
 
     
       <div className="max-w-7xl mx-auto">
