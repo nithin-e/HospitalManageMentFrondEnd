@@ -403,55 +403,124 @@ const DoctorDashBoard: React.FC = () => {
     return isValid;
   };
 
+
+  // const handleSubmitDoctorInfo = async () => {
+  //   if (!validateForm()) {
+  //     return;
+  //   }
+
+  //   setIsSubmitting(true);
+  //   try {
+  //     const formData = new FormData();
+      
+  //     Object.keys(doctorFormData).forEach(key => {
+  //       if (key === 'profileImage' && profileImageFile) {
+  //         return; 
+  //       }
+  //       formData.append(key, doctorFormData[key]);
+  //     });
+
+  //     if (profileImageFile) {
+  //       formData.append('profileImage', profileImageFile);
+  //     } else if (!doctorFormData.profileImageUrl) {
+  //       formData.append('profileImage', '');
+  //     }
+
+  //     if (doctor?.id) {
+  //       formData.append('doctorId', doctor.id);
+  //     }
+
+  //     const response: AxiosResponse<ApiResponse> = await changeDoctorInfo(formData);
+      
+  //     if (response.data.success) {
+  //       handleCloseEditModal();
+        
+  //       if (doctor?.email) {
+  //         await fetchDoctorData(doctor.email);
+  //       }
+        
+  //       await fetchUserFullAppointments();
+  //     } else {
+  //       throw new Error(response.data.message || "Failed to update doctor information");
+  //     }
+  //   } catch (error: any) {
+  //     console.error("Failed to update doctor information:", error);
+  //     setFormErrors((prev) => ({
+  //       ...prev,
+  //       form: error.message || "Failed to update doctor information. Please try again.",
+  //     }));
+  //   } finally {
+  //     setIsSubmitting(false);
+  //   }
+  // };
+
+
   const handleSubmitDoctorInfo = async () => {
     if (!validateForm()) {
-      return;
+        return;
     }
 
     setIsSubmitting(true);
     try {
-      const formData = new FormData();
-      
-      Object.keys(doctorFormData).forEach(key => {
-        if (key === 'profileImage' && profileImageFile) {
-          return; 
-        }
-        formData.append(key, doctorFormData[key]);
-      });
-
-      if (profileImageFile) {
-        formData.append('profileImage', profileImageFile);
-      } else if (!doctorFormData.profileImageUrl) {
-        formData.append('profileImage', '');
-      }
-
-      if (doctor?.id) {
-        formData.append('doctorId', doctor.id);
-      }
-
-      const response: AxiosResponse<ApiResponse> = await changeDoctorInfo(formData);
-      
-      if (response.data.success) {
-        handleCloseEditModal();
+        const formData = new FormData();
         
-        if (doctor?.email) {
-          await fetchDoctorData(doctor.email);
-        }
+        // Append ALL fields including email
+        formData.append('email', doctorFormData.email);
+        formData.append('firstName', doctorFormData.firstName);
+        formData.append('lastName', doctorFormData.lastName);
+        formData.append('phoneNumber', doctorFormData.phoneNumber);
+        formData.append('specialty', doctorFormData.specialty);
+        formData.append('qualifications', doctorFormData.qualifications);
+        formData.append('licenseNumber', doctorFormData.licenseNumber);
+        formData.append('medicalLicenseNumber', doctorFormData.medicalLicenseNumber);
         
-        await fetchUserFullAppointments();
-      } else {
-        throw new Error(response.data.message || "Failed to update doctor information");
-      }
+        // Append the existing URL fields if they exist
+        if (doctorFormData.medicalLicenseUrl) {
+            formData.append('medicalLicenseUrl', doctorFormData.medicalLicenseUrl);
+        }
+        if (doctorFormData.profileImageUrl) {
+            formData.append('profileImageUrl', doctorFormData.profileImageUrl);
+        }
+
+        // Append profile image file with the correct field name
+        if (profileImageFile) {
+            formData.append('profileImageFile', profileImageFile);
+        }
+
+        // Append doctorId if available
+        if (doctor?.id) {
+            formData.append('doctorId', doctor.id);
+        }
+
+        // Debug: Log what's in FormData
+        console.log("FormData contents:");
+        for (let pair of formData.entries()) {
+            console.log(pair[0] + ': ', pair[1]);
+        }
+
+        const response: AxiosResponse<ApiResponse> = await changeDoctorInfo(formData);
+        
+        if (response.data.success) {
+            handleCloseEditModal();
+            
+            if (doctor?.email) {
+                await fetchDoctorData(doctor.email);
+            }
+            
+            await fetchUserFullAppointments();
+        } else {
+            throw new Error(response.data.message || "Failed to update doctor information");
+        }
     } catch (error: any) {
-      console.error("Failed to update doctor information:", error);
-      setFormErrors((prev) => ({
-        ...prev,
-        form: error.message || "Failed to update doctor information. Please try again.",
-      }));
+        console.error("Failed to update doctor information:", error);
+        setFormErrors((prev) => ({
+            ...prev,
+            form: error.message || "Failed to update doctor information. Please try again.",
+        }));
     } finally {
-      setIsSubmitting(false);
+        setIsSubmitting(false);
     }
-  };
+};
 
   useEffect(() => {
     if (email) {
