@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Check, Search, User } from 'lucide-react';
 import { UserfetchingDoctors } from '../../store/userSideApi/UserfetchingDoctors';
 import { useNavigate } from 'react-router-dom';
+import Navbar from './Navbar';
+import Footer from './Footer';
 
 interface Doctor {
   id?: string;
@@ -231,6 +233,7 @@ const DoctorListing: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-gray-50 to-blue-100 p-4 sm:p-6 lg:p-8">
+      <Navbar/>
       <div className="max-w-7xl mx-auto">
         {/* Header Section */}
         <div className="text-center mb-8 sm:mb-12">
@@ -339,6 +342,7 @@ const DoctorListing: React.FC = () => {
           </div>
         )}
       </div>
+      <Footer/>
     </div>
   );
 };

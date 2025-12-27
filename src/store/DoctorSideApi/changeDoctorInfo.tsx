@@ -7,7 +7,6 @@ export const changeDoctorInfo = async (formData) => {
       DOCTOR_ROUTES.CHANGE_DOCTOR_INFO,
        formData 
     );
-
     console.log("Backend API response:", response);
     return response;
   } catch (error) {
@@ -16,4 +15,3 @@ export const changeDoctorInfo = async (formData) => {
   }
 };
 
-////////////////////////////

@@ -464,7 +464,6 @@ const DoctorDashBoard: React.FC = () => {
     try {
         const formData = new FormData();
         
-        // Append ALL fields including email
         formData.append('email', doctorFormData.email);
         formData.append('firstName', doctorFormData.firstName);
         formData.append('lastName', doctorFormData.lastName);
@@ -474,7 +473,6 @@ const DoctorDashBoard: React.FC = () => {
         formData.append('licenseNumber', doctorFormData.licenseNumber);
         formData.append('medicalLicenseNumber', doctorFormData.medicalLicenseNumber);
         
-        // Append the existing URL fields if they exist
         if (doctorFormData.medicalLicenseUrl) {
             formData.append('medicalLicenseUrl', doctorFormData.medicalLicenseUrl);
         }
@@ -482,17 +480,14 @@ const DoctorDashBoard: React.FC = () => {
             formData.append('profileImageUrl', doctorFormData.profileImageUrl);
         }
 
-        // Append profile image file with the correct field name
         if (profileImageFile) {
             formData.append('profileImageFile', profileImageFile);
         }
 
-        // Append doctorId if available
         if (doctor?.id) {
             formData.append('doctorId', doctor.id);
         }
 
-        // Debug: Log what's in FormData
         console.log("FormData contents:");
         for (let pair of formData.entries()) {
             console.log(pair[0] + ': ', pair[1]);
