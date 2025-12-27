@@ -41,6 +41,7 @@ export const DOCTOR_ROUTES = {
   FETCHING_PRESCRIPTION: "/api/doctor/fetchingPrescription",
   MAKING_APPOINTMENT:  "/api/auth/user/makingAppointMent",
   REFRESH_TOCKEN_API: "/api/user/refresh",
+  CHANGE_DOCTOR_INFO:"/api/user/changeDoctorProfile"
 };
 
 

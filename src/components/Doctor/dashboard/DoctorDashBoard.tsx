@@ -10,6 +10,8 @@ import { AddPrescription } from "@/store/DoctorSideApi/addPrescription";
 import StatusCard from "../components/StatusCard";
 import EnhancedAppointmentCard from "./EnhancedAppointmentCard";
 import { useSocket } from "@/context/socketContext";
+import { changeDoctorInfo } from "@/store/DoctorSideApi/changeDoctorInfo";
+import { AxiosResponse } from "axios";
 
 const defaultAvatar =
   "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80";
@@ -55,6 +57,25 @@ interface DoctorFormData {
   profileImage: string;
   medicalLicenseUrl: string;
   [key: string]: any;
+}
+
+interface FormErrors {
+  firstName?: string;
+  email?: string;
+  specialty?: string;
+  licenseNumber?: string;
+  phoneNumber?: string;
+  medicalLicenseNumber?: string;
+  form?: string;
+  profileImage?: string;
+  [key: string]: string | undefined;
+}
+
+// Interface for API response
+interface ApiResponse {
+  success: boolean;
+  message: string;
+  data?: any;
 }
 
 const DoctorDashBoard: React.FC = () => {
@@ -108,6 +129,8 @@ const DoctorDashBoard: React.FC = () => {
   });
   const [profileImagePreview, setProfileImagePreview] = useState<string>("");
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const itemsPerPage = 5;
@@ -210,13 +233,15 @@ const DoctorDashBoard: React.FC = () => {
   const handleStartButtonClick = (appointment: AppointmentData) => {
     stopBeeping(appointment.id || "");
     const roomId = `consultation_${doctor?.id}_${appointment.id}_${Date.now()}`;
-    socket.emit("initiateConsultation", {
-      appointmentId: appointment.id,
-      patientId: appointment.userId,
-      url: `https://healnova.fun/Video-call/${roomId}`,
-      doctorId: doctor?.id,
-      doctorName: `${doctor?.firstName} ${"doctor"}`,
-    });
+    if (socket) {
+      socket.emit("initiateConsultation", {
+        appointmentId: appointment.id,
+        patientId: appointment.userId,
+        url: `https://healnova.fun/Video-call/${roomId}`,
+        doctorId: doctor?.id,
+        doctorName: `${doctor?.firstName} ${"doctor"}`,
+      });
+    }
     navigate(`/Video-call/${roomId}`);
   };
 
@@ -238,8 +263,9 @@ const DoctorDashBoard: React.FC = () => {
         time: selectedAppointment.startTime,
       };
 
-      const res = await AddPrescription(prescriptionData);
-      if (res.success) {
+      const response = await AddPrescription(prescriptionData);
+      // Access the data property from the Axios response
+      if (response.data?.success) {
         setIsPrescriptionModalOpen(false);
         setPrescriptionText("");
         fetchUserFullAppointments();
@@ -268,6 +294,7 @@ const DoctorDashBoard: React.FC = () => {
       });
       setProfileImagePreview(profileImage || defaultAvatar);
       setProfileImageFile(null);
+      setFormErrors({});
     }
     setIsEditModalOpen(true);
   };
@@ -275,6 +302,7 @@ const DoctorDashBoard: React.FC = () => {
   const handleCloseEditModal = () => {
     setIsEditModalOpen(false);
     setProfileImageFile(null);
+    setFormErrors({});
   };
 
   const handleDoctorFormChange = (
@@ -285,35 +313,45 @@ const DoctorDashBoard: React.FC = () => {
       ...prev,
       [name]: value,
     }));
+    if (formErrors[name]) {
+      setFormErrors((prev) => ({
+        ...prev,
+        [name]: undefined,
+      }));
+    }
   };
 
   const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Check file size (limit to 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        alert("File size should be less than 5MB");
+        setFormErrors((prev) => ({
+          ...prev,
+          profileImage: "File size should be less than 5MB",
+        }));
         return;
       }
 
-      // Check file type
       if (!file.type.startsWith('image/')) {
-        alert("Please select an image file");
+        setFormErrors((prev) => ({
+          ...prev,
+          profileImage: "Please select an image file (JPG, PNG, GIF)",
+        }));
         return;
       }
 
       setProfileImageFile(file);
       
+      setFormErrors((prev) => ({
+        ...prev,
+        profileImage: undefined,
+      }));
+
       // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
         const result = reader.result as string;
         setProfileImagePreview(result);
-        setDoctorFormData((prev) => ({
-          ...prev,
-          profileImage: result,
-          profileImageUrl: result,
-        }));
       };
       reader.readAsDataURL(file);
     }
@@ -332,51 +370,92 @@ const DoctorDashBoard: React.FC = () => {
     }
   };
 
+  const validateForm = (): boolean => {
+    const errors: FormErrors = {};
+    let isValid = true;
+
+    if (!doctorFormData.firstName.trim()) {
+      errors.firstName = "First name is required";
+      isValid = false;
+    }
+
+    if (!doctorFormData.email.trim()) {
+      errors.email = "Email is required";
+      isValid = false;
+    } else if (!/\S+@\S+\.\S+/.test(doctorFormData.email)) {
+      errors.email = "Email is invalid";
+      isValid = false;
+    }
+
+    if (!doctorFormData.specialty.trim()) {
+      errors.specialty = "Specialty is required";
+      isValid = false;
+    }
+
+    if (!doctorFormData.licenseNumber.trim()) {
+      errors.licenseNumber = "License number is required";
+      isValid = false;
+    }
+
+    if (doctorFormData.phoneNumber && !/^[+]?[\d\s\-()]+$/.test(doctorFormData.phoneNumber)) {
+      errors.phoneNumber = "Phone number is invalid";
+      isValid = false;
+    }
+
+    setFormErrors(errors);
+    return isValid;
+  };
+
   const handleSubmitDoctorInfo = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
-      // Create form data for file upload
       const formData = new FormData();
       
-      // Append all form fields
       Object.keys(doctorFormData).forEach(key => {
-        if (key !== 'profileImage' || profileImageFile) {
-          formData.append(key, doctorFormData[key]);
+        if (key === 'profileImage' && profileImageFile) {
+          return; 
         }
+        formData.append(key, doctorFormData[key]);
       });
 
-      // Append the profile image file if selected
       if (profileImageFile) {
-        formData.append('profileImageFile', profileImageFile);
+        formData.append('profileImage', profileImageFile);
+      } else if (!doctorFormData.profileImageUrl) {
+        formData.append('profileImage', '');
       }
 
-      // Here you would typically dispatch an action to update doctor info
-      console.log("Updated doctor info:", {
-        ...doctorFormData,
-        profileImageFile: profileImageFile ? profileImageFile.name : "No new image"
-      });
-      
-      // Example API call:
-      // const response = await fetch('/api/doctor/update-profile', {
-      //   method: 'PUT',
-      //   body: formData,
-      // });
-      
-      // if (response.ok) {
-      //   const result = await response.json();
-      //   // Update local state with new data
-      //   // dispatch(updateDoctorProfile(result));
-      // }
-
-      alert("Doctor information updated successfully!");
-      handleCloseEditModal();
-      
-      // Refresh doctor data
-      if (doctor?.email) {
-        await fetchDoctorData(doctor.email);
+      // Add doctor ID for backend reference
+      if (doctor?.id) {
+        formData.append('doctorId', doctor.id);
       }
-    } catch (error) {
+
+      // Call the API
+      const response: AxiosResponse<ApiResponse> = await changeDoctorInfo(formData);
+      
+      // Access the data property from the Axios response
+      if (response.data.success) {
+        handleCloseEditModal();
+        
+        if (doctor?.email) {
+          await fetchDoctorData(doctor.email);
+        }
+        
+        await fetchUserFullAppointments();
+      } else {
+        throw new Error(response.data.message || "Failed to update doctor information");
+      }
+    } catch (error: any) {
       console.error("Failed to update doctor information:", error);
-      alert("Failed to update doctor information. Please try again.");
+      setFormErrors((prev) => ({
+        ...prev,
+        form: error.message || "Failed to update doctor information. Please try again.",
+      }));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -391,7 +470,7 @@ const DoctorDashBoard: React.FC = () => {
   const fetchDoctorData = async (email: string) => {
     try {
       setLoading(true);
-      const res = await dispatch(fetchDoctorDashBoardDatas(email));
+      await dispatch(fetchDoctorDashBoardDatas(email));
 
       setAvailableTimes([
         {
@@ -514,7 +593,7 @@ const DoctorDashBoard: React.FC = () => {
     return () => {
       beepingTimers.forEach((timer) => clearTimeout(timer));
     };
-  }, []);
+  }, [beepingTimers]);
 
   if (loading) {
     return (
@@ -849,6 +928,13 @@ const DoctorDashBoard: React.FC = () => {
                     </button>
                   </div>
                   
+                  {/* Form-level error */}
+                  {formErrors.form && (
+                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                      <p className="text-red-600 text-sm">{formErrors.form}</p>
+                    </div>
+                  )}
+                  
                   <div className="space-y-4">
                     {/* Profile Image Section */}
                     <div className="flex flex-col items-center mb-6">
@@ -881,6 +967,9 @@ const DoctorDashBoard: React.FC = () => {
                             Remove Image
                           </button>
                         )}
+                        {formErrors.profileImage && (
+                          <p className="text-red-500 text-xs mt-1">{formErrors.profileImage}</p>
+                        )}
                         <p className="text-xs text-gray-500 mt-1">
                           Max file size: 5MB. Supported formats: JPG, PNG, GIF
                         </p>
@@ -891,15 +980,21 @@ const DoctorDashBoard: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          First Name
+                          First Name *
                         </label>
                         <input
                           type="text"
                           name="firstName"
                           value={doctorFormData.firstName}
                           onChange={handleDoctorFormChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                            formErrors.firstName ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                          required
                         />
+                        {formErrors.firstName && (
+                          <p className="text-red-500 text-xs mt-1">{formErrors.firstName}</p>
+                        )}
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -918,15 +1013,21 @@ const DoctorDashBoard: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Email
+                          Email *
                         </label>
                         <input
                           type="email"
                           name="email"
                           value={doctorFormData.email}
                           onChange={handleDoctorFormChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                            formErrors.email ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                          required
                         />
+                        {formErrors.email && (
+                          <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>
+                        )}
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -937,36 +1038,54 @@ const DoctorDashBoard: React.FC = () => {
                           name="phoneNumber"
                           value={doctorFormData.phoneNumber}
                           onChange={handleDoctorFormChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                            formErrors.phoneNumber ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                          placeholder="+1 (555) 123-4567"
                         />
+                        {formErrors.phoneNumber && (
+                          <p className="text-red-500 text-xs mt-1">{formErrors.phoneNumber}</p>
+                        )}
                       </div>
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Specialty
+                        Specialty *
                       </label>
                       <input
                         type="text"
                         name="specialty"
                         value={doctorFormData.specialty}
                         onChange={handleDoctorFormChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          formErrors.specialty ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                        required
                       />
+                      {formErrors.specialty && (
+                        <p className="text-red-500 text-xs mt-1">{formErrors.specialty}</p>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          License Number
+                          License Number *
                         </label>
                         <input
                           type="text"
                           name="licenseNumber"
                           value={doctorFormData.licenseNumber}
                           onChange={handleDoctorFormChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                            formErrors.licenseNumber ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                          required
                         />
+                        {formErrors.licenseNumber && (
+                          <p className="text-red-500 text-xs mt-1">{formErrors.licenseNumber}</p>
+                        )}
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -977,8 +1096,13 @@ const DoctorDashBoard: React.FC = () => {
                           name="medicalLicenseNumber"
                           value={doctorFormData.medicalLicenseNumber}
                           onChange={handleDoctorFormChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                            formErrors.medicalLicenseNumber ? 'border-red-500' : 'border-gray-300'
+                          }`}
                         />
+                        {formErrors.medicalLicenseNumber && (
+                          <p className="text-red-500 text-xs mt-1">{formErrors.medicalLicenseNumber}</p>
+                        )}
                       </div>
                     </div>
 
@@ -1025,6 +1149,7 @@ const DoctorDashBoard: React.FC = () => {
                         onChange={handleDoctorFormChange}
                         rows={3}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="MD, PhD, Board Certified, etc."
                       />
                     </div>
                   </div>
@@ -1033,14 +1158,18 @@ const DoctorDashBoard: React.FC = () => {
                     <button
                       onClick={handleCloseEditModal}
                       className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+                      disabled={isSubmitting}
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleSubmitDoctorInfo}
-                      className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+                      disabled={isSubmitting}
+                      className={`px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors ${
+                        isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
                     >
-                      Save Changes
+                      {isSubmitting ? 'Saving...' : 'Save Changes'}
                     </button>
                   </div>
                 </div>

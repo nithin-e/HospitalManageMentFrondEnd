@@ -1,7 +1,26 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Search, Filter, ChevronDown, ArrowUpDown, Shield, User, Briefcase, Clock, X, ChevronLeft, ChevronRight, Loader2, RefreshCw, ChevronUp } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/docui/avatar";
+import {
+  Search,
+  Filter,
+  ChevronDown,
+  ArrowUpDown,
+  Shield,
+  User,
+  Briefcase,
+  Clock,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  RefreshCw,
+  ChevronUp,
+} from "lucide-react";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/docui/avatar";
 import { Input } from "@/components/ui/docui/input";
 import { Button } from "@/components/ui/docui/button";
 import { doctorPaginationApi } from "@/store/AdminSideApi/doctorPaginationApi";
@@ -41,7 +60,7 @@ export const DoctorsList = () => {
   const [doctorsPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  
+
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -51,18 +70,17 @@ export const DoctorsList = () => {
   useEffect(() => {
     if (location.state?.rejectedDoctor && location.state?.rejectedDoctorEmail) {
       const email = location.state?.rejectedDoctorEmail;
-      console.log('Found rejected doctor with email:', email);
       removeRejectedDoctor(email);
     }
   }, [location.state]);
 
   const removeRejectedDoctor = async (email) => {
     try {
-      console.log('Removing doctor with email:', email);
-      setDoctors(prevDoctors => prevDoctors.filter(doctor => doctor.email !== email));
-      console.log('Making API call to delete doctor with email:', email);
+      setDoctors((prevDoctors) =>
+        prevDoctors.filter((doctor) => doctor.email !== email)
+      );
       const response = await deleteDoctor(email);
-      console.log('API response:', response);
+      console.log("API response:", response);
       console.log(`Doctor with email ${email} successfully removed`);
     } catch (error) {
       console.error("Error removing rejected doctor:", error);
@@ -71,7 +89,7 @@ export const DoctorsList = () => {
   };
 
   useEffect(() => {
-    setCurrentPage(1); 
+    setCurrentPage(1);
     fetchDoctorData(1);
   }, [statusFilter, sortField, sortDirection]);
 
@@ -86,47 +104,50 @@ export const DoctorsList = () => {
 
   const fetchDoctorData = async (page = 1) => {
     try {
-     
       if (page === 1 && !searchLoading) {
         setLoading(true);
       } else {
         setSearchLoading(true);
       }
-      
+
       setError(null);
 
       const params = new URLSearchParams();
 
       if (debouncedSearchTerm.trim()) {
-        params.append('searchQuery', debouncedSearchTerm.trim());
+        params.append("searchQuery", debouncedSearchTerm.trim());
       }
-      
-   
+
       if (statusFilter !== "all") {
-       
-        params.append('status', statusFilter.toLowerCase());
+        params.append("status", statusFilter.toLowerCase());
       }
-      
-      params.append('sortBy', sortField);
-      params.append('sortDirection', sortDirection);
-      params.append('page', page.toString());
-      params.append('limit', doctorsPerPage.toString());
+
+      params.append("sortBy", sortField);
+      params.append("sortDirection", sortDirection);
+      params.append("page", page.toString());
+      params.append("limit", doctorsPerPage.toString());
 
       console.log("Fetching doctors with params:", params.toString());
-      
+
       const response = await doctorPaginationApi(params);
-      console.log('Doctor data response:', response.data);
-      
+      console.log("Doctor data response:", response.data);
+
       const responseData = response.data.data;
-      
+
       if (!responseData || !responseData.success) {
         throw new Error(responseData?.message || "Failed to fetch doctors");
       }
 
-      const { doctors: doctorData, totalCount, approvedCount, pendingCount, declinedCount } = responseData;
+      const {
+        doctors: doctorData,
+        totalCount,
+        approvedCount,
+        pendingCount,
+        declinedCount,
+      } = responseData;
 
       // Transform data
-      const transformedDoctors = doctorData.map(doctor => ({
+      const transformedDoctors = doctorData.map((doctor) => ({
         id: doctor.id,
         name: `${doctor.firstName} ${doctor.lastName}`,
         firstName: doctor.firstName,
@@ -143,7 +164,7 @@ export const DoctorsList = () => {
         agreeTerms: doctor.agreeTerms,
         createdAt: doctor.createdAt,
         formattedDate: new Date(doctor.createdAt).toLocaleDateString(),
-        isActive: doctor.isActive
+        isActive: doctor.isActive,
       }));
 
       setDoctors(transformedDoctors);
@@ -152,10 +173,9 @@ export const DoctorsList = () => {
       setPendingDoctors(pendingCount || 0);
       setDeclinedDoctors(declinedCount || 0);
       setCurrentPage(page);
-      
+
       const calculatedPages = Math.ceil((totalCount || 0) / doctorsPerPage);
       setTotalPages(calculatedPages || 1);
-
     } catch (error) {
       console.error("Error fetching doctors:", error);
       setError(error.message || "Failed to load doctors. Please try again.");
@@ -213,32 +233,32 @@ export const DoctorsList = () => {
   const getStatusIconAndColor = (status) => {
     switch (status) {
       case "Approved":
-        return { 
-          color: "text-emerald-500", 
-          bgColor: "bg-emerald-50", 
+        return {
+          color: "text-emerald-500",
+          bgColor: "bg-emerald-50",
           borderColor: "border-emerald-200",
-          icon: <Shield className="w-4 h-4 text-emerald-500" />
+          icon: <Shield className="w-4 h-4 text-emerald-500" />,
         };
       case "Pending":
-        return { 
-          color: "text-amber-500", 
-          bgColor: "bg-amber-50", 
+        return {
+          color: "text-amber-500",
+          bgColor: "bg-amber-50",
           borderColor: "border-amber-200",
-          icon: <Clock className="w-4 h-4 text-amber-500" />
+          icon: <Clock className="w-4 h-4 text-amber-500" />,
         };
       case "Declined":
-        return { 
-          color: "text-rose-500", 
-          bgColor: "bg-rose-50", 
-          borderColor: "border-rose-200", 
-          icon: <X className="w-4 h-4 text-rose-500" />
+        return {
+          color: "text-rose-500",
+          bgColor: "bg-rose-50",
+          borderColor: "border-rose-200",
+          icon: <X className="w-4 h-4 text-rose-500" />,
         };
       default:
-        return { 
-          color: "text-gray-500", 
-          bgColor: "bg-gray-50", 
+        return {
+          color: "text-gray-500",
+          bgColor: "bg-gray-50",
           borderColor: "border-gray-200",
-          icon: <User className="w-4 h-4 text-gray-500" />
+          icon: <User className="w-4 h-4 text-gray-500" />,
         };
     }
   };
@@ -278,7 +298,8 @@ export const DoctorsList = () => {
             onClick={() => handlePageChange(page)}
             className={cn(
               "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg min-w-[40px]",
-              currentPage === page && "bg-blue-100 text-blue-700 border-blue-300"
+              currentPage === page &&
+                "bg-blue-100 text-blue-700 border-blue-300"
             )}
             disabled={loading || searchLoading}
           >
@@ -301,17 +322,24 @@ export const DoctorsList = () => {
     <div className="w-full max-w-6xl mx-auto px-4 py-8">
       <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Medical Professionals Directory</h1>
-          <p className="text-gray-500">Manage and review doctor registrations</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Medical Professionals Directory
+          </h1>
+          <p className="text-gray-500">
+            Manage and review doctor registrations
+          </p>
         </div>
-        
+
         <div className="flex gap-2">
-          <Button 
+          <Button
             onClick={handleRefresh}
             disabled={loading || searchLoading}
             className="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 flex items-center gap-2"
           >
-            <RefreshCw size={18} className={(loading || searchLoading) ? "animate-spin" : ""} />
+            <RefreshCw
+              size={18}
+              className={loading || searchLoading ? "animate-spin" : ""}
+            />
             <span className="hidden md:inline">Refresh</span>
           </Button>
         </div>
@@ -323,31 +351,37 @@ export const DoctorsList = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-sm font-medium">Total Doctors</p>
-              <p className="text-3xl font-bold mt-1 text-gray-800">{totalDoctors}</p>
+              <p className="text-3xl font-bold mt-1 text-gray-800">
+                {totalDoctors}
+              </p>
             </div>
             <div className="bg-blue-100 p-3 rounded-lg">
               <User className="h-6 w-6 text-blue-600" />
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-sm font-medium">Approved</p>
-              <p className="text-3xl font-bold mt-1 text-gray-800">{approvedDoctors}</p>
+              <p className="text-3xl font-bold mt-1 text-gray-800">
+                {approvedDoctors}
+              </p>
             </div>
             <div className="bg-green-100 p-3 rounded-lg">
               <Shield className="h-6 w-6 text-green-600" />
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-sm font-medium">Pending</p>
-              <p className="text-3xl font-bold mt-1 text-gray-800">{pendingDoctors}</p>
+              <p className="text-3xl font-bold mt-1 text-gray-800">
+                {pendingDoctors}
+              </p>
             </div>
             <div className="bg-amber-100 p-3 rounded-lg">
               <Clock className="h-6 w-6 text-amber-600" />
@@ -359,7 +393,9 @@ export const DoctorsList = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-sm font-medium">Declined</p>
-              <p className="text-3xl font-bold mt-1 text-gray-800">{declinedDoctors}</p>
+              <p className="text-3xl font-bold mt-1 text-gray-800">
+                {declinedDoctors}
+              </p>
             </div>
             <div className="bg-rose-100 p-3 rounded-lg">
               <X className="h-6 w-6 text-rose-600" />
@@ -381,13 +417,13 @@ export const DoctorsList = () => {
             value={searchQuery}
             onChange={handleSearchChange}
           />
-          
+
           {searchLoading && (
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
               <Loader2 className="h-5 w-5 text-blue-500 animate-spin" />
             </div>
           )}
-          
+
           {searchQuery && !searchLoading && (
             <button
               onClick={clearSearch}
@@ -397,9 +433,9 @@ export const DoctorsList = () => {
             </button>
           )}
         </div>
-        
+
         <div className="flex items-center gap-2">
-          <Button 
+          <Button
             onClick={() => setShowFilters(!showFilters)}
             className="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 py-6 px-4 rounded-xl shadow-sm flex items-center gap-2"
           >
@@ -407,13 +443,19 @@ export const DoctorsList = () => {
             <span>Filters</span>
             {showFilters ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </Button>
-          
-          <Button 
-            onClick={() => setSortDirection(sortDirection === "asc" ? "desc" : "asc")}
+
+          <Button
+            onClick={() =>
+              setSortDirection(sortDirection === "asc" ? "desc" : "asc")
+            }
             className="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 py-6 px-4 rounded-xl shadow-sm flex items-center gap-2"
           >
             {sortDirection === "desc" ? "Newest First" : "Oldest First"}
-            {sortDirection === "desc" ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+            {sortDirection === "desc" ? (
+              <ChevronDown size={16} />
+            ) : (
+              <ChevronUp size={16} />
+            )}
           </Button>
         </div>
       </div>
@@ -428,10 +470,9 @@ export const DoctorsList = () => {
             </span>
           ) : (
             <span>
-              {doctors.length > 0 
+              {doctors.length > 0
                 ? `Found ${totalDoctors} doctor(s) matching "${debouncedSearchTerm}"`
-                : `No doctors found for "${debouncedSearchTerm}"`
-              }
+                : `No doctors found for "${debouncedSearchTerm}"`}
             </span>
           )}
         </div>
@@ -442,18 +483,21 @@ export const DoctorsList = () => {
         <div className="bg-white p-4 rounded-xl shadow-sm mb-6 border border-gray-100">
           <div className="font-medium mb-2 text-gray-700">Filter by Status</div>
           <div className="flex flex-wrap gap-2">
-            {["all", "Approved", "Pending", "Declined"].map(status => {
+            {["all", "Approved", "Pending", "Declined"].map((status) => {
               const isActive = statusFilter === status;
-              const { color, bgColor } = status !== "all" ? getStatusIconAndColor(status) : { color: "text-gray-600", bgColor: "bg-gray-50" };
+              const { color, bgColor } =
+                status !== "all"
+                  ? getStatusIconAndColor(status)
+                  : { color: "text-gray-600", bgColor: "bg-gray-50" };
               return (
-                <Button 
+                <Button
                   key={status}
                   onClick={() => handleStatusFilterChange(status)}
                   className={cn(
                     "rounded-full px-4 py-1 text-sm font-medium transition-all duration-200",
-                    isActive 
-                      ? `${bgColor} ${color} ring-2 ring-offset-2 ring-blue-300` 
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    isActive
+                      ? `${bgColor} ${color} ring-2 ring-offset-2 ring-blue-300`
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   )}
                 >
                   {status === "all" ? "All Doctors" : status}
@@ -461,9 +505,9 @@ export const DoctorsList = () => {
                 </Button>
               );
             })}
-            
+
             {(statusFilter !== "all" || searchQuery) && (
-              <Button 
+              <Button
                 onClick={clearAllFilters}
                 className="bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 rounded-full px-4 py-1 text-sm"
               >
@@ -504,15 +548,16 @@ export const DoctorsList = () => {
           <div className="mx-auto w-16 h-16 bg-gray-100 flex items-center justify-center rounded-full mb-4">
             <User className="h-8 w-8 text-gray-400" />
           </div>
-          <h3 className="text-xl font-medium text-gray-800 mb-2">No doctors found</h3>
+          <h3 className="text-xl font-medium text-gray-800 mb-2">
+            No doctors found
+          </h3>
           <p className="text-gray-500 mb-6">
-            {searchQuery 
-              ? `No results for "${debouncedSearchTerm}"` 
-              : "No doctors match your current filter criteria"
-            }
+            {searchQuery
+              ? `No results for "${debouncedSearchTerm}"`
+              : "No doctors match your current filter criteria"}
           </p>
-          <Button 
-            onClick={clearAllFilters} 
+          <Button
+            onClick={clearAllFilters}
             className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg"
           >
             Clear All Filters
@@ -524,7 +569,7 @@ export const DoctorsList = () => {
       {!loading && !error && doctors.length > 0 && (
         <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
           <div className="grid grid-cols-12 p-4 bg-gray-50 font-medium border-b border-gray-200">
-            <div 
+            <div
               className="col-span-5 flex items-center gap-1 cursor-pointer hover:text-blue-600 transition-colors"
               onClick={() => toggleSort("name")}
             >
@@ -536,7 +581,7 @@ export const DoctorsList = () => {
                 </span>
               )}
             </div>
-            <div 
+            <div
               className="col-span-3 flex items-center gap-1 cursor-pointer hover:text-blue-600 transition-colors"
               onClick={() => toggleSort("specialty")}
             >
@@ -549,7 +594,7 @@ export const DoctorsList = () => {
               )}
             </div>
             <div className="col-span-2 text-center">Status</div>
-            <div 
+            <div
               className="col-span-2 flex items-center gap-1 cursor-pointer hover:text-blue-600 transition-colors"
               onClick={() => toggleSort("createdAt")}
             >
@@ -566,8 +611,9 @@ export const DoctorsList = () => {
           {/* Doctor rows */}
           <div className="divide-y divide-gray-100">
             {doctors.map((doctor) => {
-              const { color, bgColor, borderColor, icon } = getStatusIconAndColor(doctor.status);
-              
+              const { color, bgColor, borderColor, icon } =
+                getStatusIconAndColor(doctor.status);
+
               return (
                 <div
                   key={doctor.id}
@@ -576,9 +622,15 @@ export const DoctorsList = () => {
                 >
                   <div className="col-span-5 flex items-center gap-3">
                     <Avatar className="h-12 w-12 rounded-full shadow-sm">
-                      <AvatarImage src={doctor.profileImageUrl} alt={doctor.name} />
+                      <AvatarImage
+                        src={doctor.profileImageUrl}
+                        alt={doctor.name}
+                      />
                       <AvatarFallback className="bg-gray-100 text-blue-600">
-                        {doctor.name.split(" ").map((n) => n[0]).join("")}
+                        {doctor.name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")}
                       </AvatarFallback>
                     </Avatar>
                     <div>
@@ -590,10 +642,12 @@ export const DoctorsList = () => {
                           </span>
                         )}
                       </div>
-                      <div className="text-gray-500 text-sm">{doctor.email}</div>
+                      <div className="text-gray-500 text-sm">
+                        {doctor.email}
+                      </div>
                     </div>
                   </div>
-                  
+
                   <div className="col-span-3">
                     <div className="flex items-center gap-2">
                       <span className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
@@ -602,14 +656,18 @@ export const DoctorsList = () => {
                       <span className="text-gray-700">{doctor.specialty}</span>
                     </div>
                   </div>
-                  
+
                   <div className="col-span-2 flex justify-center">
-                    <div className={`px-3 py-1 rounded-full flex items-center gap-1.5 ${bgColor} ${borderColor} border`}>
+                    <div
+                      className={`px-3 py-1 rounded-full flex items-center gap-1.5 ${bgColor} ${borderColor} border`}
+                    >
                       {icon}
-                      <span className={`text-sm font-medium ${color}`}>{doctor.status}</span>
+                      <span className={`text-sm font-medium ${color}`}>
+                        {doctor.status}
+                      </span>
                     </div>
                   </div>
-                  
+
                   <div className="col-span-2 text-sm text-gray-500">
                     {doctor.formattedDate}
                   </div>
@@ -621,12 +679,18 @@ export const DoctorsList = () => {
       )}
 
       {/* Pagination */}
-      {!loading && !error && doctors.length > 0 && totalPages > 1 && renderPagination()}
-      
+      {!loading &&
+        !error &&
+        doctors.length > 0 &&
+        totalPages > 1 &&
+        renderPagination()}
+
       {/* Results info */}
       {!loading && !error && doctors.length > 0 && (
         <div className="mt-4 text-center text-sm text-gray-500">
-          Showing {((currentPage - 1) * doctorsPerPage) + 1} to {Math.min(currentPage * doctorsPerPage, totalDoctors)} of {totalDoctors} doctors
+          Showing {(currentPage - 1) * doctorsPerPage + 1} to{" "}
+          {Math.min(currentPage * doctorsPerPage, totalDoctors)} of{" "}
+          {totalDoctors} doctors
           {debouncedSearchTerm && ` (filtered results)`}
         </div>
       )}
