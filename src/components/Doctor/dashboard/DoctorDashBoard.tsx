@@ -71,7 +71,6 @@ interface FormErrors {
   [key: string]: string | undefined;
 }
 
-// Interface for API response
 interface ApiResponse {
   success: boolean;
   message: string;
@@ -151,7 +150,6 @@ const DoctorDashBoard: React.FC = () => {
     )}-${String(today.getDate()).padStart(2, "0")}`;
   };
 
-  // Function to shorten URLs
   const shortenUrl = (url: string): string => {
     if (!url) return "";
     
@@ -264,7 +262,6 @@ const DoctorDashBoard: React.FC = () => {
       };
 
       const response = await AddPrescription(prescriptionData);
-      // Access the data property from the Axios response
       if (response.data?.success) {
         setIsPrescriptionModalOpen(false);
         setPrescriptionText("");
@@ -428,15 +425,12 @@ const DoctorDashBoard: React.FC = () => {
         formData.append('profileImage', '');
       }
 
-      // Add doctor ID for backend reference
       if (doctor?.id) {
         formData.append('doctorId', doctor.id);
       }
 
-      // Call the API
       const response: AxiosResponse<ApiResponse> = await changeDoctorInfo(formData);
       
-      // Access the data property from the Axios response
       if (response.data.success) {
         handleCloseEditModal();
         

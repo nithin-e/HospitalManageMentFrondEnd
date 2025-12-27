@@ -85,11 +85,11 @@ const EnhancedAppointmentCard: React.FC<EnhancedAppointmentCardProps> = ({
         )}
         
         <div className="flex items-center z-10">
-          <img 
+          {/* <img 
             src={avatarUrl} 
             alt={name} 
             className="w-12 h-12 rounded-full mr-4"
-          />
+          /> */}
           <div>
             <div className="flex items-center">
               <h3 className="font-medium mr-2">{name}</h3>
