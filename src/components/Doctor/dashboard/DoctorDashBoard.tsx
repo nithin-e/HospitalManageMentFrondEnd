@@ -404,55 +404,7 @@ const DoctorDashBoard: React.FC = () => {
   };
 
 
-  // const handleSubmitDoctorInfo = async () => {
-  //   if (!validateForm()) {
-  //     return;
-  //   }
-
-  //   setIsSubmitting(true);
-  //   try {
-  //     const formData = new FormData();
-      
-  //     Object.keys(doctorFormData).forEach(key => {
-  //       if (key === 'profileImage' && profileImageFile) {
-  //         return; 
-  //       }
-  //       formData.append(key, doctorFormData[key]);
-  //     });
-
-  //     if (profileImageFile) {
-  //       formData.append('profileImage', profileImageFile);
-  //     } else if (!doctorFormData.profileImageUrl) {
-  //       formData.append('profileImage', '');
-  //     }
-
-  //     if (doctor?.id) {
-  //       formData.append('doctorId', doctor.id);
-  //     }
-
-  //     const response: AxiosResponse<ApiResponse> = await changeDoctorInfo(formData);
-      
-  //     if (response.data.success) {
-  //       handleCloseEditModal();
-        
-  //       if (doctor?.email) {
-  //         await fetchDoctorData(doctor.email);
-  //       }
-        
-  //       await fetchUserFullAppointments();
-  //     } else {
-  //       throw new Error(response.data.message || "Failed to update doctor information");
-  //     }
-  //   } catch (error: any) {
-  //     console.error("Failed to update doctor information:", error);
-  //     setFormErrors((prev) => ({
-  //       ...prev,
-  //       form: error.message || "Failed to update doctor information. Please try again.",
-  //     }));
-  //   } finally {
-  //     setIsSubmitting(false);
-  //   }
-  // };
+  
 
 
   const handleSubmitDoctorInfo = async () => {
@@ -1016,7 +968,7 @@ const DoctorDashBoard: React.FC = () => {
                         >
                           Change Profile Image
                         </label>
-                        {profileImagePreview && profileImagePreview !== defaultAvatar && (
+                        {/* {profileImagePreview && profileImagePreview !== defaultAvatar && (
                           <button
                             type="button"
                             onClick={handleRemoveProfileImage}
@@ -1027,7 +979,7 @@ const DoctorDashBoard: React.FC = () => {
                         )}
                         {formErrors.profileImage && (
                           <p className="text-red-500 text-xs mt-1">{formErrors.profileImage}</p>
-                        )}
+                        )} */}
                         <p className="text-xs text-gray-500 mt-1">
                           Max file size: 5MB. Supported formats: JPG, PNG, GIF
                         </p>
