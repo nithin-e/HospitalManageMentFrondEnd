@@ -1963,11 +1963,10 @@ const UserProfileComponent = () => {
           )}
         </div>
 
-
+{/* 
 {showPrescriptionModal && (
   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{ zIndex: 9999 }}>
     <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col relative">
-      {/* Fixed Header with Close Button */}
       <div className="bg-white border-b border-gray-200 rounded-t-xl p-4 flex justify-between items-center sticky top-0 z-10">
         <h3 className="text-lg font-bold text-gray-800">Prescription Details</h3>
         <button
@@ -1981,7 +1980,6 @@ const UserProfileComponent = () => {
         </button>
       </div>
 
-      {/* Scrollable Content Area */}
       <div className="overflow-y-auto flex-1">
         <div className="p-4">
           {prescriptionLoading ? (
@@ -1991,7 +1989,6 @@ const UserProfileComponent = () => {
             </div>
           ) : prescriptionData ? (
             <div className="space-y-4">
-              {/* Header */}
               <div className="text-center pt-2">
                 <div className="inline-flex items-center justify-center w-10 h-10 bg-blue-100 rounded-full mb-2">
                   <FileText className="w-5 h-5 text-blue-600" />
@@ -2000,7 +1997,6 @@ const UserProfileComponent = () => {
                 <p className="text-gray-500 text-sm mt-1">Generated from your consultation</p>
               </div>
 
-              {/* Patient and Doctor Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
                   <h4 className="font-medium text-blue-700 mb-2 text-sm flex items-center">
@@ -2058,7 +2054,6 @@ const UserProfileComponent = () => {
                 </div>
               </div>
 
-              {/* Appointment Details */}
               <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
                 <h4 className="font-medium text-gray-700 mb-2 text-sm flex items-center">
                   <Calendar className="w-3.5 h-3.5 mr-1.5" />
@@ -2094,7 +2089,6 @@ const UserProfileComponent = () => {
                 </div>
               </div>
 
-              {/* Appointment Notes */}
               {prescriptionData.notes && (
                 <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-100">
                   <h4 className="font-medium text-yellow-700 mb-2 text-sm flex items-center">
@@ -2109,7 +2103,6 @@ const UserProfileComponent = () => {
                 </div>
               )}
 
-              {/* Prescription Details */}
               <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
                 <h4 className="font-medium text-blue-700 mb-2 text-sm flex items-center">
                   <Pill className="w-3.5 h-3.5 mr-1.5" />
@@ -2122,7 +2115,6 @@ const UserProfileComponent = () => {
                 </div>
               </div>
 
-              {/* Footer */}
               <div className="text-center text-xs text-gray-500 border-t pt-3">
                 <p>For consultation purposes only • {new Date().toLocaleDateString("en-US", {
                   month: "short", day: "numeric", year: "numeric"
@@ -2142,9 +2134,33 @@ const UserProfileComponent = () => {
       </div>
     </div>
   </div>
-)}
+)} */}
 
 
+
+{showPrescriptionModal && (
+  <div 
+    className="fixed inset-0 flex items-center justify-center p-4" 
+    style={{ 
+      zIndex: 99999,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)'
+    }}
+  >
+    <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col relative" style={{ zIndex: 100000 }}>
+      {/* Fixed Header with Close Button */}
+      <div className="bg-white border-b border-gray-200 rounded-t-xl p-4 flex justify-between items-center sticky top-0" style={{ zIndex: 100001 }}>
+        <h3 className="text-lg font-bold text-gray-800">Prescription Details</h3>
+        <button
+          onClick={() => {
+            setShowPrescriptionModal(false);
+            setPrescriptionData(null);
+          }}
+          className="text-gray-500 hover:text-gray-700 bg-white rounded-full p-2 hover:bg-gray-100 transition-colors border border-gray-200 shadow-sm flex-shrink-0 ml-2"
+          style={{ zIndex: 100002 }}
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
 
         {/* Chat Modal */}
         {showChatModal && (
