@@ -83,11 +83,21 @@ interface Appointment {
 }
 
 interface Prescription {
+  _id?: string;
   prescriptionDetails: string;
   date: string;
   time: string;
   patientEmail: string;
+  patientName?: string;
+  patientPhone?: string;
   doctorEmail: string;
+  doctorName?: string;
+  specialty?: string;
+  appointmentDate?: string;
+  appointmentTime?: string;
+  notes?: string;
+  status?: string;
+  amount?: number;
 }
 
 const UserProfileComponent = () => {
@@ -487,26 +497,46 @@ const UserProfileComponent = () => {
       const res = await UserfetchingAppointMents(userEmail);
 
       if (res.success && res.appointments) {
+        // const transformedAppointments = res.appointments.map((appointment) => ({
+        //   id: appointment.id,
+        //   date: new Date(appointment.appointmentDate).toLocaleDateString(
+        //     "en-US",
+        //     {
+        //       year: "numeric",
+        //       month: "long",
+        //       day: "numeric",
+        //     }
+        //   ),
+        //   time: appointment.appointmentTime,
+        //   doctor: appointment.doctorName,
+        //   department: appointment.specialty,
+        //   purpose: appointment.notes || "General consultation",
+        //   status: appointment.status,
+        //   message: appointment.message,
+        //   doctorEmail: appointment.doctorEmail,
+        //   doctorId: appointment.doctorId,
+        //   Prescription: appointment.Prescription,
+        // }));
+
+
         const transformedAppointments = res.appointments.map((appointment) => ({
-          id: appointment.id,
-          date: new Date(appointment.appointmentDate).toLocaleDateString(
-            "en-US",
-            {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            }
-          ),
-          time: appointment.appointmentTime,
-          doctor: appointment.doctorName,
-          department: appointment.specialty,
-          purpose: appointment.notes || "General consultation",
-          status: appointment.status,
-          message: appointment.message,
-          doctorEmail: appointment.doctorEmail,
-          doctorId: appointment.doctorId,
-          Prescription: appointment.Prescription,
-        }));
+  id: appointment.id,
+  date: new Date(appointment.appointmentDate).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }),
+  time: appointment.appointmentTime,
+  doctor: appointment.doctorName,
+  department: appointment.specialty,
+  purpose: appointment.notes || "General consultation",
+  status: appointment.status,
+  message: appointment.message,
+  doctorEmail: appointment.doctorEmail,
+  doctorId: appointment.doctorId,
+  Prescription: appointment.Prescription,
+  notes: appointment.notes, // Add this line
+}));
 
         setUserData((prevData) => ({
           ...(prevData || {
@@ -543,30 +573,69 @@ const UserProfileComponent = () => {
     }
   };
 
-  const handleViewPrescription = async (appointment) => {
-    try {
-      setPrescriptionLoading(true);
-      const prescription = {
-        doctorId: appointment.doctorId,
-        userIdd: userIdd,
-        appointmentId: appointment.id,
-        date: appointment.date,
-        time: appointment.time,
-      };
+  // const handleViewPrescription = async (appointment) => {
+  //   try {
+  //     setPrescriptionLoading(true);
+  //     const prescription = {
+  //       doctorId: appointment.doctorId,
+  //       userIdd: userIdd,
+  //       appointmentId: appointment.id,
+  //       date: appointment.date,
+  //       time: appointment.time,
+  //     };
 
-      const res = await fetchingPrescription(prescription);
-      const data = res.data;
+  //     const res = await fetchingPrescription(prescription);
+  //     const data = res.data;
 
-      console.log("Prescription data from backend:", data);
+  //     console.log("Prescription data from backend:", data);
 
-      setPrescriptionData(data);
-      setShowPrescriptionModal(true);
-    } catch (error) {
-      console.error("Error while fetching prescription:", error);
-    } finally {
-      setPrescriptionLoading(false);
-    }
-  };
+  //     setPrescriptionData(data);
+  //     setShowPrescriptionModal(true);
+  //   } catch (error) {
+  //     console.error("Error while fetching prescription:", error);
+  //   } finally {
+  //     setPrescriptionLoading(false);
+  //   }
+  // };
+
+
+
+const handleViewPrescription = async (appointment) => {
+  try {
+    setPrescriptionLoading(true);
+    const prescription = {
+      doctorId: appointment.doctorId,
+      userIdd: userIdd,
+      appointmentId: appointment.id,
+      date: appointment.date,
+      time: appointment.time,
+    };
+
+    const res = await fetchingPrescription(prescription);
+    const data = res.data;
+
+    // If the API doesn't return these fields, add them from the appointment
+    const enhancedData = {
+      ...data,
+      patientName: userData?.name,
+      patientPhone: userData?.phoneNumber,
+      doctorName: appointment.doctor,
+      specialty: appointment.department,
+      appointmentDate: appointment.date,
+      appointmentTime: appointment.time,
+      notes: appointment.purpose, // or from appointment.notes if you have it
+      status: appointment.status,
+    };
+
+    console.log("Enhanced prescription data:", enhancedData);
+    setPrescriptionData(enhancedData);
+    setShowPrescriptionModal(true);
+  } catch (error) {
+    console.error("Error while fetching prescription:", error);
+  } finally {
+    setPrescriptionLoading(false);
+  }
+};
 
   useEffect(() => {
     const fetchInitialConversations = async () => {
@@ -1917,97 +1986,208 @@ const UserProfileComponent = () => {
         </div>
 
         {/* Prescription View Modal */}
-        {showPrescriptionModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-4 sm:p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg sm:text-xl font-bold text-gray-800">
-                    Prescription Details
-                  </h3>
-                  <button
-                    onClick={() => {
-                      setShowPrescriptionModal(false);
-                      setPrescriptionData(null);
-                    }}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    <X className="w-5 h-5 sm:w-6 sm:h-6" />
-                  </button>
-                </div>
+{/* Prescription View Modal */}
+{showPrescriptionModal && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="p-4 sm:p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-lg sm:text-xl font-bold text-gray-800">
+            Prescription Details
+          </h3>
+          <button
+            onClick={() => {
+              setShowPrescriptionModal(false);
+              setPrescriptionData(null);
+            }}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <X className="w-5 h-5 sm:w-6 sm:h-6" />
+          </button>
+        </div>
 
-                {prescriptionLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                    <span className="ml-2 text-gray-600">
-                      Loading prescription...
-                    </span>
-                  </div>
-                ) : prescriptionData ? (
-                  <div className="space-y-6">
-                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                      <h4 className="font-semibold text-blue-800 mb-2">
-                        Appointment Information
-                      </h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm text-gray-600">Date</p>
-                          <p className="font-medium text-sm sm:text-base">
-                            {new Date(prescriptionData.date).toLocaleDateString(
-                              "en-US",
-                              {
-                                year: "numeric",
-                                month: "long",
-                                day: "numeric",
-                              }
-                            )}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-600">Time</p>
-                          <p className="font-medium text-sm sm:text-base">
-                            {prescriptionData.time}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-600">Doctor Email</p>
-                          <p className="font-medium text-sm sm:text-base break-all">
-                            {prescriptionData.doctorEmail}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-600">Patient Email</p>
-                          <p className="font-medium text-sm sm:text-base break-all">
-                            {prescriptionData.patientEmail}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+        {prescriptionLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <span className="ml-3 text-gray-600">
+              Loading prescription details...
+            </span>
+          </div>
+        ) : prescriptionData ? (
+          <div className="space-y-6">
+            {/* Header */}
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-4">
+                <FileText className="w-6 h-6 text-blue-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800">Medical Prescription</h2>
+              <p className="text-gray-600 mt-2">Generated from your consultation</p>
+            </div>
 
-                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                      <h4 className="font-semibold text-blue-800 mb-2">
-                        Prescription Details
-                      </h4>
-                      <div className="bg-white p-4 rounded border border-blue-200">
-                        <p className="whitespace-pre-wrap text-sm sm:text-base">
-                          {prescriptionData.prescriptionDetails}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <FileText className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-4 text-gray-400" />
-                    <p className="text-sm sm:text-base">
-                      No prescription data available.
+            {/* Patient and Doctor Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-blue-50 p-4 sm:p-5 rounded-lg border border-blue-100">
+                <h4 className="font-semibold text-blue-800 mb-4 flex items-center">
+                  <User className="w-4 h-4 mr-2" />
+                  Patient Information
+                </h4>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs text-gray-500">Name</p>
+                    <p className="font-medium text-sm sm:text-base">
+                      {prescriptionData.patientName || userData?.name || "Not specified"}
                     </p>
                   </div>
-                )}
+                  <div>
+                    <p className="text-xs text-gray-500">Email</p>
+                    <p className="font-medium text-sm sm:text-base break-all">
+                      {prescriptionData.patientEmail}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Phone</p>
+                    <p className="font-medium text-sm sm:text-base">
+                      {prescriptionData.patientPhone || userData?.phoneNumber || "Not specified"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-green-50 p-4 sm:p-5 rounded-lg border border-green-100">
+                <h4 className="font-semibold text-green-800 mb-4 flex items-center">
+                  <User className="w-4 h-4 mr-2" />
+                  Doctor Information
+                </h4>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs text-gray-500">Name</p>
+                    <p className="font-medium text-sm sm:text-base">
+                      {prescriptionData.doctorName || "Not specified"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Email</p>
+                    <p className="font-medium text-sm sm:text-base break-all">
+                      {prescriptionData.doctorEmail}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Specialty</p>
+                    <p className="font-medium text-sm sm:text-base">
+                      {prescriptionData.specialty || "General Medicine"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Appointment Details */}
+            <div className="bg-gray-50 p-4 sm:p-5 rounded-lg border border-gray-200">
+              <h4 className="font-semibold text-gray-800 mb-4 flex items-center">
+                <Calendar className="w-4 h-4 mr-2" />
+                Appointment Details
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <p className="text-xs text-gray-500">Date</p>
+                  <p className="font-medium text-sm sm:text-base">
+                    {new Date(prescriptionData.appointmentDate || prescriptionData.date).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Time</p>
+                  <p className="font-medium text-sm sm:text-base">
+                    {prescriptionData.appointmentTime || prescriptionData.time}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Status</p>
+                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                    prescriptionData.status === "completed" 
+                      ? "bg-green-100 text-green-800" 
+                      : "bg-blue-100 text-blue-800"
+                  }`}>
+                    {prescriptionData.status || "Completed"}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Amount</p>
+                  <p className="font-medium text-sm sm:text-base">
+                    ₹{prescriptionData.amount || "0"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Appointment Notes */}
+            {prescriptionData.notes && (
+              <div className="bg-yellow-50 p-4 sm:p-5 rounded-lg border border-yellow-100">
+                <h4 className="font-semibold text-yellow-800 mb-4 flex items-center">
+                  <Clipboard className="w-4 h-4 mr-2" />
+                  Appointment Notes
+                </h4>
+                <div className="bg-white p-4 rounded border border-yellow-200">
+                  <p className="whitespace-pre-wrap text-sm sm:text-base text-gray-700">
+                    {prescriptionData.notes}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Prescription Details */}
+            <div className="bg-blue-50 p-4 sm:p-5 rounded-lg border border-blue-100">
+              <h4 className="font-semibold text-blue-800 mb-4 flex items-center">
+                <Pill className="w-4 h-4 mr-2" />
+                Prescription Details
+              </h4>
+              <div className="bg-white p-4 sm:p-5 rounded-lg border border-blue-200">
+                <div className="prose prose-sm max-w-none">
+                  <p className="whitespace-pre-wrap text-sm sm:text-base leading-relaxed">
+                    {prescriptionData.prescriptionDetails || "No prescription details available."}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Information */}
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-center">
+              <div className="flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500">
+                <div className="mb-2 sm:mb-0">
+                  <p>Prescription ID: {prescriptionData._id?.substring(0, 8) || "N/A"}</p>
+                </div>
+                <div className="mb-2 sm:mb-0">
+                  <p>Generated on: {new Date().toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}</p>
+                </div>
+                <div>
+                  <p>For consultation purposes only</p>
+                </div>
               </div>
             </div>
           </div>
+        ) : (
+          <div className="text-center py-12">
+            <FileText className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 text-gray-400" />
+            <h4 className="text-lg font-medium text-gray-700 mb-2">
+              No Prescription Available
+            </h4>
+            <p className="text-gray-500 text-sm sm:text-base max-w-md mx-auto">
+              No prescription has been generated for this appointment yet.
+              Please check back later or contact your doctor.
+            </p>
+          </div>
         )}
-
+      </div>
+    </div>
+  </div>
+)}
         {/* Chat Modal */}
         {showChatModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end sm:items-center justify-end sm:justify-end p-0 sm:p-4">

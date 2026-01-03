@@ -975,7 +975,6 @@ const DoctorDashBoard: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Basic Information */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1176,7 +1175,6 @@ const DoctorDashBoard: React.FC = () => {
             </div>
           )}
 
-          {/* Prescription Modal */}
           {isPrescriptionModalOpen && selectedAppointment && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
               <div className="max-w-lg w-full mx-auto bg-white shadow-2xl rounded-lg max-h-[90vh] overflow-y-auto scrollbar-hide">

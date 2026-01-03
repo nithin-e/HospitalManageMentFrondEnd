@@ -115,13 +115,11 @@ const PrescriptionModal: React.FC = () => {
                 </div>
               </div>
               
-              {/* Decorative stethoscope in footer */}
               <div className="absolute bottom-1 right-2 opacity-20">
                 <Stethoscope className="w-8 h-8" />
               </div>
             </div>
 
-            {/* Action Buttons */}
             <div className="flex justify-end space-x-3 p-4 bg-gray-50 rounded-b-lg">
               <button
                 onClick={handleCancel}

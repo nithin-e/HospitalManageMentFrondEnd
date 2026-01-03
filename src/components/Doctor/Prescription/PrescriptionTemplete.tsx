@@ -1,4 +1,3 @@
-// PrescriptionTemplete.tsx
 import React, { useEffect, useRef } from "react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -44,7 +43,6 @@ const PrescriptionPdf: React.FC<Props> = ({ data, onComplete }) => {
       if (!element) return;
 
       try {
-        // Use a higher scale for better PDF quality
         const canvas = await html2canvas(element, { scale: 2 });
         const imgData = canvas.toDataURL("image/png");
 
@@ -56,11 +54,9 @@ const PrescriptionPdf: React.FC<Props> = ({ data, onComplete }) => {
         const imgWidthMm = pageWidth;
         const imgHeightMm = (imgProps.height * imgWidthMm) / imgProps.width;
 
-        // If content is taller than a single A4 page, add pages as needed
         if (imgHeightMm <= pageHeight) {
           pdf.addImage(imgData, "PNG", 0, 0, imgWidthMm, imgHeightMm);
         } else {
-          // Split the canvas into multiple pages by drawing the image and shifting
           let remainingHeight = imgHeightMm;
           let position = 0;
           const imgHeightPx = canvas.height;
