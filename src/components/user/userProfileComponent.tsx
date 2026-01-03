@@ -1963,182 +1963,9 @@ const UserProfileComponent = () => {
           )}
         </div>
 
-{/* 
-{showPrescriptionModal && (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{ zIndex: 9999 }}>
-    <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col relative">
-      <div className="bg-white border-b border-gray-200 rounded-t-xl p-4 flex justify-between items-center sticky top-0 z-10">
-        <h3 className="text-lg font-bold text-gray-800">Prescription Details</h3>
-        <button
-          onClick={() => {
-            setShowPrescriptionModal(false);
-            setPrescriptionData(null);
-          }}
-          className="text-gray-500 hover:text-gray-700 bg-white rounded-full p-2 hover:bg-gray-100 transition-colors border border-gray-200 shadow-sm flex-shrink-0"
-        >
-          <X className="w-5 h-5" />
-        </button>
-      </div>
+       
 
-      <div className="overflow-y-auto flex-1">
-        <div className="p-4">
-          {prescriptionLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-              <span className="ml-3 text-gray-600">Loading prescription details...</span>
-            </div>
-          ) : prescriptionData ? (
-            <div className="space-y-4">
-              <div className="text-center pt-2">
-                <div className="inline-flex items-center justify-center w-10 h-10 bg-blue-100 rounded-full mb-2">
-                  <FileText className="w-5 h-5 text-blue-600" />
-                </div>
-                <h2 className="text-lg font-bold text-gray-800">Medical Prescription</h2>
-                <p className="text-gray-500 text-sm mt-1">Generated from your consultation</p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
-                  <h4 className="font-medium text-blue-700 mb-2 text-sm flex items-center">
-                    <User className="w-3.5 h-3.5 mr-1.5" />
-                    Patient Info
-                  </h4>
-                  <div className="space-y-2">
-                    <div>
-                      <p className="text-xs text-gray-500">Name</p>
-                      <p className="font-medium text-sm truncate">
-                        {prescriptionData.patientName || userData?.name || "Not specified"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Email</p>
-                      <p className="font-medium text-sm truncate">
-                        {prescriptionData.patientEmail}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Phone</p>
-                      <p className="font-medium text-sm">
-                        {prescriptionData.patientPhone || userData?.phoneNumber || "Not specified"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-green-50 p-3 rounded-lg border border-green-100">
-                  <h4 className="font-medium text-green-700 mb-2 text-sm flex items-center">
-                    <User className="w-3.5 h-3.5 mr-1.5" />
-                    Doctor Info
-                  </h4>
-                  <div className="space-y-2">
-                    <div>
-                      <p className="text-xs text-gray-500">Name</p>
-                      <p className="font-medium text-sm truncate">
-                        {prescriptionData.doctorName || "Not specified"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Specialty</p>
-                      <p className="font-medium text-sm">
-                        {prescriptionData.specialty || "General Medicine"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Date</p>
-                      <p className="font-medium text-sm">
-                        {new Date(prescriptionData.appointmentDate || prescriptionData.date)
-                          .toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                <h4 className="font-medium text-gray-700 mb-2 text-sm flex items-center">
-                  <Calendar className="w-3.5 h-3.5 mr-1.5" />
-                  Appointment Details
-                </h4>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <p className="text-xs text-gray-500">Time</p>
-                    <p className="font-medium text-sm">
-                      {prescriptionData.appointmentTime || prescriptionData.time}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Status</p>
-                    <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
-                      prescriptionData.status === "completed" 
-                        ? "bg-green-100 text-green-800" 
-                        : "bg-blue-100 text-blue-800"
-                    }`}>
-                      {prescriptionData.status || "Completed"}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Amount</p>
-                    <p className="font-medium text-sm">₹{prescriptionData.amount || "0"}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">ID</p>
-                    <p className="font-medium text-sm text-gray-600">
-                      {prescriptionData._id?.substring(0, 6) || "N/A"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {prescriptionData.notes && (
-                <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-100">
-                  <h4 className="font-medium text-yellow-700 mb-2 text-sm flex items-center">
-                    <Clipboard className="w-3.5 h-3.5 mr-1.5" />
-                    Appointment Notes
-                  </h4>
-                  <div className="bg-white p-3 rounded border border-yellow-200">
-                    <p className="text-sm text-gray-700 line-clamp-3">
-                      {prescriptionData.notes}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
-                <h4 className="font-medium text-blue-700 mb-2 text-sm flex items-center">
-                  <Pill className="w-3.5 h-3.5 mr-1.5" />
-                  Prescription Details
-                </h4>
-                <div className="bg-white p-3 rounded border border-blue-200">
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap max-h-40 overflow-y-auto">
-                    {prescriptionData.prescriptionDetails || "No prescription details available."}
-                  </p>
-                </div>
-              </div>
-
-              <div className="text-center text-xs text-gray-500 border-t pt-3">
-                <p>For consultation purposes only • {new Date().toLocaleDateString("en-US", {
-                  month: "short", day: "numeric", year: "numeric"
-                })}</p>
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <FileText className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 text-gray-400" />
-              <h4 className="text-lg font-medium text-gray-700 mb-2">No Prescription Available</h4>
-              <p className="text-gray-500 text-sm sm:text-base max-w-md mx-auto">
-                No prescription has been generated for this appointment yet. Please check back later or contact your doctor.
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  </div>
-)} */}
-
-
-
-{showPrescriptionModal && (
+          {showPrescriptionModal && (
   <div 
     className="fixed inset-0 flex items-center justify-center p-4" 
     style={{ 
@@ -2161,6 +1988,192 @@ const UserProfileComponent = () => {
           <X className="w-5 h-5" />
         </button>
       </div>
+              <div className="overflow-y-auto flex-1">
+                <div className="p-4">
+                  {prescriptionLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                      <span className="ml-3 text-gray-600">
+                        Loading prescription details...
+                      </span>
+                    </div>
+                  ) : prescriptionData ? (
+                    <div className="space-y-4">
+                      <div className="text-center pt-2">
+                        <div className="inline-flex items-center justify-center w-10 h-10 bg-blue-100 rounded-full mb-2">
+                          <FileText className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <h2 className="text-lg font-bold text-gray-800">
+                          Medical Prescription
+                        </h2>
+                        <p className="text-gray-500 text-sm mt-1">
+                          Generated from your consultation
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                          <h4 className="font-medium text-blue-700 mb-2 text-sm flex items-center">
+                            <User className="w-3.5 h-3.5 mr-1.5" />
+                            Patient Info
+                          </h4>
+                          <div className="space-y-2">
+                            <div>
+                              <p className="text-xs text-gray-500">Name</p>
+                              <p className="font-medium text-sm truncate">
+                                {prescriptionData.patientName ||
+                                  userData?.name ||
+                                  "Not specified"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-500">Email</p>
+                              <p className="font-medium text-sm truncate">
+                                {prescriptionData.patientEmail}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-500">Phone</p>
+                              <p className="font-medium text-sm">
+                                {prescriptionData.patientPhone ||
+                                  userData?.phoneNumber ||
+                                  "Not specified"}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="bg-green-50 p-3 rounded-lg border border-green-100">
+                          <h4 className="font-medium text-green-700 mb-2 text-sm flex items-center">
+                            <User className="w-3.5 h-3.5 mr-1.5" />
+                            Doctor Info
+                          </h4>
+                          <div className="space-y-2">
+                            <div>
+                              <p className="text-xs text-gray-500">Name</p>
+                              <p className="font-medium text-sm truncate">
+                                {prescriptionData.doctorName || "Not specified"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-500">Specialty</p>
+                              <p className="font-medium text-sm">
+                                {prescriptionData.specialty ||
+                                  "General Medicine"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-500">Date</p>
+                              <p className="font-medium text-sm">
+                                {new Date(
+                                  prescriptionData.appointmentDate ||
+                                    prescriptionData.date
+                                ).toLocaleDateString("en-US", {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                })}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                        <h4 className="font-medium text-gray-700 mb-2 text-sm flex items-center">
+                          <Calendar className="w-3.5 h-3.5 mr-1.5" />
+                          Appointment Details
+                        </h4>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <p className="text-xs text-gray-500">Time</p>
+                            <p className="font-medium text-sm">
+                              {prescriptionData.appointmentTime ||
+                                prescriptionData.time}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500">Status</p>
+                            <span
+                              className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                                prescriptionData.status === "completed"
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-blue-100 text-blue-800"
+                              }`}
+                            >
+                              {prescriptionData.status || "Completed"}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500">Amount</p>
+                            <p className="font-medium text-sm">
+                              ₹{prescriptionData.amount || "0"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500">ID</p>
+                            <p className="font-medium text-sm text-gray-600">
+                              {prescriptionData._id?.substring(0, 6) || "N/A"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {prescriptionData.notes && (
+                        <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-100">
+                          <h4 className="font-medium text-yellow-700 mb-2 text-sm flex items-center">
+                            <Clipboard className="w-3.5 h-3.5 mr-1.5" />
+                            Appointment Notes
+                          </h4>
+                          <div className="bg-white p-3 rounded border border-yellow-200">
+                            <p className="text-sm text-gray-700 line-clamp-3">
+                              {prescriptionData.notes}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                        <h4 className="font-medium text-blue-700 mb-2 text-sm flex items-center">
+                          <Pill className="w-3.5 h-3.5 mr-1.5" />
+                          Prescription Details
+                        </h4>
+                        <div className="bg-white p-3 rounded border border-blue-200">
+                          <p className="text-sm text-gray-700 whitespace-pre-wrap max-h-40 overflow-y-auto">
+                            {prescriptionData.prescriptionDetails ||
+                              "No prescription details available."}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="text-center text-xs text-gray-500 border-t pt-3">
+                        <p>
+                          For consultation purposes only •{" "}
+                          {new Date().toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <FileText className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 text-gray-400" />
+                      <h4 className="text-lg font-medium text-gray-700 mb-2">
+                        No Prescription Available
+                      </h4>
+                      <p className="text-gray-500 text-sm sm:text-base max-w-md mx-auto">
+                        No prescription has been generated for this appointment
+                        yet. Please check back later or contact your doctor.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Chat Modal */}
         {showChatModal && (
