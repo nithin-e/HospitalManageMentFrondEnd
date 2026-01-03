@@ -172,11 +172,10 @@ export default function AppointmentBooking() {
         console.log("Doctors found:", doctors.length);
 
         doctors.forEach((doctor) => {
-          // Normalize status and accept multiple shapes: `status === 'active'` or `isActive === true`.
           const status = (doctor.status || "").toString().toLowerCase();
           const isActive = status === "active" || doctor.isActive === true;
 
-          if (!isActive) return; // skip non-active doctors
+          if (!isActive) return; 
 
           console.log("including active doctor id", doctor.id ?? doctor._id);
           const doctorId = doctor.id || doctor._id;

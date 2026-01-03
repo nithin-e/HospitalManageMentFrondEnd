@@ -8,8 +8,6 @@ const PrescriptionModal: React.FC = () => {
   const closeModal = () => setIsOpen(false);
 
   const handleSubmit = () => {
-    // Handle form submission logic here
-    console.log('Prescription submitted');
     closeModal();
   };
 
@@ -21,11 +19,9 @@ const PrescriptionModal: React.FC = () => {
     <div>
      
 
-      {/* Modal Overlay */}
       {isOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="max-w-lg w-full mx-auto bg-white shadow-2xl rounded-lg max-h-[90vh] overflow-y-auto">
-            {/* Header */}
             <div className="bg-blue-500 text-white p-3 flex items-center justify-between rounded-t-lg">
               <div className="flex items-center space-x-2">
                 <Stethoscope className="w-6 h-6" />
@@ -47,7 +43,6 @@ const PrescriptionModal: React.FC = () => {
               </div>
             </div>
 
-            {/* Patient Information Section */}
             <div className="bg-blue-50 p-3 border-b-2 border-blue-200">
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -82,7 +77,6 @@ const PrescriptionModal: React.FC = () => {
               </div>
             </div>
 
-            {/* Prescription Area */}
             <div className="relative p-4 min-h-48">
               <div className="absolute top-2 left-4">
                 <div className="text-4xl font-bold text-blue-400 opacity-80">
@@ -90,7 +84,6 @@ const PrescriptionModal: React.FC = () => {
                 </div>
               </div>
               <div className="pt-12">
-                {/* Prescription lines */}
                 {[...Array(8)].map((_, index) => (
                   <div key={index} className="border-b border-gray-200 mb-3 pb-1 h-3"></div>
                 ))}
