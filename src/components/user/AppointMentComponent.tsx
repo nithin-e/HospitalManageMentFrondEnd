@@ -172,23 +172,27 @@ export default function AppointmentBooking() {
         console.log("Doctors found:", doctors.length);
 
         doctors.forEach((doctor) => {
-          if (doctor.status === "completed") {
-            console.log("check the id of doctor", doctor.id);
-            const doctorId = doctor.id || doctor._id;
-            const email = doctor.email;
-            const specialty = doctor.specialty;
-            const doctorName = `Dr. ${doctor.firstName} ${doctor.lastName}`;
+          // Normalize status and accept multiple shapes: `status === 'active'` or `isActive === true`.
+          const status = (doctor.status || "").toString().toLowerCase();
+          const isActive = status === "active" || doctor.isActive === true;
 
-            if (!groupedDoctors[specialty]) {
-              groupedDoctors[specialty] = [];
-            }
+          if (!isActive) return; // skip non-active doctors
 
-            groupedDoctors[specialty].push({
-              name: doctorName,
-              email: email,
-              doctorId: doctorId,
-            });
+          console.log("including active doctor id", doctor.id ?? doctor._id);
+          const doctorId = doctor.id || doctor._id;
+          const email = doctor.email;
+          const specialty = doctor.specialty || "General";
+          const doctorName = `Dr. ${doctor.firstName || ""} ${doctor.lastName || ""}`.trim();
+
+          if (!groupedDoctors[specialty]) {
+            groupedDoctors[specialty] = [];
           }
+
+          groupedDoctors[specialty].push({
+            name: doctorName,
+            email: email,
+            doctorId: doctorId,
+          });
         });
       } else {
         console.warn("No doctors found in response");
