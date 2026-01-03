@@ -968,18 +968,7 @@ const DoctorDashBoard: React.FC = () => {
                         >
                           Change Profile Image
                         </label>
-                        {/* {profileImagePreview && profileImagePreview !== defaultAvatar && (
-                          <button
-                            type="button"
-                            onClick={handleRemoveProfileImage}
-                            className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors text-xs"
-                          >
-                            Remove Image
-                          </button>
-                        )}
-                        {formErrors.profileImage && (
-                          <p className="text-red-500 text-xs mt-1">{formErrors.profileImage}</p>
-                        )} */}
+                       
                         <p className="text-xs text-gray-500 mt-1">
                           Max file size: 5MB. Supported formats: JPG, PNG, GIF
                         </p>

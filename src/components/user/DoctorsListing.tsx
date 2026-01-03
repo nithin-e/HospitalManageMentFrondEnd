@@ -146,8 +146,11 @@ const DoctorListing: React.FC = () => {
           doctorData = [];
         }
         
-        setDoctors(doctorData);
-        setFiltered(doctorData);
+        // Filter only active doctors
+        const activeDoctors = doctorData.filter((doctor) => doctor.isActive === true);
+        
+        setDoctors(activeDoctors);
+        setFiltered(activeDoctors);
       } catch (err) {
         console.error('Error fetching doctors:', err);
         if (mounted) {
