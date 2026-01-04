@@ -141,7 +141,6 @@ const UserProfileComponent = () => {
   const [appointmentsLimit] = useState(3);
   const [totalAppointmentsCount, setTotalAppointmentsCount] = useState(0);
 
-  // Chat state variables
   const [showChatModal, setShowChatModal] = useState(false);
   const [chatAppointment, setChatAppointment] = useState<Appointment | null>(
     null
@@ -154,7 +153,6 @@ const UserProfileComponent = () => {
   >({});
   const [pdfData, setPdfData] = useState(null);
 
-  // Prescription view state
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
   const [prescriptionData, setPrescriptionData] = useState<Prescription | null>(
     null
@@ -535,48 +533,52 @@ const UserProfileComponent = () => {
     }
   };
 
-  const handleDownloadPrescription = async (appointment) => {
-    try {
-      const prescription = {
-        doctorId: appointment.doctorId,
-        userIdd: userIdd,
-        appointmentId: appointment.id,
-        date: appointment.date,
-        time: appointment.time,
-      };
+const handleDownloadPrescription = async (appointment) => {
+  try {
+    const prescription = {
+      doctorId: appointment.doctorId,
+      userIdd: userIdd,
+      appointmentId: appointment.id,
+      date: appointment.date,
+      time: appointment.time,
+    };
 
-      const res = await fetchingPrescription(prescription);
+    const res = await fetchingPrescription(prescription);
+    
+    // Enhance the prescription data with appointment details
+    const enhancedPrescriptionData = {
+      ...res.data,
+      // Add patient information
+      patientName: userData?.name || "Not specified",
+      patientPhone: userData?.phoneNumber || userData?.contactNumber || "Not provided",
+      patientEmail: userData?.email || res.data.patientEmail,
+      
+      // Add doctor information
+      doctorName: appointment.doctor,
+      specialty: appointment.department,
+      
+      // Add appointment details
+      appointmentDate: appointment.date,
+      appointmentTime: appointment.time,
+      notes: appointment.purpose || appointment.notes || "General consultation",
+      status: appointment.status || "completed",
+      
+      // Add prescription ID if not present
+      prescriptionId: res.data._id || `RX-${Date.now()}`,
+      
+      // Add amount if not present
+      amount: res.data.amount || "500"
+    };
 
-      await generatePrescriptionPDF(res.data);
-    } catch (error) {
-      console.error("Error while downloading prescription:", error);
-    }
-  };
-
-  // const handleViewPrescription = async (appointment) => {
-  //   try {
-  //     setPrescriptionLoading(true);
-  //     const prescription = {
-  //       doctorId: appointment.doctorId,
-  //       userIdd: userIdd,
-  //       appointmentId: appointment.id,
-  //       date: appointment.date,
-  //       time: appointment.time,
-  //     };
-
-  //     const res = await fetchingPrescription(prescription);
-  //     const data = res.data;
-
-  //     console.log("Prescription data from backend:", data);
-
-  //     setPrescriptionData(data);
-  //     setShowPrescriptionModal(true);
-  //   } catch (error) {
-  //     console.error("Error while fetching prescription:", error);
-  //   } finally {
-  //     setPrescriptionLoading(false);
-  //   }
-  // };
+    // Generate the PDF with enhanced data
+    await generatePrescriptionPDF(enhancedPrescriptionData);
+    
+  } catch (error) {
+    console.error("Error while downloading prescription:", error);
+    alert("Failed to download prescription. Please try again.");
+  }
+};
+  
 
   const handleViewPrescription = async (appointment) => {
     try {
@@ -605,11 +607,9 @@ const UserProfileComponent = () => {
         status: appointment.status,
       };
 
-      console.log("Enhanced prescription data:", enhancedData);
       setPrescriptionData(enhancedData);
       setShowPrescriptionModal(true);
     } catch (error) {
-      console.error("Error while fetching prescription:", error);
     } finally {
       setPrescriptionLoading(false);
     }
@@ -2436,7 +2436,7 @@ const UserProfileComponent = () => {
                   <div>
                     <p className="text-xs text-gray-500">Amount</p>
                     <p className="font-medium text-sm">
-                      ₹{prescriptionData.amount || "0"}
+                      ₹{prescriptionData.amount || "500"}
                     </p>
                   </div>
                   <div>
