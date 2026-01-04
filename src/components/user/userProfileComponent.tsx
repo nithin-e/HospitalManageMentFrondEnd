@@ -1972,19 +1972,29 @@ const UserProfileComponent = () => {
       zIndex: 99999,
       backgroundColor: 'rgba(0, 0, 0, 0.5)'
     }}
+    onClick={() => {
+      setShowPrescriptionModal(false);
+      setPrescriptionData(null);
+    }}
   >
-    <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col relative" style={{ zIndex: 100000 }}>
-      {/* Close Button - Absolutely Positioned */}
-      <button
-        onClick={() => {
-          setShowPrescriptionModal(false);
-          setPrescriptionData(null);
-        }}
-        className="absolute -top-3 -right-3 text-white bg-red-500 hover:bg-red-600 rounded-full p-2 transition-colors shadow-lg z-50"
-        style={{ zIndex: 100002 }}
-      >
-        <X className="w-5 h-5" />
-      </button>
+    <div 
+      className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col relative" 
+      style={{ zIndex: 100000 }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* Fixed Header with Close Button */}
+      <div className="bg-white border-b border-gray-200 rounded-t-xl p-4 flex items-center justify-between sticky top-0" style={{ zIndex: 100001 }}>
+        <h3 className="text-lg font-bold text-gray-800">Prescription Details</h3>
+        <button
+          onClick={() => {
+            setShowPrescriptionModal(false);
+            setPrescriptionData(null);
+          }}
+          className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full p-2 transition-colors"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
       
       {/* Fixed Header */}
       <div className="bg-white border-b border-gray-200 rounded-t-xl p-4 sticky top-0" style={{ zIndex: 100001 }}>
