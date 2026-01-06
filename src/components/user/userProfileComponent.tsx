@@ -545,28 +545,22 @@ const handleDownloadPrescription = async (appointment) => {
 
     const res = await fetchingPrescription(prescription);
     
-    // Enhance the prescription data with appointment details
     const enhancedPrescriptionData = {
       ...res.data,
-      // Add patient information
       patientName: userData?.name || "Not specified",
       patientPhone: userData?.phoneNumber || userData?.contactNumber || "Not provided",
       patientEmail: userData?.email || res.data.patientEmail,
       
-      // Add doctor information
       doctorName: appointment.doctor,
       specialty: appointment.department,
       
-      // Add appointment details
       appointmentDate: appointment.date,
       appointmentTime: appointment.time,
       notes: appointment.purpose || appointment.notes || "General consultation",
       status: appointment.status || "completed",
       
-      // Add prescription ID if not present
       prescriptionId: res.data._id || `RX-${Date.now()}`,
       
-      // Add amount if not present
       amount: res.data.amount || "500"
     };
 
