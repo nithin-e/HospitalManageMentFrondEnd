@@ -850,7 +850,7 @@ export default function DoctorAppointmentScheduler() {
         },
         newSlot: {
           id: data.newSlot.id,
-          date: data.newSlot.date || data.originalSlot.date,
+          date: data.newSlot.date || data.newSlot?.date || null,
           time24: data.newSlot.time24,
           time12: data.newSlot.time12,
           available: data.newSlot.available,
@@ -964,8 +964,8 @@ export default function DoctorAppointmentScheduler() {
           onCancel={handleCancelAction}
           onConfirm={handleConfirmReshedule}
           selectedSlot={selectedSlot}
-          existingSlots={savedAppointmentData?.result?.slots}
           existingTimes={existingTimes}
+          getExistingTimesForDate={getExistingTimesForDate}
         />
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold mb-4">
