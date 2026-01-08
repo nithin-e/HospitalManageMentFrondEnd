@@ -863,7 +863,8 @@ export default function DoctorAppointmentScheduler() {
       setSelectedSlot(null);
       });
 
-
+              setShowPopup(false);
+      setSelectedSlot(null);
     };
 
     const handleCancelAction = () => {
