@@ -859,10 +859,11 @@ export default function DoctorAppointmentScheduler() {
 
       socket.emit("reschedule-appointment", rescheduleData, (response) => {
         console.log("Socket response:", response);
+              setShowPopup(false);
+      setSelectedSlot(null);
       });
 
-      setShowPopup(false);
-      setSelectedSlot(null);
+
     };
 
     const handleCancelAction = () => {

@@ -19,7 +19,6 @@ const PopUpMessage = ({
   );
   const [existingTimesForDate, setExistingTimesForDate] = useState(existingTimes || []);
 
-  // Convert 24-hour time to 12-hour format
   const convertTo12Hour = (time24) => {
     const [hours, minutes] = time24.split(':');
     const hour = parseInt(hours);
@@ -28,13 +27,12 @@ const PopUpMessage = ({
     return `${hour12}:${minutes} ${ampm}`;
   };
 
-  // Generate available slots. For same-day reschedule allow 9 AM - 8 PM,
-  // for other dates allow only slots after 5 PM (17:00) up to 8 PM.
+
   const generateAvailableSlots = () => {
     const slots = [];
     const isOtherDate = selectedDate !== (selectedSlot?.date || '');
-    const startHour = isOtherDate ? 17 : 9; // 5 PM for other dates
-    const endHour = 20; // 8 PM in 24-hour format
+    const startHour = isOtherDate ? 17 : 9;
+    const endHour = 20; 
 
     for (let hour = startHour; hour < endHour; hour++) {
       for (const minutes of [0, 30]) {
@@ -43,7 +41,6 @@ const PopUpMessage = ({
           .padStart(2, '0')}`;
         const time12 = convertTo12Hour(time24);
 
-        // Determine conflicts using existingTimesForDate (which is kept in state)
         const isExisting = (existingTimesForDate || []).some((existingTime) => {
           if (typeof existingTime === 'string') {
             return existingTime === time24 || existingTime === time12;
@@ -65,12 +62,10 @@ const PopUpMessage = ({
     return slots;
   };
 
-  // Refresh existing times for the current selected date when date changes
   React.useEffect(() => {
     if (getExistingTimesForDate && selectedDate) {
       try {
         const res = getExistingTimesForDate(selectedDate);
-        // If the parent returns an array or promise, handle both
         if (res && typeof res.then === 'function') {
           res.then((arr) => setExistingTimesForDate(arr || []));
         } else {
@@ -98,7 +93,6 @@ const PopUpMessage = ({
 
   const handleRescheduleConfirm = () => {
     if (selectedRescheduleSlot) {
-      // Attach selected date to newSlot
       const payload = {
         action: 'reschedule',
         originalSlot: selectedSlot,
@@ -120,9 +114,7 @@ const PopUpMessage = ({
       <div className="bg-white rounded-lg shadow-xl p-6 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
         
         {!showReschedule ? (
-          // Original confirmation view
           <>
-            {/* Popup Header */}
             <div className="flex items-center mb-4">
               <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4">
                 <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -132,7 +124,6 @@ const PopUpMessage = ({
               <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
             </div>
 
-            {/* Popup Content */}
             <div className="mb-6">
               <p className="text-gray-700 mb-2">{message}</p>
               
@@ -161,7 +152,6 @@ const PopUpMessage = ({
               )}
             </div>
 
-            {/* Popup Actions */}
             <div className="flex flex-col space-y-3">
               <div className="flex justify-end space-x-3">
                 <button
@@ -180,7 +170,6 @@ const PopUpMessage = ({
             </div>
           </>
         ) : (
-          // Reschedule view
           <>
             {/* Reschedule Header */}
             <div className="flex items-center mb-4">
